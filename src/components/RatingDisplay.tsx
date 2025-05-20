@@ -47,19 +47,21 @@ const RatingDisplay: React.FC = () => {
         <p className="text-gray-700">{feedback}</p>
       </div>
       
-      <div>
-        <h4 className="text-lg font-medium mb-2 text-fashion-700">Style Suggestions</h4>
-        <ul className="space-y-2">
-          {suggestions.map((suggestion, index) => (
-            <li key={index} className="flex items-start gap-2">
-              <div className="min-w-5 mt-1">
-                <div className="w-3 h-3 rounded-full fashion-gradient"></div>
-              </div>
-              <p className="text-gray-700">{suggestion}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {suggestions && suggestions.length > 0 && (
+        <div>
+          <h4 className="text-lg font-medium mb-2 text-fashion-700">Style Suggestions</h4>
+          <ul className="space-y-2">
+            {suggestions.map((suggestion, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <div className="min-w-5 mt-1">
+                  <div className="w-3 h-3 rounded-full fashion-gradient"></div>
+                </div>
+                <p className="text-gray-700">{suggestion}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       
       <div className="mt-6 pt-6 border-t border-gray-100">
         <p className="text-sm text-gray-500 italic">

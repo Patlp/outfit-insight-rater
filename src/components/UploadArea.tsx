@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRating } from '@/context/RatingContext';
 import { Upload, Image, X } from 'lucide-react';
-import { analyzeOutfit } from '@/utils/mockRatingService';
+import { analyzeOutfit } from '@/utils/aiRatingService';
 import { toast } from 'sonner';
 
 const UploadArea: React.FC = () => {
@@ -83,15 +83,17 @@ const UploadArea: React.FC = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!imageFile) return;
+    if (!imageFile || !imageSrc) return;
     
     setIsAnalyzing(true);
     try {
-      const result = await analyzeOutfit(selectedGender);
+      // We already have the base64 image in imageSrc
+      const result = await analyzeOutfit(selectedGender, imageSrc);
       setRatingResult(result);
+      toast.success('Analysis complete!');
     } catch (error) {
-      toast.error('Failed to analyze your outfit. Please try again.');
       console.error('Analysis error:', error);
+      toast.error('Failed to analyze your outfit. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
