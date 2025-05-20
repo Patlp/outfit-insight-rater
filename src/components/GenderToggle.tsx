@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useRating } from '@/context/RatingContext';
-import { Male, Female } from 'lucide-react';
+import { UserCircle2, User2 } from 'lucide-react';
 
 const GenderToggle: React.FC = () => {
   const { selectedGender, setSelectedGender, imageFile } = useRating();
@@ -25,7 +25,7 @@ const GenderToggle: React.FC = () => {
           } ${imageFile ? 'opacity-60 cursor-not-allowed' : ''}`}
           disabled={!!imageFile}
         >
-          <Male size={18} />
+          <User2 size={18} />
           <span>Male</span>
         </button>
         
@@ -38,7 +38,7 @@ const GenderToggle: React.FC = () => {
           } ${imageFile ? 'opacity-60 cursor-not-allowed' : ''}`}
           disabled={!!imageFile}
         >
-          <Female size={18} />
+          <UserCircle2 size={18} />
           <span>Female</span>
         </button>
       </div>
