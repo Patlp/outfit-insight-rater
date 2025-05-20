@@ -16,6 +16,14 @@ const RatingDisplay: React.FC = () => {
     if (score >= 6) return 'text-yellow-500';
     return 'text-red-500';
   };
+
+  // Parse markdown bold syntax (**text**) to HTML
+  const parseMarkdownBold = (text: string) => {
+    if (!text) return '';
+    
+    // Replace **text** with <strong>text</strong>
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  };
   
   return (
     <div className="animate-fade-in max-w-md w-full mx-auto mt-8 fashion-card">
@@ -44,7 +52,10 @@ const RatingDisplay: React.FC = () => {
       
       <div className="mb-6">
         <h4 className="text-lg font-medium mb-2 text-fashion-700">Analysis</h4>
-        <p className="text-gray-700">{feedback}</p>
+        <p 
+          className="text-gray-700" 
+          dangerouslySetInnerHTML={{ __html: parseMarkdownBold(feedback) }}
+        />
       </div>
       
       {suggestions && suggestions.length > 0 && (
@@ -56,7 +67,10 @@ const RatingDisplay: React.FC = () => {
                 <div className="min-w-5 mt-1">
                   <div className="w-3 h-3 rounded-full fashion-gradient"></div>
                 </div>
-                <p className="text-gray-700">{suggestion}</p>
+                <p 
+                  className="text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: parseMarkdownBold(suggestion) }}
+                />
               </li>
             ))}
           </ul>
