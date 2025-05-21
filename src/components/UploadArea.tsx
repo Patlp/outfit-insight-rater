@@ -130,7 +130,7 @@ const UploadArea: React.FC = () => {
               <span>Analyzing outfit...</span>
             </>
           ) : (
-            <span>Rate My Outfit</span>
+            <span>{feedbackMode === 'roast' ? 'Roast My Outfit' : 'Rate My Outfit'}</span>
           )}
         </button>
       </div>
