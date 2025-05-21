@@ -25,23 +25,29 @@ const RatingDisplay: React.FC = () => {
     return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   };
   
-  // Format feedback into sections by looking for headings
+  // Format feedback into clean sections with clear headings
   const formatFeedbackSections = (text: string) => {
     if (!text) return [];
     
-    // Look for common section identifiers in fashion feedback
+    // Define common fashion feedback section identifiers
     const sectionIdentifiers = [
       'Style:', 'Color Coordination:', 'Fit:', 'Overall Impression:',
       'Style', 'Color Coordination', 'Fit', 'Overall Impression',
-      'Detailed Feedback:'
+      'Detailed Feedback:', 'Pattern:', 'Accessories:', 'Proportions:'
     ];
     
     let formattedText = text;
     
+    // Remove numbered list indicators (1., 2., etc.)
+    formattedText = formattedText.replace(/^\d+\.\s*/gm, '');
+    
+    // Remove extra sections like "Improvement:" or redundant headings
+    formattedText = formattedText.replace(/(Improvement:|\/10|Score:)/gi, '');
+    
     // Replace section identifiers with HTML heading elements
     sectionIdentifiers.forEach(identifier => {
       const regex = new RegExp(`(- ${identifier}|${identifier})\\s`, 'g');
-      formattedText = formattedText.replace(regex, `<h4 class="text-fashion-500 font-medium mt-4 mb-2">${identifier}</h4>`);
+      formattedText = formattedText.replace(regex, `<h4 class="text-fashion-600 font-semibold mt-4 mb-2">${identifier}</h4>`);
     });
     
     // Split into paragraphs and create formatted HTML
@@ -51,7 +57,7 @@ const RatingDisplay: React.FC = () => {
       .map(p => {
         // If the paragraph doesn't start with an h4 tag, wrap it in a p tag
         if (!p.startsWith('<h4')) {
-          return `<p class="mb-3">${p}</p>`;
+          return `<p class="mb-3 text-gray-700">${p}</p>`;
         }
         return p;
       });
@@ -59,24 +65,30 @@ const RatingDisplay: React.FC = () => {
     return paragraphs;
   };
   
-  // Format suggestions with clear heading styling
+  // Format style suggestions with clean heading styling
   const formatSuggestion = (suggestion: string) => {
-    // Look for patterns like "Accessories:" or "- Footwear:" in suggestions
-    const headingPattern = /^(\*\* - |\*\*|- |\- )?([A-Za-z\s]+):/;
-    const match = suggestion.match(headingPattern);
+    // Clean up the suggestion text
+    let cleanSuggestion = suggestion
+      .replace(/^(\d+\.\s*|\-\s*|\*\s*)/, '') // Remove list markers (numbers, dashes, asterisks)
+      .trim();
+    
+    // Look for category patterns like "Accessories:" or "Footwear:"
+    const headingPattern = /^(\*\* - |\*\*|- |\- )?([A-Za-z\s&]+):/;
+    const match = cleanSuggestion.match(headingPattern);
     
     if (match && match[2]) {
       const heading = match[2].trim();
-      const content = suggestion.replace(headingPattern, '').trim();
+      const content = cleanSuggestion.replace(headingPattern, '').trim();
+      
       return (
         <>
-          <span className="font-semibold text-fashion-500">{heading}:</span>{' '}
+          <span className="font-semibold text-fashion-600">{heading}:</span>{' '}
           <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(content) }} />
         </>
       );
     }
     
-    return <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(suggestion) }} />;
+    return <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(cleanSuggestion) }} />;
   };
   
   const feedbackSections = formatFeedbackSections(feedback);
@@ -107,11 +119,12 @@ const RatingDisplay: React.FC = () => {
       </div>
       
       <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-3 text-fashion-500 border-b border-fashion-200 pb-2">Analysis</h3>
+        <h3 className="text-lg font-semibold mb-3 text-fashion-600 border-b border-fashion-200 pb-2">Detailed Feedback</h3>
         <div className="space-y-1">
           {feedbackSections.map((section, index) => (
             <div 
               key={index}
+              className="feedback-section"
               dangerouslySetInnerHTML={{ __html: parseMarkdownBold(section) }}
             />
           ))}
@@ -120,8 +133,8 @@ const RatingDisplay: React.FC = () => {
       
       {suggestions && suggestions.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-3 text-fashion-500 border-b border-fashion-200 pb-2">Style Suggestions</h3>
-          <ul className="space-y-3">
+          <h3 className="text-lg font-semibold mb-3 text-fashion-600 border-b border-fashion-200 pb-2">Style Suggestions</h3>
+          <ul className="space-y-3 mt-4">
             {suggestions.map((suggestion, index) => (
               <li key={index} className="flex items-start gap-2">
                 <div className="min-w-5 mt-1">
