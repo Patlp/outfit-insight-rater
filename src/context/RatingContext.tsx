@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export type Gender = 'male' | 'female';
 export type FeedbackMode = 'normal' | 'roast';
@@ -24,6 +24,10 @@ interface RatingContextType {
   ratingResult: RatingResult | null;
   setRatingResult: (result: RatingResult | null) => void;
   resetState: () => void;
+  hasUnlockedRoastMode: boolean;
+  setHasUnlockedRoastMode: (unlocked: boolean) => void;
+  showInviteWall: boolean;
+  setShowInviteWall: (show: boolean) => void;
 }
 
 const RatingContext = createContext<RatingContextType | undefined>(undefined);
@@ -35,6 +39,21 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [ratingResult, setRatingResult] = useState<RatingResult | null>(null);
+  const [hasUnlockedRoastMode, setHasUnlockedRoastMode] = useState<boolean>(false);
+  const [showInviteWall, setShowInviteWall] = useState<boolean>(false);
+
+  // Check localStorage on initial load to see if roast mode is already unlocked
+  useEffect(() => {
+    const unlocked = localStorage.getItem('hasUnlockedRoastMode') === 'true';
+    setHasUnlockedRoastMode(unlocked);
+  }, []);
+
+  // Save unlocked status to localStorage when it changes
+  useEffect(() => {
+    if (hasUnlockedRoastMode) {
+      localStorage.setItem('hasUnlockedRoastMode', 'true');
+    }
+  }, [hasUnlockedRoastMode]);
 
   const resetState = () => {
     setImageFile(null);
@@ -58,6 +77,10 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         ratingResult,
         setRatingResult,
         resetState,
+        hasUnlockedRoastMode,
+        setHasUnlockedRoastMode,
+        showInviteWall,
+        setShowInviteWall,
       }}
     >
       {children}

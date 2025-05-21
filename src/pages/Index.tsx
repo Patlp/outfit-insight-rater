@@ -6,6 +6,7 @@ import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
 import PrivacyNotice from '@/components/PrivacyNotice';
 import RoastModeToggle from '@/components/RoastModeToggle';
+import InviteWall from '@/components/InviteWall';
 import { useRating } from '@/context/RatingContext';
 
 const HomeContent: React.FC = () => {
@@ -35,6 +36,7 @@ const HomeContent: React.FC = () => {
       
       <GenderToggle />
       <RoastModeToggle />
+      <InviteWall />
       
       <UploadArea />
       

@@ -2,11 +2,24 @@
 import React from 'react';
 import { useRating } from '@/context/RatingContext';
 import { Flame } from 'lucide-react';
+import InviteWall from '@/components/InviteWall';
 
 const RoastModeToggle: React.FC = () => {
-  const { feedbackMode, setFeedbackMode } = useRating();
+  const { 
+    feedbackMode, 
+    setFeedbackMode, 
+    hasUnlockedRoastMode, 
+    setShowInviteWall 
+  } = useRating();
   
   const toggleRoastMode = () => {
+    if (!hasUnlockedRoastMode && feedbackMode === 'normal') {
+      // Show the invite wall if roast mode is not unlocked
+      setShowInviteWall(true);
+      return;
+    }
+    
+    // Toggle the mode if already unlocked
     setFeedbackMode(feedbackMode === 'normal' ? 'roast' : 'normal');
   };
   
@@ -24,6 +37,7 @@ const RoastModeToggle: React.FC = () => {
         <Flame className={`h-5 w-5 ${feedbackMode === 'roast' ? 'text-white' : 'text-orange-500'}`} />
         <span className="font-medium">
           {feedbackMode === 'roast' ? 'Roast Mode: ON' : 'Roast Mode: OFF'}
+          {!hasUnlockedRoastMode && feedbackMode === 'normal' && " (Locked)"}
         </span>
       </button>
       {feedbackMode === 'roast' && (

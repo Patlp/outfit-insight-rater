@@ -3,3 +3,6 @@ project_id = "frfvrgarcwmpviimsenu"
 
 [functions.analyze-outfit]
 verify_jwt = false
+
+[functions.send-invites]
+verify_jwt = false
