@@ -1,18 +1,20 @@
 
 import React, { useState } from 'react';
-import { LockOpen } from 'lucide-react';
+import { LockOpen, X } from 'lucide-react';
 import { useRating } from '@/context/RatingContext';
 import { 
   Dialog, 
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
+  DialogClose
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
-// Import our new component files
+// Import our component files
 import EmailInviteForm from './invite/EmailInviteForm';
 import ManualShareOptions from './invite/ManualShareOptions';
 import ConfirmationDialog from './invite/ConfirmationDialog';
@@ -27,10 +29,7 @@ const InviteWall: React.FC = () => {
     setFeedbackMode('roast');
     setShowInviteWall(false);
 
-    toast({
-      title: "Roast Mode Unlocked!",
-      description: "Thanks for spreading the word. Roast Mode is now active for YOU!",
-    });
+    toast.success("Roast Mode Unlocked! Ready for brutally honest feedback.");
   };
 
   const handleManualShareCompleted = () => {
@@ -45,10 +44,23 @@ const InviteWall: React.FC = () => {
   const handleCancelConfirmation = () => {
     setShowConfirmation(false);
   };
+
+  const handleClose = () => {
+    if (showConfirmation) {
+      setShowConfirmation(false);
+    } else {
+      setShowInviteWall(false);
+    }
+  };
   
   return (
     <Dialog open={showInviteWall} onOpenChange={setShowInviteWall}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto relative">
+        <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </DialogClose>
+
         {!showConfirmation ? (
           <>
             <DialogHeader>
@@ -73,6 +85,16 @@ const InviteWall: React.FC = () => {
               <Separator className="my-4" />
               
               <ManualShareOptions onShareCompleted={handleManualShareCompleted} />
+
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleClose}
+                  className="text-gray-500"
+                >
+                  Maybe Later
+                </Button>
+              </div>
             </div>
           </>
         ) : (
