@@ -13,7 +13,11 @@ const HomeContent: React.FC = () => {
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8 flex flex-col items-center">
       <header className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-3 fashion-gradient bg-clip-text text-transparent">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 text-black" style={{ 
+          fontFamily: "'Inter', 'Helvetica Neue', sans-serif", 
+          letterSpacing: '-0.02em',
+          fontWeight: 800
+        }}>
           RateMyFit
         </h1>
         <p className="text-gray-600 max-w-md mx-auto">
