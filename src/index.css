@@ -5,33 +5,33 @@
 
 @layer base {
   :root {
-    --background: 260 60% 99%;
+    --background: 40 55% 98%;
     --foreground: 260 10% 10%;
 
-    --card: 0 0% 100%;
+    --card: 40 50% 98%;
     --card-foreground: 260 10% 10%;
 
-    --popover: 0 0% 100%;
+    --popover: 40 50% 98%;
     --popover-foreground: 260 10% 10%;
 
-    --primary: 260 84% 60%;
+    --primary: 0 0% 13%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 30% 96%;
-    --secondary-foreground: 260 50% 30%;
+    --secondary: 40 30% 96%;
+    --secondary-foreground: 0 0% 13%;
 
-    --muted: 260 20% 96%;
+    --muted: 40 20% 96%;
     --muted-foreground: 260 10% 40%;
 
-    --accent: 260 30% 96%;
-    --accent-foreground: 260 50% 30%;
+    --accent: 40 30% 96%;
+    --accent-foreground: 0 0% 13%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 30% 90%;
-    --input: 260 30% 90%;
-    --ring: 260 84% 60%;
+    --border: 40 30% 90%;
+    --input: 40 30% 90%;
+    --ring: 0 0% 13%;
 
     --radius: 0.75rem;
 
@@ -88,21 +88,21 @@
 
 @layer components {
   .fashion-gradient {
-    @apply bg-gradient-to-br from-fashion-400 to-fashion-600;
+    @apply bg-gradient-to-br from-fashion-500 to-fashion-600;
   }
   
   .fashion-card {
-    @apply bg-white rounded-2xl shadow-lg p-6 border border-fashion-100;
+    @apply bg-fashion-100 rounded-2xl shadow-lg p-6 border border-fashion-200;
   }
   
   .fashion-button {
-    @apply fashion-gradient text-white font-medium py-3 px-6 rounded-full 
-           shadow-md hover:shadow-lg hover:opacity-90 transition-all 
+    @apply bg-fashion-600 text-white font-medium py-3 px-6 rounded-full 
+           shadow-md hover:shadow-lg hover:bg-fashion-700 transition-all 
            focus:outline-none focus:ring-2 focus:ring-fashion-500 focus:ring-opacity-50;
   }
   
   .fashion-input {
-    @apply block w-full px-4 py-3 bg-white border border-gray-200 
+    @apply block w-full px-4 py-3 bg-fashion-100 border border-fashion-200
            rounded-xl focus:outline-none focus:ring-2 
            focus:ring-fashion-500 focus:border-transparent;
   }

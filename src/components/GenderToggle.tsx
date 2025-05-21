@@ -14,14 +14,14 @@ const GenderToggle: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center mb-6">
-      <p className="text-fashion-800 font-medium mb-3">Select fashion style guide:</p>
+      <p className="text-fashion-500 font-medium mb-3">Select fashion style guide:</p>
       <div className="flex items-center gap-4">
         <button
           onClick={() => handleGenderChange('male')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-full transition-all ${
             selectedGender === 'male'
-              ? 'fashion-gradient text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-fashion-600 text-white'
+              : 'bg-fashion-100 text-fashion-500 hover:bg-fashion-200'
           } ${imageFile ? 'opacity-60 cursor-not-allowed' : ''}`}
           disabled={!!imageFile}
         >
@@ -33,8 +33,8 @@ const GenderToggle: React.FC = () => {
           onClick={() => handleGenderChange('female')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-full transition-all ${
             selectedGender === 'female'
-              ? 'fashion-gradient text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-fashion-600 text-white'
+              : 'bg-fashion-100 text-fashion-500 hover:bg-fashion-200'
           } ${imageFile ? 'opacity-60 cursor-not-allowed' : ''}`}
           disabled={!!imageFile}
         >

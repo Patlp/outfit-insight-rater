@@ -64,16 +64,17 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				fashion: {
-					100: '#F3EFFC',
-					200: '#D6BCFA',
+					100: '#FDF8F2', // lighter cream
+					200: '#F8F0E5', // light cream
 					300: '#B794F4',
 					400: '#9B87F5',
-					500: '#8B5CF6',
-					600: '#7C3AED',
-					700: '#6D28D9',
-					800: '#5B21B6',
-					900: '#4C1D95'
-				}
+					500: '#333333', // dark gray
+					600: '#222222', // nearly black
+					700: '#111111', // true black
+					800: '#000000',
+					900: '#000000'
+				},
+				'warm-cream': '#FDF6E9', // warm cream background
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
