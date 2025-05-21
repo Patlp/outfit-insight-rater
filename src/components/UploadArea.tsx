@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useRating } from '@/context/RatingContext';
-import { Upload, Image, X } from 'lucide-react';
+import { Image, X } from 'lucide-react';
 import { analyzeOutfit } from '@/utils/aiRatingService';
 import { toast } from 'sonner';
 
@@ -149,10 +148,6 @@ const UploadArea: React.FC = () => {
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <div className="fashion-gradient w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Upload className="h-8 w-8 text-white" />
-        </div>
-        
         <h3 className="text-lg font-medium text-gray-700 mb-2">
           Upload your outfit photo
         </h3>
