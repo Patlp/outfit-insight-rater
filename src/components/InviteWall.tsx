@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Send, LockOpen, Copy, MessageSquare } from 'lucide-react';
+import { X, Send, LockOpen, Copy, MessageSquare, AlertCircle } from 'lucide-react';
 import { useRating } from '@/context/RatingContext';
 import { 
   Dialog, 
@@ -17,12 +17,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const InviteWall: React.FC = () => {
-  const { showInviteWall, setShowInviteWall, setHasUnlockedRoastMode, setFeedbackMode } = useRating();
+  const { showInviteWall, setShowInviteWall, setHasUnlockedRoastMode, setFeedbackMode, feedbackMode } = useRating();
   const [emails, setEmails] = useState<string[]>(['', '', '']);
   const [isSending, setIsSending] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   
-  const defaultInviteText = "I just got roasted by AI on RateMyFit — brutally. Try it and see if your fit survives. [ratemyfit.lovable.app]";
+  const defaultInviteText = "I just tried RateMyFit — an AI that critiques outfit photos! They have this 'Roast Mode' that's brutally honest. Check it out at ratemyfit.lovable.app";
   
   const handleEmailChange = (index: number, value: string) => {
     const newEmails = [...emails];
@@ -95,13 +95,13 @@ const InviteWall: React.FC = () => {
       if (failedCount > 0) {
         toast({
           title: "Roast Mode Unlocked!",
-          description: `Successfully sent ${sentCount} invite${sentCount !== 1 ? 's' : ''}, but ${failedCount} failed. Roast Mode is now active!`,
+          description: `Successfully sent ${sentCount} invite${sentCount !== 1 ? 's' : ''}, but ${failedCount} failed. Roast Mode is now active for you!`,
           variant: "default"
         });
       } else {
         toast({
           title: "Roast Mode Unlocked!",
-          description: `Invites sent to ${sentCount} friend${sentCount !== 1 ? 's' : ''}. Roast Mode is now active!`,
+          description: `Invites sent to ${sentCount} friend${sentCount !== 1 ? 's' : ''}. Roast Mode is now active for you!`,
           variant: "default"
         });
       }
@@ -160,7 +160,7 @@ const InviteWall: React.FC = () => {
 
     toast({
       title: "Roast Mode Unlocked!",
-      description: "Thanks for spreading the word. Roast Mode is now active!",
+      description: "Thanks for spreading the word. Roast Mode is now active for YOU!",
     });
   };
   
@@ -172,16 +172,24 @@ const InviteWall: React.FC = () => {
             <DialogHeader>
               <DialogTitle className="text-xl font-bold flex items-center gap-2">
                 <LockOpen className="h-5 w-5 text-orange-500" />
-                Unlock Roast Mode
+                Unlock Roast Mode — For You
               </DialogTitle>
               <DialogDescription className="text-base pt-2">
-                Roast Mode is locked! Want brutal fashion truth? Invite friends to unlock it — they'll thank you later (or roast you back).
+                <span className="font-medium text-orange-600">Want brutally honest fashion feedback for YOUR outfits?</span> Invite friends to try RateMyFit and unlock "Roast Mode" for yourself!
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-2">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2">
+                <AlertCircle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium">What is Roast Mode?</p>
+                  <p className="mt-1">It's a special feedback mode that gives you brutally honest, no-holds-barred critique of your outfits. Perfect when you want the unfiltered truth about your style.</p>
+                </div>
+              </div>
+              
               <div className="text-sm font-medium text-gray-700">
-                We'll email them on your behalf with your permission. No spam, just a fun fit challenge.
+                Enter friends' emails to invite them to try RateMyFit. We'll email them with your permission, and you'll unlock Roast Mode for yourself! (No spam, just a fun invitation)
               </div>
               
               <div className="space-y-3">
@@ -214,7 +222,7 @@ const InviteWall: React.FC = () => {
                   className="bg-orange-500 hover:bg-orange-600"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {isSending ? 'Sending...' : 'Send & Unlock'}
+                  {isSending ? 'Sending...' : 'Send & Unlock for Me'}
                 </Button>
               </div>
 
@@ -222,7 +230,7 @@ const InviteWall: React.FC = () => {
               
               <div className="space-y-4">
                 <p className="text-sm font-medium text-center">
-                  Prefer to invite manually? Use one of the options below and let us know when you're done!
+                  Prefer to invite manually? Use one of the options below to share with friends and unlock Roast Mode for yourself!
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -260,8 +268,11 @@ const InviteWall: React.FC = () => {
           <div className="space-y-6 py-4">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold text-center">
-                Did you send the invite?
+                Did you invite your friends to RateMyFit?
               </DialogTitle>
+              <DialogDescription className="text-base text-center pt-2">
+                Confirming this will unlock Roast Mode for YOUR outfit feedback
+              </DialogDescription>
             </DialogHeader>
             
             <div className="flex flex-col items-center gap-4">
@@ -269,7 +280,7 @@ const InviteWall: React.FC = () => {
                 onClick={confirmManualInvite}
                 className="w-full bg-orange-500 hover:bg-orange-600"
               >
-                Yes, I sent the invite
+                Yes, I invited friends
               </Button>
               
               <Button 
