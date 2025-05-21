@@ -2,7 +2,6 @@
 import React from 'react';
 import { useRating } from '@/context/RatingContext';
 import { Star } from 'lucide-react';
-import ShareRating from './ShareRating';
 
 const RatingDisplay: React.FC = () => {
   const { ratingResult } = useRating();
@@ -170,8 +169,6 @@ const RatingDisplay: React.FC = () => {
           </ul>
         </div>
       )}
-      
-      <ShareRating />
       
       <div className="mt-6 pt-6 border-t border-fashion-200">
         <p className="text-sm text-gray-500 italic">
