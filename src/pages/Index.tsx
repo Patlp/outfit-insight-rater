@@ -5,6 +5,7 @@ import GenderToggle from '@/components/GenderToggle';
 import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
 import PrivacyNotice from '@/components/PrivacyNotice';
+import RoastModeToggle from '@/components/RoastModeToggle';
 import { useRating } from '@/context/RatingContext';
 
 const HomeContent: React.FC = () => {
@@ -33,6 +34,7 @@ const HomeContent: React.FC = () => {
       </header>
       
       <GenderToggle />
+      <RoastModeToggle />
       
       <UploadArea />
       

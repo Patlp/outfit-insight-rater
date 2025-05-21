@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useRating } from '@/context/RatingContext';
 import { Image, X } from 'lucide-react';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 const UploadArea: React.FC = () => {
   const {
     selectedGender,
+    feedbackMode,
     imageFile,
     setImageFile,
     imageSrc,
@@ -87,7 +89,7 @@ const UploadArea: React.FC = () => {
     setIsAnalyzing(true);
     try {
       // We already have the base64 image in imageSrc
-      const result = await analyzeOutfit(selectedGender, imageSrc);
+      const result = await analyzeOutfit(selectedGender, feedbackMode, imageSrc);
       setRatingResult(result);
       toast.success('Analysis complete!');
     } catch (error) {

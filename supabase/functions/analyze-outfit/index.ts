@@ -14,23 +14,31 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, gender } = await req.json();
+    const { imageBase64, gender, feedbackMode } = await req.json();
     
     if (!imageBase64) {
       throw new Error('No image provided');
     }
 
-    console.log(`Analyzing ${gender} outfit...`);
+    console.log(`Analyzing ${gender} outfit in ${feedbackMode} mode...`);
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Prepare the system message based on gender
-    const systemMessage = gender === 'male' 
-      ? "You are an expert fashion consultant specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions."
-      : "You are an expert fashion consultant specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions.";
+    // Prepare the system message based on gender and feedback mode
+    let systemMessage = "";
+    
+    if (feedbackMode === 'roast') {
+      systemMessage = gender === 'male' 
+        ? "You are a brutally honest, sarcastic fashion critic specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited."
+        : "You are a brutally honest, sarcastic fashion critic specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited.";
+    } else {
+      systemMessage = gender === 'male' 
+        ? "You are an expert fashion consultant specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions."
+        : "You are an expert fashion consultant specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions.";
+    }
 
     // Call OpenAI API with the image
     const response = await fetch("https://api.openai.com/v1/chat/completions", {

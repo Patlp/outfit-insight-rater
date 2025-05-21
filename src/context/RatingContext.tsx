@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Gender = 'male' | 'female';
+export type FeedbackMode = 'normal' | 'roast';
 
 export interface RatingResult {
   score: number;
@@ -12,6 +13,8 @@ export interface RatingResult {
 interface RatingContextType {
   selectedGender: Gender;
   setSelectedGender: (gender: Gender) => void;
+  feedbackMode: FeedbackMode;
+  setFeedbackMode: (mode: FeedbackMode) => void;
   imageFile: File | null;
   setImageFile: (file: File | null) => void;
   imageSrc: string | null;
@@ -27,6 +30,7 @@ const RatingContext = createContext<RatingContextType | undefined>(undefined);
 
 export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedGender, setSelectedGender] = useState<Gender>('female');
+  const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>('normal');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -43,6 +47,8 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       value={{
         selectedGender,
         setSelectedGender,
+        feedbackMode,
+        setFeedbackMode,
         imageFile,
         setImageFile,
         imageSrc,

@@ -1,12 +1,17 @@
 
-import { Gender, RatingResult } from '@/context/RatingContext';
+import { Gender, FeedbackMode, RatingResult } from '@/context/RatingContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export const analyzeOutfit = async (gender: Gender, imageBase64: string): Promise<RatingResult> => {
+export const analyzeOutfit = async (
+  gender: Gender, 
+  feedbackMode: FeedbackMode, 
+  imageBase64: string
+): Promise<RatingResult> => {
   try {
     const { data, error } = await supabase.functions.invoke('analyze-outfit', {
       body: {
         gender,
+        feedbackMode,
         imageBase64
       }
     });
