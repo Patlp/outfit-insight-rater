@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Send, LockOpen } from 'lucide-react';
+import { X, Send, LockOpen, Copy, MessageSquare } from 'lucide-react';
 import { useRating } from '@/context/RatingContext';
 import { 
   Dialog, 
@@ -11,13 +11,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const InviteWall: React.FC = () => {
   const { showInviteWall, setShowInviteWall, setHasUnlockedRoastMode, setFeedbackMode } = useRating();
   const [emails, setEmails] = useState<string[]>(['', '', '']);
   const [isSending, setIsSending] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  
+  const defaultInviteText = "I just got roasted by AI on RateMyFit — brutally. Try it and see if your fit survives. [ratemyfit.lovable.app]";
   
   const handleEmailChange = (index: number, value: string) => {
     const newEmails = [...emails];
@@ -111,59 +116,172 @@ const InviteWall: React.FC = () => {
       setIsSending(false);
     }
   };
+
+  const shareViaWhatsApp = () => {
+    const encodedText = encodeURIComponent(defaultInviteText);
+    const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+    window.open(whatsappUrl, '_blank');
+    setShowConfirmation(true);
+  };
+
+  const shareViaMessageSquare = () => {
+    // For iOS/macOS, try to use SMS URL scheme
+    const smsUrl = `sms:&body=${encodeURIComponent(defaultInviteText)}`;
+    
+    // If on mobile, attempt to open native SMS app
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.location.href = smsUrl;
+    } else {
+      // On desktop, just copy to clipboard
+      copyInviteText();
+      toast({
+        title: "Message copied!",
+        description: "Paste this in your messaging app to invite friends",
+      });
+    }
+    setShowConfirmation(true);
+  };
+
+  const copyInviteText = () => {
+    navigator.clipboard.writeText(defaultInviteText);
+    toast({
+      title: "Copied to clipboard!",
+      description: "Invite text copied to clipboard",
+    });
+    setShowConfirmation(true);
+  };
+
+  const confirmManualInvite = () => {
+    // Unlock Roast Mode
+    setHasUnlockedRoastMode(true);
+    setFeedbackMode('roast');
+    setShowInviteWall(false);
+    setShowConfirmation(false);
+
+    toast({
+      title: "Roast Mode Unlocked!",
+      description: "Thanks for spreading the word. Roast Mode is now active!",
+    });
+  };
   
   return (
     <Dialog open={showInviteWall} onOpenChange={setShowInviteWall}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2">
-            <LockOpen className="h-5 w-5 text-orange-500" />
-            Unlock Roast Mode
-          </DialogTitle>
-          <DialogDescription className="text-base pt-2">
-            Roast Mode is locked! Want brutal fashion truth? Invite friends to unlock it — they'll thank you later (or roast you back).
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-2">
-          <div className="text-sm font-medium text-gray-700">
-            We'll email them on your behalf with your permission. No spam, just a fun fit challenge.
-          </div>
-          
-          <div className="space-y-3">
-            {emails.map((email, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <Input
-                  type="email"
-                  placeholder={`Friend's email ${index + 1}`}
-                  value={email}
-                  onChange={(e) => handleEmailChange(index, e.target.value)}
-                  className="flex-1"
-                />
+        {!showConfirmation ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <LockOpen className="h-5 w-5 text-orange-500" />
+                Unlock Roast Mode
+              </DialogTitle>
+              <DialogDescription className="text-base pt-2">
+                Roast Mode is locked! Want brutal fashion truth? Invite friends to unlock it — they'll thank you later (or roast you back).
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-2">
+              <div className="text-sm font-medium text-gray-700">
+                We'll email them on your behalf with your permission. No spam, just a fun fit challenge.
               </div>
-            ))}
+              
+              <div className="space-y-3">
+                {emails.map((email, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      type="email"
+                      placeholder={`Friend's email ${index + 1}`}
+                      value={email}
+                      onChange={(e) => handleEmailChange(index, e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex justify-between gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowInviteWall(false)}
+                  disabled={isSending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="button"
+                  onClick={sendInvites} 
+                  disabled={isSending}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {isSending ? 'Sending...' : 'Send & Unlock'}
+                </Button>
+              </div>
+
+              <Separator className="my-4" />
+              
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-center">
+                  Prefer to invite manually? Use one of the options below and let us know when you're done!
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  <Button 
+                    variant="outline"
+                    onClick={shareViaWhatsApp}
+                    className="flex-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    <span className="ml-2">WhatsApp</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={shareViaMessageSquare}
+                    className="flex-1"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="ml-2">iMessage/SMS</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={copyInviteText}
+                    className="flex-1"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <span className="ml-2">Copy Text</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-6 py-4">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-center">
+                Did you send the invite?
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex flex-col items-center gap-4">
+              <Button 
+                onClick={confirmManualInvite}
+                className="w-full bg-orange-500 hover:bg-orange-600"
+              >
+                Yes, I sent the invite
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowConfirmation(false)}
+                className="w-full"
+              >
+                Not yet
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex justify-between gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowInviteWall(false)}
-              disabled={isSending}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="button"
-              onClick={sendInvites} 
-              disabled={isSending}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {isSending ? 'Sending...' : 'Send & Unlock'}
-            </Button>
-          </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
