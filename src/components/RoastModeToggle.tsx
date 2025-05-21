@@ -37,7 +37,6 @@ const RoastModeToggle: React.FC = () => {
         <Flame className={`h-5 w-5 ${feedbackMode === 'roast' ? 'text-white' : 'text-orange-500'}`} />
         <span className="font-medium">
           {feedbackMode === 'roast' ? 'Roast Mode: ON' : 'Roast Mode: OFF'}
-          {!hasUnlockedRoastMode && feedbackMode === 'normal' && " (Locked)"}
         </span>
       </button>
       {feedbackMode === 'roast' && (

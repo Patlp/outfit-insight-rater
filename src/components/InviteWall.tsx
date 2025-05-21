@@ -111,18 +111,6 @@ const InviteWall: React.FC = () => {
       setIsSending(false);
     }
   };
-
-  const skipInvites = () => {
-    // For demo purposes, allow skipping
-    setHasUnlockedRoastMode(true);
-    setFeedbackMode('roast');
-    setShowInviteWall(false);
-    
-    toast({
-      title: "Roast Mode Unlocked!",
-      description: "You've unlocked Roast Mode without inviting friends (demo mode).",
-    });
-  };
   
   return (
     <Dialog open={showInviteWall} onOpenChange={setShowInviteWall}>
@@ -165,26 +153,15 @@ const InviteWall: React.FC = () => {
             >
               Cancel
             </Button>
-            <div className="space-x-2">
-              <Button 
-                type="button" 
-                variant="secondary" 
-                size="sm"
-                onClick={skipInvites}
-                disabled={isSending}
-              >
-                Skip (Demo Only)
-              </Button>
-              <Button 
-                type="button"
-                onClick={sendInvites} 
-                disabled={isSending}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {isSending ? 'Sending...' : 'Send & Unlock'}
-              </Button>
-            </div>
+            <Button 
+              type="button"
+              onClick={sendInvites} 
+              disabled={isSending}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {isSending ? 'Sending...' : 'Send & Unlock'}
+            </Button>
           </div>
         </div>
       </DialogContent>
