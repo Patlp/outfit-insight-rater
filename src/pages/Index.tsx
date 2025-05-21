@@ -8,6 +8,7 @@ import PrivacyNotice from '@/components/PrivacyNotice';
 import RoastModeToggle from '@/components/RoastModeToggle';
 import InviteWall from '@/components/InviteWall';
 import { useRating } from '@/context/RatingContext';
+import { Toaster } from '@/components/ui/sonner';
 
 const HomeContent: React.FC = () => {
   const { ratingResult } = useRating();
@@ -52,6 +53,7 @@ const Index: React.FC = () => {
     <RatingProvider>
       <div className="min-h-screen bg-warm-cream">
         <HomeContent />
+        <Toaster position="bottom-center" />
       </div>
     </RatingProvider>
   );
