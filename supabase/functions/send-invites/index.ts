@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,33 +28,46 @@ serve(async (req) => {
     
     console.log(`Processing invite requests for ${emails.length} email(s)`);
     
-    // In a real implementation, you would send emails here using a service like Resend
-    // For now, we'll just log and simulate success
-    
-    // Example of what the email sending code might look like:
-    /*
+    // Initialize the Resend client with your API key
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     
-    for (const email of emails) {
-      await resend.emails.send({
-        from: "RateMyFit <noreply@ratemyfit.app>",
-        to: [email],
-        subject: "Your friend invited you to RateMyFit!",
-        html: `
-          <h1>You've been invited to RateMyFit!</h1>
-          <p>Your friend just got roasted by AI on RateMyFit and thought you'd want in.</p>
-          <p>Click here to upload your fit and try it — if you beat their score, you get Meme Mode too!</p>
-          <a href="https://ratemyfit.app" style="background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px;">Try RateMyFit Now</a>
-        `,
-      });
-    }
-    */
+    const sentEmails = [];
+    const failedEmails = [];
     
-    // For now, just simulate success
+    // Send emails to each recipient
+    for (const email of emails) {
+      try {
+        const { data, error } = await resend.emails.send({
+          from: "RateMyFit <invites@ratemyfit.app>",
+          to: [email],
+          subject: "Your friend invited you to RateMyFit!",
+          html: `
+            <h1>You've been invited to RateMyFit!</h1>
+            <p>Your friend just got roasted by AI on RateMyFit and thought you'd want in.</p>
+            <p>Click here to upload your fit and try it — if you beat their score, you get Roast Mode too!</p>
+            <a href="https://ratemyfit.app" style="background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px;">Try RateMyFit Now</a>
+          `,
+        });
+        
+        if (error) {
+          console.error(`Failed to send email to ${email}:`, error);
+          failedEmails.push({ email, error: error.message });
+        } else {
+          console.log(`Successfully sent email to ${email}`);
+          sentEmails.push(email);
+        }
+      } catch (emailError) {
+        console.error(`Exception sending email to ${email}:`, emailError);
+        failedEmails.push({ email, error: emailError.message });
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully sent ${emails.length} invite(s)` 
+        message: `Successfully sent ${sentEmails.length} invite(s)`,
+        sentEmails,
+        failedEmails
       }),
       { 
         status: 200, 
@@ -64,7 +78,7 @@ serve(async (req) => {
     console.error("Error processing invite requests:", error);
     
     return new Response(
-      JSON.stringify({ error: "Failed to process invite requests" }),
+      JSON.stringify({ error: "Failed to process invite requests", details: error.message }),
       { 
         status: 500, 
         headers: { "Content-Type": "application/json", ...corsHeaders } 

@@ -61,13 +61,20 @@ const InviteWall: React.FC = () => {
       // Filter out empty emails
       const validEmails = emails.filter(email => email.trim() !== '');
       
+      // Show pending toast
+      toast({
+        title: "Sending invites...",
+        description: `Inviting ${validEmails.length} friend${validEmails.length > 1 ? 's' : ''}`,
+      });
+      
       // Send the invites using Supabase Edge Function
-      // In a real implementation, we would have this function configured
-      const { error } = await supabase.functions.invoke('send-invites', {
+      const { data, error } = await supabase.functions.invoke('send-invites', {
         body: { emails: validEmails }
       });
       
       if (error) throw error;
+      
+      console.log('Invite response:', data);
       
       // Unlock Roast Mode
       setHasUnlockedRoastMode(true);
@@ -76,11 +83,23 @@ const InviteWall: React.FC = () => {
       // Close the invite wall
       setShowInviteWall(false);
       
-      toast({
-        title: "Roast Mode Unlocked!",
-        description: `Invites sent to ${validEmails.length} friend${validEmails.length > 1 ? 's' : ''}. Roast Mode is now active!`,
-        variant: "default"
-      });
+      const sentCount = data?.sentEmails?.length || 0;
+      const failedCount = data?.failedEmails?.length || 0;
+      
+      // Show success toast with sent/failed counts
+      if (failedCount > 0) {
+        toast({
+          title: "Roast Mode Unlocked!",
+          description: `Successfully sent ${sentCount} invite${sentCount !== 1 ? 's' : ''}, but ${failedCount} failed. Roast Mode is now active!`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Roast Mode Unlocked!",
+          description: `Invites sent to ${sentCount} friend${sentCount !== 1 ? 's' : ''}. Roast Mode is now active!`,
+          variant: "default"
+        });
+      }
     } catch (error) {
       console.error('Error sending invites:', error);
       toast({
