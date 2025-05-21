@@ -33,16 +33,21 @@ const RatingDisplay: React.FC = () => {
     const sectionIdentifiers = [
       'Style:', 'Color Coordination:', 'Fit:', 'Overall Impression:',
       'Style', 'Color Coordination', 'Fit', 'Overall Impression',
-      'Detailed Feedback:', 'Pattern:', 'Accessories:', 'Proportions:'
+      'Detailed Feedback:', 'Pattern:', 'Accessories:', 'Proportions:',
+      'Layering:', 'Color:', 'Patterns:', 'Silhouette:'
     ];
     
     let formattedText = text;
     
-    // Remove numbered list indicators (1., 2., etc.)
+    // Remove all numbered list indicators and formatting artifacts
     formattedText = formattedText.replace(/^\d+\.\s*/gm, '');
+    formattedText = formattedText.replace(/^\(\d+\)\s*\*\*/gm, '');
     
-    // Remove extra sections like "Improvement:" or redundant headings
-    formattedText = formattedText.replace(/(Improvement:|\/10|Score:)/gi, '');
+    // Remove metadata and scoring info
+    formattedText = formattedText.replace(/(Score:|Rating:|Improvement:|\/10|\d+\s*out of\s*10|on a scale of \d+)/gi, '');
+    
+    // Remove standalone headings when they're not part of a section
+    formattedText = formattedText.replace(/^(Style|Improvement|Feedback|Score)$/gmi, '');
     
     // Replace section identifiers with HTML heading elements
     sectionIdentifiers.forEach(identifier => {
@@ -67,29 +72,42 @@ const RatingDisplay: React.FC = () => {
   
   // Format style suggestions with clean heading styling
   const formatSuggestion = (suggestion: string) => {
+    if (!suggestion || suggestion.trim().length < 5) return null;
+    
     // Clean up the suggestion text
     let cleanSuggestion = suggestion
-      .replace(/^(\d+\.\s*|\-\s*|\*\s*)/, '') // Remove list markers (numbers, dashes, asterisks)
+      .replace(/^(\d+\.\s*|\-\s*|\*\s*)/, '') // Remove list markers
+      .replace(/^\s*\*\*/g, '') // Remove starting asterisks
       .trim();
     
-    // Look for category patterns like "Accessories:" or "Footwear:"
-    const headingPattern = /^(\*\* - |\*\*|- |\- )?([A-Za-z\s&]+):/;
+    // Look for category patterns like "**Accessories:**" or "Footwear:"
+    const headingPattern = /^(.*?):\s*(.*)/;
     const match = cleanSuggestion.match(headingPattern);
     
-    if (match && match[2]) {
-      const heading = match[2].trim();
-      const content = cleanSuggestion.replace(headingPattern, '').trim();
+    if (match && match[1] && match[2]) {
+      const heading = match[1].replace(/\*\*/g, '').trim();
+      const content = match[2].trim();
       
-      return (
-        <>
-          <span className="font-semibold text-fashion-600">{heading}:</span>{' '}
-          <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(content) }} />
-        </>
-      );
+      if (heading && content) {
+        return (
+          <>
+            <span className="font-semibold text-fashion-600">{heading}:</span>{' '}
+            <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(content) }} />
+          </>
+        );
+      }
     }
     
+    // If no pattern match, just return the cleaned suggestion
     return <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(cleanSuggestion) }} />;
   };
+  
+  // Filter out empty or problematic suggestions
+  const validSuggestions = suggestions ? suggestions
+    .filter(suggestion => 
+      suggestion && 
+      suggestion.trim().length > 5 && 
+      !suggestion.match(/^\s*\*\*\s*$/)) : [];
   
   const feedbackSections = formatFeedbackSections(feedback);
   
@@ -131,20 +149,23 @@ const RatingDisplay: React.FC = () => {
         </div>
       </div>
       
-      {suggestions && suggestions.length > 0 && (
+      {validSuggestions && validSuggestions.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold mb-3 text-fashion-600 border-b border-fashion-200 pb-2">Style Suggestions</h3>
           <ul className="space-y-3 mt-4">
-            {suggestions.map((suggestion, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <div className="min-w-5 mt-1">
-                  <div className="w-3 h-3 rounded-full bg-fashion-500"></div>
-                </div>
-                <p className="text-gray-700">
-                  {formatSuggestion(suggestion)}
-                </p>
-              </li>
-            ))}
+            {validSuggestions.map((suggestion, index) => {
+              const formattedSuggestion = formatSuggestion(suggestion);
+              return formattedSuggestion ? (
+                <li key={index} className="flex items-start gap-2">
+                  <div className="min-w-5 mt-1">
+                    <div className="w-3 h-3 rounded-full bg-fashion-500"></div>
+                  </div>
+                  <p className="text-gray-700">
+                    {formattedSuggestion}
+                  </p>
+                </li>
+              ) : null;
+            })}
           </ul>
         </div>
       )}
