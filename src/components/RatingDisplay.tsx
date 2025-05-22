@@ -1,10 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRating } from '@/context/RatingContext';
-import { Star } from 'lucide-react';
+import { Star, Mail, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 const RatingDisplay: React.FC = () => {
   const { ratingResult } = useRating();
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isSending, setIsSending] = useState(false);
   
   if (!ratingResult) return null;
   
@@ -101,6 +108,47 @@ const RatingDisplay: React.FC = () => {
     // If no pattern match, just return the cleaned suggestion
     return <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(cleanSuggestion) }} />;
   };
+
+  const handleSendEmail = async () => {
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsSending(true);
+    
+    try {
+      // Prepare the data to send
+      const emailData = {
+        email,
+        subject: `Your Fashion Rating: ${score}/10`,
+        score,
+        feedback,
+        suggestions
+      };
+      
+      const { data, error } = await fetch('https://frfvrgarcwmpviimsenu.supabase.co/functions/v1/send-rating-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      }).then(res => res.json());
+      
+      if (error) {
+        throw new Error(error.message || 'Failed to send email');
+      }
+      
+      toast.success('Rating results sent to your email!');
+      setShowEmailDialog(false);
+      setEmail('');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error('Failed to send email. Please try again later.');
+    } finally {
+      setIsSending(false);
+    }
+  };
   
   // Filter out empty or problematic suggestions
   const validSuggestions = suggestions ? suggestions
@@ -171,10 +219,63 @@ const RatingDisplay: React.FC = () => {
       )}
       
       <div className="mt-6 pt-6 border-t border-fashion-200">
-        <p className="text-sm text-gray-500 italic">
+        <p className="text-sm text-gray-500 italic mb-4">
           Remember, fashion is subjective and these suggestions are just guidelines!
         </p>
+        
+        <Button 
+          onClick={() => setShowEmailDialog(true)} 
+          className="w-full flex items-center justify-center gap-2 bg-fashion-500 hover:bg-fashion-600 text-white"
+        >
+          <Mail size={16} />
+          Send My Results to Email
+        </Button>
       </div>
+
+      {/* Email Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Mail className="h-5 w-5 text-fashion-500" />
+              Send Your Results
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Enter your email address to receive your style rating and personalized suggestions.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <Input
+                type="email"
+                placeholder="Your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button 
+                onClick={handleSendEmail} 
+                disabled={isSending}
+                className="bg-fashion-500 hover:bg-fashion-600 text-white"
+              >
+                {isSending ? 'Sending...' : (
+                  <>
+                    <Send size={16} className="mr-2" />
+                    Send Results
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
