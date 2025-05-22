@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useRating } from '@/context/RatingContext';
 import { Star, Mail, Send } from 'lucide-react';
@@ -254,6 +253,9 @@ const RatingDisplay: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
               />
+              <p className="text-xs text-muted-foreground italic mt-1">
+                (If you don't see the email shortly, please check your spam or junk folder)
+              </p>
             </div>
             
             <div className="flex gap-3 justify-end">
