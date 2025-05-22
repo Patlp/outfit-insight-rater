@@ -81,7 +81,10 @@ const handler = async (req: Request): Promise<Response> => {
       subject: `Your Style Rating: ${score}/10`,
       html: `
         <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="text-align: center; color: #333333;">Your Style Rating</h1>
+          <h1 style="text-align: center; color: #333333;">
+            <strong>www.ratemyfit.app</strong>
+          </h1>
+          <h2 style="text-align: center; color: #333333;">Your Style Rating</h2>
           
           <div style="text-align: center; margin: 30px 0;">
             <div style="font-size: 42px; font-weight: bold; color: ${scoreColor};">${score}<span style="font-size: 24px; color: #999;">/10</span></div>
