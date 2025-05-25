@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
@@ -28,6 +29,12 @@ serve(async (req) => {
     
     console.log(`Processing invite requests for ${emails.length} email(s)`);
     
+    // Initialize Supabase client for logging
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
     // Initialize the Resend client with your API key
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     
@@ -37,6 +44,18 @@ serve(async (req) => {
     // Send emails to each recipient
     for (const email of emails) {
       try {
+        // Log the email to our database first
+        const { error: logError } = await supabase
+          .from('email_records')
+          .insert({
+            email: email,
+            source: 'invite'
+          });
+        
+        if (logError) {
+          console.error(`Failed to log email ${email}:`, logError);
+        }
+        
         const { data, error } = await resend.emails.send({
           from: "RateMyFit <invites@ratemyfit.app>",
           to: [email],
