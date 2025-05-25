@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { formatFeedbackSections, parseMarkdownBold } from '@/utils/textFormatting';
+import { formatFeedbackSections } from '@/utils/textFormatting';
 
 interface FeedbackSectionProps {
   feedback: string;
@@ -8,6 +8,10 @@ interface FeedbackSectionProps {
 
 const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
   const feedbackSections = formatFeedbackSections(feedback);
+
+  if (!feedbackSections || feedbackSections.length === 0) {
+    return null;
+  }
 
   return (
     <div className="mb-6">
@@ -19,7 +23,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
           <div 
             key={index}
             className="feedback-section"
-            dangerouslySetInnerHTML={{ __html: parseMarkdownBold(section) }}
+            dangerouslySetInnerHTML={{ __html: section }}
           />
         ))}
       </div>
