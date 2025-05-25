@@ -26,9 +26,10 @@ const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({ suggestions }) 
               <div className="min-w-5 mt-1">
                 <div className="w-3 h-3 rounded-full bg-fashion-500"></div>
               </div>
-              <p className="text-gray-700">
-                {formattedSuggestion}
-              </p>
+              <p 
+                className="text-gray-700"
+                dangerouslySetInnerHTML={{ __html: formattedSuggestion }}
+              />
             </li>
           ) : null;
         })}

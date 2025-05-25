@@ -52,9 +52,9 @@ export const formatFeedbackSections = (text: string): string[] => {
   return paragraphs;
 };
 
-// Format style suggestions with clean heading styling
-export const formatSuggestion = (suggestion: string): JSX.Element | null => {
-  if (!suggestion || suggestion.trim().length < 5) return null;
+// Format style suggestions with clean heading styling - returns formatted string
+export const formatSuggestion = (suggestion: string): string => {
+  if (!suggestion || suggestion.trim().length < 5) return '';
   
   // Clean up the suggestion text
   let cleanSuggestion = suggestion
@@ -71,17 +71,12 @@ export const formatSuggestion = (suggestion: string): JSX.Element | null => {
     const content = match[2].trim();
     
     if (heading && content) {
-      return (
-        <>
-          <span className="font-semibold text-fashion-600">{heading}:</span>{' '}
-          <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(content) }} />
-        </>
-      );
+      return `<span class="font-semibold text-fashion-600">${heading}:</span> <span>${parseMarkdownBold(content)}</span>`;
     }
   }
   
   // If no pattern match, just return the cleaned suggestion
-  return <span dangerouslySetInnerHTML={{ __html: parseMarkdownBold(cleanSuggestion) }} />;
+  return parseMarkdownBold(cleanSuggestion);
 };
 
 // Filter out empty or problematic suggestions
