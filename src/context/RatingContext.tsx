@@ -37,8 +37,8 @@ interface RatingContextType {
   setShowInviteWall: (show: boolean) => void;
   occasionContext: OccasionContext | null;
   setOccasionContext: (context: OccasionContext | null) => void;
-  currentStep: 'occasion' | 'upload' | 'analyze';
-  setCurrentStep: (step: 'occasion' | 'upload' | 'analyze') => void;
+  currentStep: 'upload' | 'analyze';
+  setCurrentStep: (step: 'upload' | 'analyze') => void;
 }
 
 const RatingContext = createContext<RatingContextType | undefined>(undefined);
@@ -53,7 +53,7 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [hasUnlockedRoastMode, setHasUnlockedRoastMode] = useState<boolean>(false);
   const [showInviteWall, setShowInviteWall] = useState<boolean>(false);
   const [occasionContext, setOccasionContext] = useState<OccasionContext | null>(null);
-  const [currentStep, setCurrentStep] = useState<'occasion' | 'upload' | 'analyze'>('occasion');
+  const [currentStep, setCurrentStep] = useState<'upload' | 'analyze'>('upload');
 
   // Check localStorage on initial load to see if roast mode is already unlocked
   useEffect(() => {
@@ -73,7 +73,7 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setImageSrc(null);
     setRatingResult(null);
     setOccasionContext(null);
-    setCurrentStep('occasion');
+    setCurrentStep('upload');
   };
 
   return (

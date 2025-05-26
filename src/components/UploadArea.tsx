@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { useRating } from '@/context/RatingContext';
-import OccasionContextInput from '@/components/upload/OccasionContextInput';
-import FileUploadZone from '@/components/upload/FileUploadZone';
+import CombinedUploadForm from '@/components/upload/CombinedUploadForm';
 import ImagePreview from '@/components/upload/ImagePreview';
 import AnalyzeButton from '@/components/upload/AnalyzeButton';
 
@@ -19,14 +18,10 @@ const UploadArea: React.FC = () => {
     setCurrentStep
   } = useRating();
 
-  const handleOccasionNext = (context: { eventContext: string | null; isNeutral: boolean }) => {
-    setOccasionContext(context);
-    setCurrentStep('upload');
-  };
-
-  const handleFileProcessed = (file: File, src: string) => {
+  const handleFileProcessed = (file: File, src: string, occasionData: { eventContext: string | null; isNeutral: boolean }) => {
     setImageFile(file);
     setImageSrc(src);
+    setOccasionContext(occasionData);
     setCurrentStep('analyze');
   };
 
@@ -34,46 +29,18 @@ const UploadArea: React.FC = () => {
     resetState();
   };
 
-  const handleBackToOccasion = () => {
-    setCurrentStep('occasion');
-    setImageFile(null);
-    setImageSrc(null);
-  };
-
-  // Step 1: Occasion Context Input
-  if (currentStep === 'occasion') {
-    return <OccasionContextInput onNext={handleOccasionNext} />;
+  // Step 1: Combined Upload Form (occasion + file upload)
+  if (currentStep === 'upload' || currentStep === 'occasion') {
+    return <CombinedUploadForm onFileProcessed={handleFileProcessed} />;
   }
 
-  // Step 2: File Upload
-  if (currentStep === 'upload') {
-    return (
-      <div className="max-w-md w-full mx-auto space-y-4">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={handleBackToOccasion}
-            className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
-          >
-            ← Back to occasion
-          </button>
-          {occasionContext && !occasionContext.isNeutral && (
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {occasionContext.eventContext}
-            </div>
-          )}
-        </div>
-        <FileUploadZone onFileProcessed={handleFileProcessed} />
-      </div>
-    );
-  }
-
-  // Step 3: Image Preview and Analysis
+  // Step 2: Image Preview and Analysis
   if (imageSrc) {
     return (
       <div className="max-w-md w-full mx-auto space-y-4">
         <div className="flex items-center justify-between mb-4">
           <button
-            onClick={handleBackToOccasion}
+            onClick={handleReset}
             className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
           >
             ← Start over
@@ -91,7 +58,7 @@ const UploadArea: React.FC = () => {
     );
   }
 
-  return <FileUploadZone onFileProcessed={handleFileProcessed} />;
+  return <CombinedUploadForm onFileProcessed={handleFileProcessed} />;
 };
 
 export default UploadArea;
