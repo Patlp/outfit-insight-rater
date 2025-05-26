@@ -4,7 +4,12 @@ export const parseMarkdownBold = (text: string): string => {
   if (!text) return '';
   
   // Replace **text** with <strong>text</strong>
-  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Also handle single asterisk bold formatting like *text*
+  formatted = formatted.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+  
+  return formatted;
 };
 
 // Clean and standardize raw OpenAI fashion feedback output
@@ -20,7 +25,6 @@ export const cleanFashionFeedbackOutput = (rawText: string): string => {
   // Remove markdown artifacts and malformed tokens
   cleanedText = cleanedText.replace(/\*\*\s*\*\*/g, ''); // Remove empty bold markers
   cleanedText = cleanedText.replace(/^\*\*\s*$/gm, ''); // Remove lines with just asterisks
-  cleanedText = cleanedText.replace(/\*(?!\*)/g, ''); // Remove single asterisks that aren't part of markdown
   
   // Remove standalone section titles that shouldn't be part of content
   cleanedText = cleanedText.replace(/^(Style|Improvement|Feedback|Score)$/gmi, '');
@@ -69,7 +73,7 @@ export const formatFeedbackSections = (text: string): string[] => {
     .filter(p => p.trim().length > 0)
     .map(p => {
       const trimmedP = p.trim();
-      // If the paragraph doesn't start with an h4 tag, wrap it in a p tag
+      // If the paragraph doesn't start with an h4 tag, wrap it in a p tag and apply bold formatting
       if (!trimmedP.startsWith('<h4')) {
         return `<p class="mb-3 text-gray-700">${parseMarkdownBold(trimmedP)}</p>`;
       }
@@ -120,7 +124,7 @@ export const formatSuggestion = (suggestion: string): string => {
     }
   }
   
-  // If no pattern match, just return the cleaned suggestion
+  // If no pattern match, just return the cleaned suggestion with bold formatting applied
   return parseMarkdownBold(cleanSuggestion);
 };
 
