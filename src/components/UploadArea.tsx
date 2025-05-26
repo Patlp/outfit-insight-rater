@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useRating } from '@/context/RatingContext';
-import { Image, X, Flame } from 'lucide-react';
+import { Image, X } from 'lucide-react';
 import { analyzeOutfit } from '@/utils/aiRatingService';
 import { toast } from 'sonner';
 import imageCompression from 'browser-image-compression';
@@ -10,7 +10,6 @@ const UploadArea: React.FC = () => {
   const {
     selectedGender,
     feedbackMode,
-    setFeedbackMode,
     imageFile,
     setImageFile,
     imageSrc,
@@ -18,9 +17,7 @@ const UploadArea: React.FC = () => {
     isAnalyzing,
     setIsAnalyzing,
     setRatingResult,
-    resetState,
-    hasUnlockedRoastMode,
-    setShowInviteWall
+    resetState
   } = useRating();
   
   const [dragActive, setDragActive] = useState(false);
@@ -129,17 +126,6 @@ const UploadArea: React.FC = () => {
     resetState();
   };
 
-  const toggleRoastMode = () => {
-    if (!hasUnlockedRoastMode && feedbackMode === 'normal') {
-      // Show the invite wall if roast mode is not unlocked
-      setShowInviteWall(true);
-      return;
-    }
-    
-    // Toggle the mode if already unlocked
-    setFeedbackMode(feedbackMode === 'normal' ? 'roast' : 'normal');
-  };
-
   const handleAnalyze = async () => {
     if (!imageFile || !imageSrc) return;
     
@@ -172,29 +158,6 @@ const UploadArea: React.FC = () => {
           >
             <X size={18} className="text-gray-700" />
           </button>
-        </div>
-        
-        {/* Roast Mode Toggle */}
-        <div className="mb-6">
-          <button
-            onClick={toggleRoastMode}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg w-full 
-              ${feedbackMode === 'roast' 
-                ? 'bg-orange-500 hover:bg-orange-600 text-white border-2 border-orange-600' 
-                : 'bg-white hover:bg-gray-100 text-gray-800 border-2 border-gray-300'
-              } 
-              transition-all duration-300`}
-          >
-            <Flame className={`h-5 w-5 ${feedbackMode === 'roast' ? 'text-white' : 'text-orange-500'}`} />
-            <span className="font-medium">
-              {feedbackMode === 'roast' ? 'Roast Mode: ON' : 'Roast Mode: OFF'}
-            </span>
-          </button>
-          {feedbackMode === 'roast' && (
-            <p className="text-sm text-orange-600 mt-2 text-center">
-              Warning: Prepare for brutally honest, possibly offensive feedback!
-            </p>
-          )}
         </div>
         
         <button

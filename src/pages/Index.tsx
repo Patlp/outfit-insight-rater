@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { RatingProvider } from '@/context/RatingContext';
 import GenderToggle from '@/components/GenderToggle';
 import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
 import PrivacyNotice from '@/components/PrivacyNotice';
+import RoastModeToggle from '@/components/RoastModeToggle';
 import InviteWall from '@/components/InviteWall';
 import { useRating } from '@/context/RatingContext';
 import { Toaster } from '@/components/ui/sonner';
@@ -37,6 +39,7 @@ const HomeContent: React.FC = () => {
       <InviteWall />
       
       <UploadArea />
+      <RoastModeToggle />
       
       {ratingResult && <RatingDisplay />}
       
