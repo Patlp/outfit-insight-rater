@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { Product } from '@/types/product';
 
 export type Gender = 'male' | 'female';
 export type FeedbackMode = 'normal' | 'roast';
@@ -8,6 +8,7 @@ export interface RatingResult {
   score: number;
   feedback: string;
   suggestions: string[];
+  recommendations?: Product[];
 }
 
 interface RatingContextType {
