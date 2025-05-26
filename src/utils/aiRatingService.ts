@@ -1,12 +1,13 @@
 
-import { Gender, FeedbackMode, RatingResult } from '@/context/RatingContext';
+import { Gender, FeedbackMode, RatingResult, OccasionContext } from '@/context/RatingContext';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
 
 export const analyzeOutfit = async (
   gender: Gender, 
   feedbackMode: FeedbackMode, 
-  imageBase64: string
+  imageBase64: string,
+  occasionContext?: OccasionContext | null
 ): Promise<RatingResult> => {
   try {
     // First, analyze the outfit
@@ -14,7 +15,9 @@ export const analyzeOutfit = async (
       body: {
         gender,
         feedbackMode,
-        imageBase64
+        imageBase64,
+        eventContext: occasionContext?.eventContext || null,
+        isNeutral: occasionContext?.isNeutral || false
       }
     });
 

@@ -15,7 +15,8 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
     feedbackMode,
     isAnalyzing,
     setIsAnalyzing,
-    setRatingResult
+    setRatingResult,
+    occasionContext
   } = useRating();
 
   const handleAnalyze = async () => {
@@ -23,8 +24,12 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
     
     setIsAnalyzing(true);
     try {
-      // We already have the base64 image in imageSrc
-      const result = await analyzeOutfit(selectedGender, feedbackMode, imageSrc);
+      const result = await analyzeOutfit(
+        selectedGender, 
+        feedbackMode, 
+        imageSrc, 
+        occasionContext
+      );
       setRatingResult(result);
       toast.success('Analysis complete!');
     } catch (error) {

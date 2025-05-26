@@ -1,8 +1,14 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Product } from '@/types/product';
 
 export type Gender = 'male' | 'female';
 export type FeedbackMode = 'normal' | 'roast';
+
+export interface OccasionContext {
+  eventContext: string | null;
+  isNeutral: boolean;
+}
 
 export interface RatingResult {
   score: number;
@@ -29,6 +35,10 @@ interface RatingContextType {
   setHasUnlockedRoastMode: (unlocked: boolean) => void;
   showInviteWall: boolean;
   setShowInviteWall: (show: boolean) => void;
+  occasionContext: OccasionContext | null;
+  setOccasionContext: (context: OccasionContext | null) => void;
+  currentStep: 'occasion' | 'upload' | 'analyze';
+  setCurrentStep: (step: 'occasion' | 'upload' | 'analyze') => void;
 }
 
 const RatingContext = createContext<RatingContextType | undefined>(undefined);
@@ -42,6 +52,8 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [ratingResult, setRatingResult] = useState<RatingResult | null>(null);
   const [hasUnlockedRoastMode, setHasUnlockedRoastMode] = useState<boolean>(false);
   const [showInviteWall, setShowInviteWall] = useState<boolean>(false);
+  const [occasionContext, setOccasionContext] = useState<OccasionContext | null>(null);
+  const [currentStep, setCurrentStep] = useState<'occasion' | 'upload' | 'analyze'>('occasion');
 
   // Check localStorage on initial load to see if roast mode is already unlocked
   useEffect(() => {
@@ -60,6 +72,8 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setImageFile(null);
     setImageSrc(null);
     setRatingResult(null);
+    setOccasionContext(null);
+    setCurrentStep('occasion');
   };
 
   return (
@@ -82,6 +96,10 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setHasUnlockedRoastMode,
         showInviteWall,
         setShowInviteWall,
+        occasionContext,
+        setOccasionContext,
+        currentStep,
+        setCurrentStep,
       }}
     >
       {children}

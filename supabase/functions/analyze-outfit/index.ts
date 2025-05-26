@@ -14,30 +14,49 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, gender, feedbackMode } = await req.json();
+    const { imageBase64, gender, feedbackMode, eventContext, isNeutral } = await req.json();
     
     if (!imageBase64) {
       throw new Error('No image provided');
     }
 
     console.log(`Analyzing ${gender} outfit in ${feedbackMode} mode...`);
+    if (eventContext && !isNeutral) {
+      console.log(`Event context: ${eventContext}`);
+    }
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Prepare the system message based on gender and feedback mode
+    // Prepare the system message based on gender, feedback mode, and occasion context
     let systemMessage = "";
     
     if (feedbackMode === 'roast') {
-      systemMessage = gender === 'male' 
-        ? "You are a brutally honest, sarcastic fashion critic specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited."
-        : "You are a brutally honest, sarcastic fashion critic specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited.";
+      if (isNeutral || !eventContext) {
+        // Use default roast mode prompt
+        systemMessage = gender === 'male' 
+          ? "You are a brutally honest, sarcastic fashion critic specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited."
+          : "You are a brutally honest, sarcastic fashion critic specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited.";
+      } else {
+        // Use occasion-specific roast mode prompt
+        systemMessage = gender === 'male' 
+          ? `You are a brutally honest, sarcastic fashion critic specializing in men's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Brutally honest, funny, and roast-style feedback about whether this outfit works for the specific context, making cultural references and jokes, (3) 2-3 specific outfit improvements relevant to that setting, delivered in a sarcastic tone. Keep it funny but not mean-spirited.`
+          : `You are a brutally honest, sarcastic fashion critic specializing in women's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Brutally honest, funny, and roast-style feedback about whether this outfit works for the specific context, making cultural references and jokes, (3) 2-3 specific outfit improvements relevant to that setting, delivered in a sarcastic tone. Keep it funny but not mean-spirited.`;
+      }
     } else {
-      systemMessage = gender === 'male' 
-        ? "You are an expert fashion consultant specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions."
-        : "You are an expert fashion consultant specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions.";
+      if (isNeutral || !eventContext) {
+        // Use default normal mode prompt
+        systemMessage = gender === 'male' 
+          ? "You are an expert fashion consultant specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions."
+          : "You are an expert fashion consultant specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions.";
+      } else {
+        // Use occasion-specific normal mode prompt
+        systemMessage = gender === 'male' 
+          ? `You are an expert fashion consultant specializing in men's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Detailed feedback about the style, color coordination, fit, and overall impression in relation to the specific context, (3) 2-3 specific outfit improvements relevant to that setting.`
+          : `You are an expert fashion consultant specializing in women's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Detailed feedback about the style, color coordination, fit, and overall impression in relation to the specific context, (3) 2-3 specific outfit improvements relevant to that setting.`;
+      }
     }
 
     // Call OpenAI API with the image
