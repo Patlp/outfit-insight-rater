@@ -4,6 +4,7 @@ import { useRating } from '@/context/RatingContext';
 import { Image, X } from 'lucide-react';
 import { analyzeOutfit } from '@/utils/aiRatingService';
 import { toast } from 'sonner';
+import imageCompression from 'browser-image-compression';
 
 const UploadArea: React.FC = () => {
   const {
@@ -20,6 +21,7 @@ const UploadArea: React.FC = () => {
   } = useRating();
   
   const [dragActive, setDragActive] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -40,24 +42,65 @@ const UploadArea: React.FC = () => {
       return false;
     }
     
-    // Check file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    // Check file size (50MB max as fallback)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
     if (file.size > maxSize) {
-      toast.error('Image size should be less than 5MB');
+      toast.error('Image size should be less than 50MB');
       return false;
     }
     
     return true;
   };
 
-  const handleFile = (file: File) => {
-    if (validateFile(file)) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImageSrc(e.target?.result as string);
+  const compressImage = async (file: File): Promise<File> => {
+    try {
+      setIsCompressing(true);
+      
+      // Only compress if file is larger than 2MB
+      if (file.size <= 2 * 1024 * 1024) {
+        console.log('File is already small enough, skipping compression');
+        return file;
+      }
+
+      console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      const options = {
+        maxSizeMB: 4.5, // Target size slightly under 5MB
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: file.type,
+        initialQuality: 0.8,
       };
-      reader.readAsDataURL(file);
+
+      const compressedFile = await imageCompression(file, options);
+      console.log(`Compressed file size: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      toast.success(`Image compressed from ${(file.size / 1024 / 1024).toFixed(1)}MB to ${(compressedFile.size / 1024 / 1024).toFixed(1)}MB`);
+      return compressedFile;
+    } catch (error) {
+      console.error('Compression failed:', error);
+      toast.warning('Image compression failed, using original file');
+      return file; // Return original file if compression fails
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleFile = async (file: File) => {
+    if (validateFile(file)) {
+      try {
+        const processedFile = await compressImage(file);
+        setImageFile(processedFile);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImageSrc(e.target?.result as string);
+        };
+        reader.readAsDataURL(processedFile);
+      } catch (error) {
+        console.error('Error processing file:', error);
+        toast.error('Failed to process image');
+      }
     }
   };
 
@@ -155,7 +198,10 @@ const UploadArea: React.FC = () => {
         </h3>
         
         <p className="text-sm text-gray-500 mb-6">
-          Drag and drop an image, or click to browse
+          {isCompressing 
+            ? 'Compressing image...' 
+            : 'Drag and drop an image, or click to browse'
+          }
         </p>
         
         <input
@@ -164,17 +210,29 @@ const UploadArea: React.FC = () => {
           accept="image/jpeg,image/jpg,image/png"
           className="hidden"
           onChange={handleChange}
+          disabled={isCompressing}
         />
         
-        <label htmlFor="file-upload" className="fashion-button inline-block cursor-pointer">
+        <label htmlFor="file-upload" className={`fashion-button inline-block ${isCompressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
           <span className="flex items-center gap-2">
-            <Image className="h-5 w-5" />
-            Upload or Take Photo
+            {isCompressing ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                Compressing...
+              </>
+            ) : (
+              <>
+                <Image className="h-5 w-5" />
+                Upload or Take Photo
+              </>
+            )}
           </span>
         </label>
         
         <p className="mt-4 text-xs text-gray-500">
-          Max file size: 5MB. Formats: JPG, PNG
+          Max file size: 50MB. Formats: JPG, PNG
+          <br />
+          Images over 2MB will be automatically compressed
         </p>
       </div>
     </div>
