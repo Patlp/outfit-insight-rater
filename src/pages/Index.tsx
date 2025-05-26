@@ -38,7 +38,10 @@ const HomeContent: React.FC = () => {
       <GenderToggle />
       <InviteWall />
       
-      <UploadArea />
+      <div className="mb-8">
+        <UploadArea />
+      </div>
+      
       <RoastModeToggle />
       
       {ratingResult && <RatingDisplay />}
