@@ -1,63 +1,87 @@
 
-import React from 'react';
-import { RatingProvider } from '@/context/RatingContext';
+import { RatingProvider, useRating } from '@/context/RatingContext';
 import GenderToggle from '@/components/GenderToggle';
+import RoastModeToggle from '@/components/RoastModeToggle';
 import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
-import PrivacyNotice from '@/components/PrivacyNotice';
-import RoastModeToggle from '@/components/RoastModeToggle';
 import InviteWall from '@/components/InviteWall';
-import { useRating } from '@/context/RatingContext';
-import { Toaster } from '@/components/ui/sonner';
+import PrivacyNotice from '@/components/PrivacyNotice';
+import OccasionContextInput from '@/components/upload/OccasionContextInput';
 
-const HomeContent: React.FC = () => {
-  const { ratingResult } = useRating();
-  
+const AppContent = () => {
+  const { 
+    currentStep, 
+    setCurrentStep, 
+    setOccasionContext, 
+    ratingResult, 
+    showInviteWall 
+  } = useRating();
+
+  const handleOccasionNext = (occasionData: { eventContext: string | null; isNeutral: boolean }) => {
+    setOccasionContext(occasionData);
+    setCurrentStep('upload');
+  };
+
+  const handleBackToOccasion = () => {
+    setCurrentStep('occasion');
+  };
+
+  if (showInviteWall) {
+    return <InviteWall />;
+  }
+
+  if (ratingResult) {
+    return <RatingDisplay />;
+  }
+
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-8 flex flex-col items-center">
-      <header className="text-center mb-8">
-        <div className="flex items-center justify-center mb-3">
-          <img 
-            src="/lovable-uploads/517422e1-0903-4a86-a7c0-a2c7ff150996.png" 
-            alt="RateMyFit Logo" 
-            className="h-16 mr-3" 
-          />
-          <h1 className="text-3xl md:text-4xl font-bold text-black" style={{ 
-            fontFamily: "'Inter', 'Helvetica Neue', sans-serif", 
-            letterSpacing: '-0.02em',
-            fontWeight: 800
-          }}>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
             RateMyFit
           </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Get instant AI-powered fashion feedback and style suggestions
+          </p>
         </div>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Upload your outfit photo and get instant AI-powered style feedback and improvement suggestions
-        </p>
-      </header>
-      
-      <GenderToggle />
-      <InviteWall />
-      
-      <div className="mb-8">
-        <UploadArea />
+
+        <div className="max-w-2xl mx-auto">
+          {currentStep === 'occasion' && (
+            <OccasionContextInput onNext={handleOccasionNext} />
+          )}
+          
+          {currentStep === 'upload' && (
+            <div className="space-y-6">
+              <div className="flex justify-center">
+                <button
+                  onClick={handleBackToOccasion}
+                  className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1"
+                >
+                  ← Back to occasion details
+                </button>
+              </div>
+              
+              <div className="flex justify-center gap-4 mb-6">
+                <GenderToggle />
+                <RoastModeToggle />
+              </div>
+              
+              <UploadArea />
+            </div>
+          )}
+        </div>
+
+        <PrivacyNotice />
       </div>
-      
-      <RoastModeToggle />
-      
-      {ratingResult && <RatingDisplay />}
-      
-      <PrivacyNotice />
     </div>
   );
 };
 
-const Index: React.FC = () => {
+const Index = () => {
   return (
     <RatingProvider>
-      <div className="min-h-screen bg-warm-cream">
-        <HomeContent />
-        <Toaster position="bottom-center" />
-      </div>
+      <AppContent />
     </RatingProvider>
   );
 };
