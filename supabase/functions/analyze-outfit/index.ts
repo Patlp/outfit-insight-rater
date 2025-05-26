@@ -23,6 +23,8 @@ serve(async (req) => {
     console.log(`Analyzing ${gender} outfit in ${feedbackMode} mode...`);
     if (eventContext && !isNeutral) {
       console.log(`Event context: ${eventContext}`);
+    } else if (isNeutral) {
+      console.log('Neutral context - no specific occasion');
     }
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -40,10 +42,22 @@ serve(async (req) => {
           ? "You are a brutally honest, sarcastic fashion critic specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited."
           : "You are a brutally honest, sarcastic fashion critic specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Brutally honest, funny, and roast-style feedback about the style, making cultural references and stereotypical jokes, (3) Three specific improvement suggestions delivered in a sarcastic tone. Use cultural references, stereotypes, and roast comedy. Example tones: 'You look like you run a tech startup that just failed', 'This outfit screams Gap Year in Bali with Trust Fund', 'Are you going to a rave or a TED Talk?'. Keep it funny but not mean-spirited.";
       } else {
-        // Use occasion-specific roast mode prompt
+        // Use occasion-specific roast mode prompt with much more detailed context instructions
         systemMessage = gender === 'male' 
-          ? `You are a brutally honest, sarcastic fashion critic specializing in men's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Brutally honest, funny, and roast-style feedback about whether this outfit works for the specific context, making cultural references and jokes, (3) 2-3 specific outfit improvements relevant to that setting, delivered in a sarcastic tone. Keep it funny but not mean-spirited.`
-          : `You are a brutally honest, sarcastic fashion critic specializing in women's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Brutally honest, funny, and roast-style feedback about whether this outfit works for the specific context, making cultural references and jokes, (3) 2-3 specific outfit improvements relevant to that setting, delivered in a sarcastic tone. Keep it funny but not mean-spirited.`;
+          ? `You are a brutally honest, sarcastic fashion critic specializing in men's fashion. The user is asking about an outfit for this SPECIFIC CONTEXT: "${eventContext}". 
+
+CRITICAL: You MUST heavily reference this specific context throughout your entire response. Analyze whether this outfit is appropriate, suitable, and well-chosen for "${eventContext}" specifically. 
+
+Provide: (1) A score from 1-10 for how well the outfit fits THIS SPECIFIC OCCASION: "${eventContext}", (2) Brutally honest, funny, roast-style feedback that directly addresses whether this outfit works for "${eventContext}" - mention the event/context by name multiple times, make jokes about how this outfit choice relates to "${eventContext}", (3) 2-3 specific outfit improvements that would be better suited for "${eventContext}" specifically, delivered in a sarcastic tone. 
+
+Remember: You are NOT giving general fashion advice - you are specifically evaluating this outfit FOR "${eventContext}". Make sure every part of your response directly relates to and mentions "${eventContext}".`
+          : `You are a brutally honest, sarcastic fashion critic specializing in women's fashion. The user is asking about an outfit for this SPECIFIC CONTEXT: "${eventContext}". 
+
+CRITICAL: You MUST heavily reference this specific context throughout your entire response. Analyze whether this outfit is appropriate, suitable, and well-chosen for "${eventContext}" specifically. 
+
+Provide: (1) A score from 1-10 for how well the outfit fits THIS SPECIFIC OCCASION: "${eventContext}", (2) Brutally honest, funny, roast-style feedback that directly addresses whether this outfit works for "${eventContext}" - mention the event/context by name multiple times, make jokes about how this outfit choice relates to "${eventContext}", (3) 2-3 specific outfit improvements that would be better suited for "${eventContext}" specifically, delivered in a sarcastic tone. 
+
+Remember: You are NOT giving general fashion advice - you are specifically evaluating this outfit FOR "${eventContext}". Make sure every part of your response directly relates to and mentions "${eventContext}".`;
       }
     } else {
       if (isNeutral || !eventContext) {
@@ -52,10 +66,22 @@ serve(async (req) => {
           ? "You are an expert fashion consultant specializing in men's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions."
           : "You are an expert fashion consultant specializing in women's fashion. Analyze this outfit photo and provide: (1) A score from 1-10, (2) Detailed feedback about the style, color coordination, fit, and overall impression, (3) Three specific style improvement suggestions.";
       } else {
-        // Use occasion-specific normal mode prompt
+        // Use occasion-specific normal mode prompt with much more detailed context instructions
         systemMessage = gender === 'male' 
-          ? `You are an expert fashion consultant specializing in men's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Detailed feedback about the style, color coordination, fit, and overall impression in relation to the specific context, (3) 2-3 specific outfit improvements relevant to that setting.`
-          : `You are an expert fashion consultant specializing in women's fashion. Rate how appropriate this outfit is for the following context: "${eventContext}". Provide: (1) A score from 1-10 for how well the outfit fits the occasion, (2) Detailed feedback about the style, color coordination, fit, and overall impression in relation to the specific context, (3) 2-3 specific outfit improvements relevant to that setting.`;
+          ? `You are an expert fashion consultant specializing in men's fashion. The user is asking about an outfit for this SPECIFIC CONTEXT: "${eventContext}". 
+
+CRITICAL: You MUST heavily reference this specific context throughout your entire response. Analyze whether this outfit is appropriate, suitable, and well-chosen for "${eventContext}" specifically. 
+
+Provide: (1) A score from 1-10 for how well the outfit fits THIS SPECIFIC OCCASION: "${eventContext}", (2) Detailed feedback about the style, color coordination, fit, and overall impression AS IT RELATES TO "${eventContext}" - explicitly mention how each aspect works or doesn't work for "${eventContext}", (3) 2-3 specific outfit improvements that would be better suited for "${eventContext}" specifically. 
+
+Remember: You are NOT giving general fashion advice - you are specifically evaluating this outfit FOR "${eventContext}". Make sure every part of your response directly relates to and mentions "${eventContext}".`
+          : `You are an expert fashion consultant specializing in women's fashion. The user is asking about an outfit for this SPECIFIC CONTEXT: "${eventContext}". 
+
+CRITICAL: You MUST heavily reference this specific context throughout your entire response. Analyze whether this outfit is appropriate, suitable, and well-chosen for "${eventContext}" specifically. 
+
+Provide: (1) A score from 1-10 for how well the outfit fits THIS SPECIFIC OCCASION: "${eventContext}", (2) Detailed feedback about the style, color coordination, fit, and overall impression AS IT RELATES TO "${eventContext}" - explicitly mention how each aspect works or doesn't work for "${eventContext}", (3) 2-3 specific outfit improvements that would be better suited for "${eventContext}" specifically. 
+
+Remember: You are NOT giving general fashion advice - you are specifically evaluating this outfit FOR "${eventContext}". Make sure every part of your response directly relates to and mentions "${eventContext}".`;
       }
     }
 
@@ -78,7 +104,9 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Please analyze this outfit photo and provide fashion feedback."
+                text: eventContext && !isNeutral 
+                  ? `Please analyze this outfit specifically for "${eventContext}". Remember to reference this context throughout your response.`
+                  : "Please analyze this outfit photo and provide fashion feedback."
               },
               {
                 type: "image_url",
@@ -89,7 +117,8 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 500
+        max_tokens: 600,
+        temperature: 0.7
       })
     });
 
@@ -150,9 +179,15 @@ serve(async (req) => {
       score,
       feedback,
       suggestions: suggestions.length > 0 ? suggestions : [
-        "Consider adjusting the fit for better proportions.",
-        "Try experimenting with complementary color combinations.",
-        "Adding a statement accessory could elevate this look."
+        eventContext && !isNeutral 
+          ? `Consider adjusting your outfit to better suit "${eventContext}".`
+          : "Consider adjusting the fit for better proportions.",
+        eventContext && !isNeutral 
+          ? `Choose colors that are more appropriate for "${eventContext}".`
+          : "Try experimenting with complementary color combinations.",
+        eventContext && !isNeutral 
+          ? `Add accessories that enhance your look for "${eventContext}".`
+          : "Adding a statement accessory could elevate this look."
       ]
     };
 
