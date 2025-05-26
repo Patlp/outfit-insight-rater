@@ -169,7 +169,7 @@ const UploadArea: React.FC = () => {
         <label htmlFor="file-upload" className="fashion-button inline-block cursor-pointer">
           <span className="flex items-center gap-2">
             <Image className="h-5 w-5" />
-            Choose Image
+            Upload or Take Photo
           </span>
         </label>
         
