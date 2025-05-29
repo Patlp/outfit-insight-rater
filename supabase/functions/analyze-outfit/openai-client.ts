@@ -34,13 +34,13 @@ export function createOpenAIRequest(
   feedbackMode?: string
 ): OpenAIRequest {
   const userText = eventContext && !isNeutral 
-    ? `Please analyze this outfit specifically for "${eventContext}". Remember to reference this context throughout your response.${feedbackMode === 'roast' ? ' ROAST MODE: Be absolutely savage and brutal in your feedback!' : ''}`
-    : `Please analyze this outfit photo and provide fashion feedback.${feedbackMode === 'roast' ? ' ROAST MODE: Be absolutely savage and brutal in your feedback!' : ''}`;
+    ? `Please analyze this outfit specifically for "${eventContext}". Remember to reference this context throughout your response.`
+    : "Please analyze this outfit photo and provide fashion feedback.";
 
-  // Significantly higher temperature for roast mode to get more creative, brutal, and savage responses
-  const temperature = feedbackMode === 'roast' ? 1.2 : 0.7;
+  // Increase temperature significantly for roast mode to get more creative and brutal responses
+  const temperature = feedbackMode === 'roast' ? 0.9 : 0.7;
   
-  console.log(`Using temperature ${temperature} for ${feedbackMode} mode${feedbackMode === 'roast' ? ' - MAXIMUM BRUTALITY ACTIVATED' : ''}`);
+  console.log(`Using temperature ${temperature} for ${feedbackMode} mode`);
 
   return {
     model: "gpt-4o",

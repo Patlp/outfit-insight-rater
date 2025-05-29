@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -74,7 +73,7 @@ export default {
 					800: '#000000',
 					900: '#000000'
 				},
-				'warm-cream': '#F4F0E8', // Updated to proper beige to match logo
+				'warm-cream': '#FDF6E9', // warm cream background
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
