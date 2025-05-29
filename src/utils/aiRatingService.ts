@@ -32,6 +32,8 @@ export const analyzeOutfit = async (
 
     const ratingResult = analysisData as RatingResult;
 
+    // Temporarily commented out product recommendations
+    /*
     // Then, generate product recommendations based on the feedback
     try {
       const { data: recommendationsData, error: recommendationsError } = await supabase.functions.invoke('generate-recommendations', {
@@ -52,6 +54,7 @@ export const analyzeOutfit = async (
       console.warn('Recommendations service error:', recommendationsError);
       // Continue without recommendations rather than failing the whole request
     }
+    */
 
     return ratingResult;
   } catch (error) {
