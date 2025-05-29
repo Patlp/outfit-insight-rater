@@ -7,6 +7,7 @@ import { generateSystemMessage } from './prompts.ts';
 import { parseAIResponse } from './response-parser.ts';
 import { callOpenAI, createOpenAIRequest } from './openai-client.ts';
 import { handleCORS, createResponse, createErrorResponse } from './cors.ts';
+import { validateResponse } from './response-validator.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,18 +31,29 @@ serve(async (req) => {
       console.log('Neutral context - no specific occasion');
     }
 
-    // Generate system message based on request parameters
+    // Generate enhanced system message
     const systemMessage = generateSystemMessage(requestData);
+    console.log('Using enhanced prompts for better response quality');
 
     // Create OpenAI request
     const openaiRequest = createOpenAIRequest(systemMessage, imageBase64, eventContext, isNeutral);
 
     // Call OpenAI API
     const aiResponse = await callOpenAI(openaiRequest);
-    console.log("AI response received");
+    console.log("AI response received, processing with advanced parser...");
 
-    // Parse AI response
+    // Parse AI response with advanced parser
     const result = parseAIResponse(aiResponse, requestData);
+
+    // Final validation
+    const validation = validateResponse(result);
+    if (!validation.isValid) {
+      console.error('Final validation failed:', validation.errors);
+    } else if (validation.warnings.length > 0) {
+      console.warn('Response has warnings:', validation.warnings);
+    } else {
+      console.log('Response validation passed successfully');
+    }
 
     return createResponse(result);
     
