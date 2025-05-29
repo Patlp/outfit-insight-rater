@@ -27,7 +27,7 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({ title, content, icon: Icon,
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">

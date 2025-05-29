@@ -107,7 +107,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
       <h3 className="text-lg font-semibold mb-4 text-fashion-600">
         Detailed Feedback
       </h3>
-      <div className="space-y-0">
+      <div className="space-y-3">
         {feedbackSections.map((section, index) => (
           <FeedbackCard
             key={index}
