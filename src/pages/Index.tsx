@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RatingProvider } from '@/context/RatingContext';
 import GenderToggle from '@/components/GenderToggle';
@@ -19,7 +18,7 @@ const HomeContent: React.FC = () => {
         <img 
           src="/lovable-uploads/3c887a45-fcd4-4fa5-8558-f2c9bbe856f9.png" 
           alt="RateMyFit Logo" 
-          className="h-16 sm:h-20 md:h-24 mx-auto mb-4" 
+          className="h-20 sm:h-24 md:h-28 mx-auto mb-4" 
         />
         <p className="text-gray-600 max-w-md mx-auto">
           Upload your outfit photo and get instant AI-powered style feedback and improvement suggestions
