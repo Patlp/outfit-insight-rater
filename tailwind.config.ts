@@ -74,7 +74,7 @@ export default {
 					800: '#000000',
 					900: '#000000'
 				},
-				'warm-cream': '#F5F2EC', // Updated to match logo background more closely
+				'warm-cream': '#F4F0E8', // Updated to proper beige to match logo
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
