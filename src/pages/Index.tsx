@@ -15,19 +15,15 @@ const HomeContent: React.FC = () => {
   
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8 flex flex-col items-center">
-      <header className="text-center mb-8 relative">
-        <div className="relative">
-          <img 
-            src="/lovable-uploads/3c887a45-fcd4-4fa5-8558-f2c9bbe856f9.png" 
-            alt="RateMyFit Logo" 
-            className="h-72 sm:h-80 md:h-96 mx-auto" 
-          />
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full">
-            <p className="text-gray-600 max-w-md mx-auto px-4">
-              Upload your outfit photo and get instant AI-powered style feedback and improvement suggestions
-            </p>
-          </div>
-        </div>
+      <header className="text-center mb-8">
+        <img 
+          src="/lovable-uploads/3c887a45-fcd4-4fa5-8558-f2c9bbe856f9.png" 
+          alt="RateMyFit Logo" 
+          className="h-72 sm:h-80 md:h-96 mx-auto mb-4" 
+        />
+        <p className="text-gray-600 max-w-md mx-auto">
+          Upload your outfit photo and get instant AI-powered style feedback and improvement suggestions
+        </p>
       </header>
       
       <GenderToggle />
