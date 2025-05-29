@@ -19,7 +19,7 @@ const HomeContent: React.FC = () => {
         <img 
           src="/lovable-uploads/3c887a45-fcd4-4fa5-8558-f2c9bbe856f9.png" 
           alt="RateMyFit Logo" 
-          className="h-9 mx-auto mb-3" 
+          className="h-16 sm:h-20 md:h-24 mx-auto mb-4" 
         />
         <p className="text-gray-600 max-w-md mx-auto">
           Upload your outfit photo and get instant AI-powered style feedback and improvement suggestions
