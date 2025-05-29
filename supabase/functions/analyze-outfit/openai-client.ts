@@ -30,11 +30,17 @@ export function createOpenAIRequest(
   systemMessage: string, 
   imageBase64: string, 
   eventContext?: string,
-  isNeutral?: boolean
+  isNeutral?: boolean,
+  feedbackMode?: string
 ): OpenAIRequest {
   const userText = eventContext && !isNeutral 
     ? `Please analyze this outfit specifically for "${eventContext}". Remember to reference this context throughout your response.`
     : "Please analyze this outfit photo and provide fashion feedback.";
+
+  // Increase temperature significantly for roast mode to get more creative and brutal responses
+  const temperature = feedbackMode === 'roast' ? 0.9 : 0.7;
+  
+  console.log(`Using temperature ${temperature} for ${feedbackMode} mode`);
 
   return {
     model: "gpt-4o",
@@ -60,6 +66,6 @@ export function createOpenAIRequest(
       }
     ],
     max_tokens: 600,
-    temperature: 0.7
+    temperature: temperature
   };
 }

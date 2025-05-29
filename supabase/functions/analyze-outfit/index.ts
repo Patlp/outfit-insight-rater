@@ -25,6 +25,9 @@ serve(async (req) => {
     }
 
     console.log(`Analyzing ${gender} outfit in ${feedbackMode} mode...`);
+    if (feedbackMode === 'roast') {
+      console.log('🔥 ROAST MODE ACTIVATED - Preparing brutal feedback...');
+    }
     if (eventContext && !isNeutral) {
       console.log(`Event context: ${eventContext}`);
     } else if (isNeutral) {
@@ -35,8 +38,8 @@ serve(async (req) => {
     const systemMessage = generateSystemMessage(requestData);
     console.log('Using enhanced prompts for better response quality');
 
-    // Create OpenAI request
-    const openaiRequest = createOpenAIRequest(systemMessage, imageBase64, eventContext, isNeutral);
+    // Create OpenAI request with feedback mode for temperature adjustment
+    const openaiRequest = createOpenAIRequest(systemMessage, imageBase64, eventContext, isNeutral, feedbackMode);
 
     // Call OpenAI API
     const aiResponse = await callOpenAI(openaiRequest);
