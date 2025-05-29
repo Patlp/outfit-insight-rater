@@ -30,7 +30,7 @@ const UploadArea: React.FC = () => {
   };
 
   // Step 1: Combined Upload Form (occasion + file upload)
-  if (currentStep === 'upload' || currentStep === 'occasion') {
+  if (currentStep === 'upload') {
     return <CombinedUploadForm onFileProcessed={handleFileProcessed} />;
   }
 
