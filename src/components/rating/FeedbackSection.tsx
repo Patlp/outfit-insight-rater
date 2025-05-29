@@ -13,47 +13,45 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
     return null;
   }
 
-  // Parse feedback into sections
+  // Parse feedback into sections using the enhanced parser format
   const parseFeedbackIntoSections = (text: string) => {
     const sections = [];
+    
+    // Clean the text first - remove any score references or unwanted content
     const cleanedText = text
       .replace(/^(Score:|Feedback:|Rating:|Improvement:|Detailed Feedback:)\s*/gmi, '')
-      .replace(/(Score:|Rating:|Improvement:|\/10|\d+\s*out of\s*10|on a scale of \d+)/gi, '');
+      .replace(/(Score:|Rating:|Improvement:|\/10|\d+\s*out of\s*10|on a scale of \d+)/gi, '')
+      .trim();
 
-    // Define section patterns and their corresponding icons
+    // Define section patterns that match the enhanced parser format: **Section:** content
     const sectionPatterns = [
       { 
-        pattern: /(?:^|\n)\s*-?\s*(?:\*\*)?Style(?:\*\*)?:?\s*(.*?)(?=(?:\n\s*-?\s*(?:\*\*)?(?:Color|Fit|Overall|Pattern|Accessories|Proportions|Layering|Silhouette))|$)/gis,
+        pattern: /\*\*Style:\*\*\s*(.*?)(?=\*\*(?:Color Coordination|Fit|Overall Impression):|$)/gis,
         title: 'Style',
         icon: Shirt,
         sentiment: 'good'
       },
       { 
-        pattern: /(?:^|\n)\s*-?\s*(?:\*\*)?(?:Color Coordination|Color)(?:\*\*)?:?\s*(.*?)(?=(?:\n\s*-?\s*(?:\*\*)?(?:Style|Fit|Overall|Pattern|Accessories|Proportions|Layering|Silhouette))|$)/gis,
+        pattern: /\*\*Color Coordination:\*\*\s*(.*?)(?=\*\*(?:Style|Fit|Overall Impression):|$)/gis,
         title: 'Color Coordination',
         icon: Palette,
         sentiment: 'good'
       },
       { 
-        pattern: /(?:^|\n)\s*-?\s*(?:\*\*)?Fit(?:\*\*)?:?\s*(.*?)(?=(?:\n\s*-?\s*(?:\*\*)?(?:Style|Color|Overall|Pattern|Accessories|Proportions|Layering|Silhouette))|$)/gis,
+        pattern: /\*\*Fit:\*\*\s*(.*?)(?=\*\*(?:Style|Color Coordination|Overall Impression):|$)/gis,
         title: 'Fit & Silhouette',
         icon: Users,
         sentiment: 'good'
       },
       { 
-        pattern: /(?:^|\n)\s*-?\s*(?:\*\*)?(?:Overall Impression|Overall)(?:\*\*)?:?\s*(.*?)(?=(?:\n\s*-?\s*(?:\*\*)?(?:Style|Color|Fit|Pattern|Accessories|Proportions|Layering|Silhouette))|$)/gis,
+        pattern: /\*\*Overall Impression:\*\*\s*(.*?)(?=\*\*(?:Style|Color Coordination|Fit):|$)/gis,
         title: 'Overall Impression',
         icon: Star,
-        sentiment: 'good'
-      },
-      { 
-        pattern: /(?:^|\n)\s*-?\s*(?:\*\*)?(?:Pattern|Accessories|Proportions|Layering|Silhouette)(?:\*\*)?:?\s*(.*?)(?=(?:\n\s*-?\s*(?:\*\*)?(?:Style|Color|Fit|Overall))|$)/gis,
-        title: 'Additional Details',
-        icon: Layers,
         sentiment: 'good'
       }
     ];
 
+    // Extract sections based on the enhanced parser format
     sectionPatterns.forEach(({ pattern, title, icon, sentiment }) => {
       const matches = [...cleanedText.matchAll(pattern)];
       matches.forEach(match => {
@@ -61,15 +59,18 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
           const content = match[1]
             .trim()
             .replace(/^\s*-\s*/, '')
-            .replace(/\*\*/g, '');
+            .replace(/\n+/g, ' ')
+            .replace(/\s+/g, ' ');
           
-          // Determine sentiment based on content
+          // Determine sentiment based on content keywords
           let determinedSentiment = sentiment;
-          if (content.toLowerCase().includes('excellent') || content.toLowerCase().includes('perfect')) {
+          const lowerContent = content.toLowerCase();
+          
+          if (lowerContent.includes('excellent') || lowerContent.includes('perfect') || lowerContent.includes('outstanding')) {
             determinedSentiment = 'excellent';
-          } else if (content.toLowerCase().includes('could') || content.toLowerCase().includes('might') || content.toLowerCase().includes('consider')) {
+          } else if (lowerContent.includes('could') || lowerContent.includes('might') || lowerContent.includes('consider') || lowerContent.includes('okay')) {
             determinedSentiment = 'okay';
-          } else if (content.toLowerCase().includes('lacks') || content.toLowerCase().includes('needs')) {
+          } else if (lowerContent.includes('lacks') || lowerContent.includes('needs') || lowerContent.includes('poor') || lowerContent.includes('doesn\'t work')) {
             determinedSentiment = 'needs-improvement';
           }
 
@@ -83,7 +84,39 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
       });
     });
 
-    // If no sections found, create a general feedback section
+    // Fallback: If no structured sections found, try to parse any bold headers
+    if (sections.length === 0) {
+      const fallbackPatterns = [
+        { pattern: /(?:^|\n)\s*\*\*([^*]+):\*\*\s*(.*?)(?=(?:\n\s*\*\*[^*]+:\*\*)|$)/gis, hasTitle: true },
+        { pattern: /(?:^|\n)\s*([A-Z][a-z\s]+):\s*(.*?)(?=(?:\n\s*[A-Z][a-z\s]+:)|$)/gis, hasTitle: true }
+      ];
+
+      fallbackPatterns.forEach(({ pattern, hasTitle }) => {
+        const matches = [...cleanedText.matchAll(pattern)];
+        matches.forEach(match => {
+          if (match[1] && match[2] && match[2].trim().length > 10) {
+            const title = match[1].trim();
+            const content = match[2].trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+            
+            // Map titles to appropriate icons
+            let icon = Shirt;
+            if (title.toLowerCase().includes('color')) icon = Palette;
+            else if (title.toLowerCase().includes('fit')) icon = Users;
+            else if (title.toLowerCase().includes('overall')) icon = Star;
+            else icon = Layers;
+
+            sections.push({
+              title,
+              content: parseMarkdownBold(content),
+              icon,
+              sentiment: 'good'
+            });
+          }
+        });
+      });
+    }
+
+    // Final fallback: Create a single general section if no structured content found
     if (sections.length === 0 && cleanedText.trim().length > 0) {
       sections.push({
         title: 'Style Analysis',
