@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -63,17 +64,17 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				fashion: {
-					100: '#FDF8F2', // lighter cream
-					200: '#F8F0E5', // light cream
-					300: '#B794F4',
-					400: '#9B87F5',
-					500: '#333333', // dark gray
-					600: '#222222', // nearly black
-					700: '#111111', // true black
-					800: '#000000',
-					900: '#000000'
+					100: '#FFFFFF', // pure white
+					200: '#F5F5F5', // very light gray
+					300: '#E5E5E5', // light gray
+					400: '#CCCCCC', // medium light gray
+					500: '#000000', // pure black
+					600: '#1A1A1A', // very dark gray
+					700: '#0D0D0D', // nearly black
+					800: '#000000', // pure black
+					900: '#000000'  // pure black
 				},
-				'warm-cream': '#FDF6E9', // warm cream background
+				'warm-cream': '#FFFFFF', // changed to white to match the black and white theme
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
