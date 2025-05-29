@@ -30,6 +30,20 @@ export function validateResponse(response: AnalyzeOutfitResponse): ValidationRes
     if (response.feedback.match(/^[A-Z][a-z]*:$/m)) {
       warnings.push('Standalone section headers detected in feedback');
     }
+
+    // Check for incomplete sentences
+    if (response.feedback.includes('..') || response.feedback.match(/\w\s*$/)) {
+      warnings.push('Feedback may contain incomplete sentences');
+    }
+
+    // Check for proper section structure
+    const expectedSections = ['Style', 'Color', 'Fit', 'Overall'];
+    const hasSections = expectedSections.some(section => 
+      response.feedback.includes(`**${section}`) || response.feedback.includes(`${section}:`)
+    );
+    if (!hasSections) {
+      warnings.push('Feedback lacks expected section structure');
+    }
   }
 
   // Validate suggestions
@@ -47,7 +61,23 @@ export function validateResponse(response: AnalyzeOutfitResponse): ValidationRes
       if (suggestion.includes('**:**') || suggestion.startsWith('**') && !suggestion.includes('**', 2)) {
         warnings.push(`Suggestion ${index + 1} has malformed formatting`);
       }
+
+      // Check for list markers that weren't cleaned
+      if (suggestion.match(/^\d+\.|^[-*]/)) {
+        warnings.push(`Suggestion ${index + 1} still contains list markers`);
+      }
+
+      // Check for section headers in suggestions
+      if (suggestion.match(/^(Style|Color|Fit|Suggestions?|Improvements?):/i)) {
+        warnings.push(`Suggestion ${index + 1} contains section headers`);
+      }
     });
+
+    // Check for duplicate suggestions
+    const uniqueSuggestions = new Set(response.suggestions);
+    if (uniqueSuggestions.size < response.suggestions.length) {
+      warnings.push('Duplicate suggestions detected');
+    }
   }
 
   return {
@@ -62,17 +92,63 @@ export function hasGrammarIssues(text: string): boolean {
   
   // Check for basic grammar issues
   const grammarChecks = [
-    // Missing articles before nouns
-    /\b(is|are|was|were)\s+[a-z]+ing\b/i,
     // Double spaces
     /\s{2,}/,
     // Incomplete sentences (starts with lowercase after period)
     /\.\s+[a-z]/,
-    // Missing periods at end of sentences
+    // Missing periods at end of sentences (but allow ! and ?)
     /[a-zA-Z]\s*$/,
     // Repeated words
-    /\b(\w+)\s+\1\b/i
+    /\b(\w+)\s+\1\b/i,
+    // Malformed markdown
+    /\*\*:\*\*|\*\*\s*\*\*/,
+    // Standalone colons
+    /\s:\s/,
+    // Multiple punctuation
+    /[.!?]{2,}/
   ];
   
   return grammarChecks.some(check => check.test(text));
+}
+
+export function assessFeedbackQuality(feedback: string): {
+  score: number;
+  issues: string[];
+} {
+  const issues: string[] = [];
+  let qualityScore = 100;
+
+  // Check for section structure
+  const expectedSections = ['Style', 'Color', 'Fit', 'Overall'];
+  const foundSections = expectedSections.filter(section => 
+    feedback.includes(`**${section}`) || feedback.includes(`${section}:`)
+  );
+  
+  if (foundSections.length < 3) {
+    issues.push('Missing expected section structure');
+    qualityScore -= 20;
+  }
+
+  // Check for appropriate length
+  if (feedback.length < 200) {
+    issues.push('Feedback too brief');
+    qualityScore -= 15;
+  }
+
+  // Check for grammar issues
+  if (hasGrammarIssues(feedback)) {
+    issues.push('Grammar or formatting issues detected');
+    qualityScore -= 10;
+  }
+
+  // Check for meaningful content
+  if (feedback.includes('good') > 3 || feedback.includes('nice') > 2) {
+    issues.push('Feedback may be too generic');
+    qualityScore -= 10;
+  }
+
+  return {
+    score: Math.max(0, qualityScore),
+    issues
+  };
 }

@@ -60,32 +60,28 @@ export class AdvancedResponseParser {
       }
     }
 
-    // Extract suggestions with improved patterns
-    const suggestionPatterns = [
-      /(Suggestions|Improvements|Recommendations|Tips):([\s\S]+?)(?:\n\n|\n[A-Z]|$)/i,
-      /(?:^|\n)(?:\d+\.|[-*])\s*([^.\n]+\.)/gm
-    ];
-    
-    for (const pattern of suggestionPatterns) {
-      const matches = [...aiResponse.matchAll(new RegExp(pattern.source, pattern.flags))];
-      if (matches.length > 0) {
-        if (pattern.source.includes('Suggestions')) {
-          // Handle section-based suggestions
-          const suggestionsText = matches[0][2];
-          suggestions = suggestionsText
-            .split(/\n[0-9]+\.|\n-|\n\*/)
-            .filter(item => item.trim().length > 10)
-            .map(item => item.trim())
-            .slice(0, 3);
-        } else {
-          // Handle individual suggestion matches
-          suggestions = matches
-            .map(match => match[1] ? match[1].trim() : match[0].trim())
-            .filter(s => s.length > 10)
-            .slice(0, 3);
-        }
-        break;
-      }
+    // Extract suggestions with improved patterns (using match instead of matchAll to avoid regex flags issues)
+    const suggestionSectionMatch = aiResponse.match(/(Suggestions|Improvements|Recommendations|Tips):([\s\S]+?)(?:\n\n|\n[A-Z]|$)/i);
+    if (suggestionSectionMatch) {
+      const suggestionsText = suggestionSectionMatch[2];
+      suggestions = suggestionsText
+        .split(/\n[0-9]+\.|\n-|\n\*/)
+        .filter(item => item.trim().length > 10)
+        .map(item => item.trim())
+        .slice(0, 3);
+    } else {
+      // Try to find individual suggestion lines
+      const lines = aiResponse.split('\n');
+      suggestions = lines
+        .filter(line => {
+          const cleaned = line.trim();
+          return cleaned.length > 15 && 
+                 (cleaned.match(/^\d+\./) || cleaned.match(/^[-*]/) ||
+                  cleaned.toLowerCase().includes('consider') || 
+                  cleaned.toLowerCase().includes('try'));
+        })
+        .map(line => line.trim())
+        .slice(0, 3);
     }
 
     // Clean feedback by removing score references and suggestion sections

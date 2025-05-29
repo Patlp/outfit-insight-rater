@@ -55,18 +55,18 @@ export class TextProcessor {
   static extractStructuredFeedback(rawText: string): { [key: string]: string } {
     const sections: { [key: string]: string } = {};
     
-    // Define section patterns with more robust regex
+    // Define section patterns with proper global flags for matchAll
     const patterns = [
-      { key: 'style', pattern: /(?:\*\*)?Style(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Color|Fit|Overall|$))/is },
-      { key: 'color', pattern: /(?:\*\*)?(?:Color Coordination|Color)(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Style|Fit|Overall|$))/is },
-      { key: 'fit', pattern: /(?:\*\*)?Fit(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Style|Color|Overall|$))/is },
-      { key: 'overall', pattern: /(?:\*\*)?(?:Overall Impression|Overall)(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Style|Color|Fit|$))/is }
+      { key: 'style', pattern: /(?:\*\*)?Style(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Color|Fit|Overall|$))/gis },
+      { key: 'color', pattern: /(?:\*\*)?(?:Color Coordination|Color)(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Style|Fit|Overall|$))/gis },
+      { key: 'fit', pattern: /(?:\*\*)?Fit(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Style|Color|Overall|$))/gis },
+      { key: 'overall', pattern: /(?:\*\*)?(?:Overall Impression|Overall)(?:\*\*)?:?\s*(.*?)(?=(?:\*\*)?(?:Style|Color|Fit|$))/gis }
     ];
     
     patterns.forEach(({ key, pattern }) => {
-      const match = rawText.match(pattern);
-      if (match && match[1]) {
-        sections[key] = this.cleanAndEnhanceText(match[1].trim());
+      const matches = [...rawText.matchAll(pattern)];
+      if (matches.length > 0 && matches[0][1]) {
+        sections[key] = this.cleanAndEnhanceText(matches[0][1].trim());
       }
     });
     
