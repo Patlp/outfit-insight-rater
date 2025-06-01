@@ -37,10 +37,18 @@ export function createOpenAIRequest(
     ? `Please analyze this outfit specifically for "${eventContext}". Remember to reference this context throughout your response.`
     : "Please analyze this outfit photo and provide fashion feedback.";
 
-  // Increase temperature significantly for roast mode to get more creative and brutal responses
-  const temperature = feedbackMode === 'roast' ? 0.9 : 0.7;
+  // 🔥 MAXIMUM CREATIVITY FOR ROAST MODE 🔥
+  let temperature = 0.7; // Default for normal mode
+  let maxTokens = 600;   // Default token limit
+
+  if (feedbackMode === 'roast') {
+    temperature = 1.2;  // MAXIMUM creativity and unpredictability
+    maxTokens = 800;    // More tokens for elaborate roasting
+    console.log('🔥 ROAST MODE: Using MAXIMUM temperature (1.2) for creative brutality');
+    console.log('🔥 ROAST MODE: Increased token limit for elaborate destruction');
+  }
   
-  console.log(`Using temperature ${temperature} for ${feedbackMode} mode`);
+  console.log(`Using temperature ${temperature} and ${maxTokens} tokens for ${feedbackMode} mode`);
 
   return {
     model: "gpt-4o",
@@ -65,7 +73,7 @@ export function createOpenAIRequest(
         ]
       }
     ],
-    max_tokens: 600,
+    max_tokens: maxTokens,
     temperature: temperature
   };
 }

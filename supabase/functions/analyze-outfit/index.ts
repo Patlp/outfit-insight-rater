@@ -26,7 +26,10 @@ serve(async (req) => {
 
     console.log(`Analyzing ${gender} outfit in ${feedbackMode} mode...`);
     if (feedbackMode === 'roast') {
-      console.log('🔥 ROAST MODE ACTIVATED - Preparing brutal feedback...');
+      console.log('🔥🔥🔥 ROAST MODE ACTIVATED - PREPARING MAXIMUM BRUTALITY 🔥🔥🔥');
+      console.log('🔥 Brutality level: MAXIMUM');
+      console.log('🔥 Savage mode: ENGAGED');
+      console.log('🔥 Mercy level: ZERO');
     }
     if (eventContext && !isNeutral) {
       console.log(`Event context: ${eventContext}`);
@@ -36,26 +39,49 @@ serve(async (req) => {
 
     // Generate enhanced system message
     const systemMessage = generateSystemMessage(requestData);
-    console.log('Using enhanced prompts for better response quality');
+    if (feedbackMode === 'roast') {
+      console.log('🔥 Using BRUTAL roast prompts for maximum savagery');
+    } else {
+      console.log('Using enhanced prompts for better response quality');
+    }
 
-    // Create OpenAI request with feedback mode for temperature adjustment
+    // Create OpenAI request with MAXIMUM creativity for roast mode
     const openaiRequest = createOpenAIRequest(systemMessage, imageBase64, eventContext, isNeutral, feedbackMode);
+    
+    if (feedbackMode === 'roast') {
+      console.log(`🔥 Using temperature ${openaiRequest.temperature} for maximum creative brutality`);
+    }
 
     // Call OpenAI API
     const aiResponse = await callOpenAI(openaiRequest);
-    console.log("AI response received, processing with advanced parser...");
+    console.log("AI response received, processing...");
+    
+    if (feedbackMode === 'roast') {
+      console.log('🔥 Processing roast response with specialized brutal parser...');
+    } else {
+      console.log("Processing with advanced parser...");
+    }
 
-    // Parse AI response with advanced parser
+    // Parse AI response with advanced parser (automatically detects roast mode)
     const result = parseAIResponse(aiResponse, requestData);
 
-    // Final validation
-    const validation = validateResponse(result);
+    // Final validation with feedback mode
+    const validation = validateResponse(result, feedbackMode);
     if (!validation.isValid) {
       console.error('Final validation failed:', validation.errors);
+      if (feedbackMode === 'roast') {
+        console.error('🔥 ROAST VALIDATION FAILED - Response not brutal enough');
+      }
     } else if (validation.warnings.length > 0) {
       console.warn('Response has warnings:', validation.warnings);
+      if (feedbackMode === 'roast') {
+        console.warn('🔥 ROAST WARNINGS - Could be more savage');
+      }
     } else {
       console.log('Response validation passed successfully');
+      if (feedbackMode === 'roast') {
+        console.log('🔥 ROAST VALIDATION PASSED - Maximum brutality achieved!');
+      }
     }
 
     return createResponse(result);

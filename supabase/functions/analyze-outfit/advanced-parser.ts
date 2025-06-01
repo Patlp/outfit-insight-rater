@@ -1,14 +1,20 @@
-
 import { AnalyzeOutfitResponse, AnalyzeOutfitRequest } from './types.ts';
 import { TextProcessor } from './text-processor.ts';
 import { validateResponse, hasGrammarIssues } from './response-validator.ts';
+import { RoastModeParser } from './roast-parser.ts';
 
 export class AdvancedResponseParser {
   
   static parseAIResponse(aiResponse: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
     console.log('Parsing AI response with advanced parser...');
     
-    // First attempt: Try to parse the response normally
+    // 🔥 ROAST MODE: Use specialized parser to preserve brutality
+    if (request.feedbackMode === 'roast') {
+      console.log('🔥 ROAST MODE DETECTED: Using brutal parser...');
+      return RoastModeParser.parseRoastResponse(aiResponse, request);
+    }
+    
+    // Normal mode processing (existing logic)
     let result = this.attemptBasicParsing(aiResponse, request);
     
     // Validate the result
@@ -30,7 +36,7 @@ export class AdvancedResponseParser {
       }
     }
     
-    // Final quality check and enhancement
+    // Final quality check and enhancement (NOT for roast mode)
     result = this.enhanceResponseQuality(result);
     
     console.log('Final parsed result:', JSON.stringify(result, null, 2));

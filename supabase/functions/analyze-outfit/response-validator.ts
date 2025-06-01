@@ -1,5 +1,5 @@
-
 import { AnalyzeOutfitResponse } from './types.ts';
+import { validateRoastResponse, assessRoastQuality } from './roast-validator.ts';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -7,7 +7,24 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-export function validateResponse(response: AnalyzeOutfitResponse): ValidationResult {
+export function validateResponse(response: AnalyzeOutfitResponse, feedbackMode?: string): ValidationResult {
+  // 🔥 Use roast-specific validation for roast mode
+  if (feedbackMode === 'roast') {
+    console.log('🔥 Using roast-specific validation...');
+    const roastValidation = validateRoastResponse(response);
+    const roastQuality = assessRoastQuality(response);
+    
+    console.log(`🔥 Roast brutality score: ${roastValidation.brutalityScore}`);
+    console.log(`🔥 Roast quality score: ${roastQuality.score}`);
+    
+    return {
+      isValid: roastValidation.isValid,
+      errors: roastValidation.errors,
+      warnings: [...roastValidation.warnings, ...roastQuality.issues]
+    };
+  }
+
+  // Regular validation for normal mode
   const errors: string[] = [];
   const warnings: string[] = [];
 
