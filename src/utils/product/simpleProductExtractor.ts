@@ -33,19 +33,20 @@ export const extractProductsFromSuggestions = (
       // Check if we already have a similar item
       const isDuplicate = products.some(p => 
         p.category === categorizeProduct(attributes.clothingType) ||
-        p.searchTerm.toLowerCase().includes(attributes.clothingType)
+        p.searchTerm.toLowerCase().includes(attributes.clothingType) ||
+        similarFashionPhrases(p.searchTerm, attributes.fullPhrase)
       );
       
       if (!isDuplicate) {
         const cleanProductName = createCleanProductName(attributes);
         const searchTerm = buildAmazonSearchQuery(attributes);
         const category = categorizeProduct(attributes.clothingType);
-        const rationale = generateRationale(suggestion, attributes.clothingType);
+        const rationale = generateRationale(suggestion, attributes.fullPhrase);
         
-        // Extract context from the suggestion
+        // Extract context from the suggestion using the full phrase
         const context = extractContextFromSuggestion(suggestion, attributes.fullPhrase || attributes.clothingType);
         
-        // Use the full fashion phrase in the product name
+        // Use the clean product name directly in the title
         const product: SimpleExtractedProduct = {
           name: `${rationale}: ${cleanProductName}`,
           context: context,
@@ -56,6 +57,7 @@ export const extractProductsFromSuggestions = (
         
         console.log('Adding product:', product);
         console.log('Full phrase used:', attributes.fullPhrase);
+        console.log('Search term generated:', searchTerm);
         products.push(product);
       }
     }
@@ -65,7 +67,20 @@ export const extractProductsFromSuggestions = (
   return products.slice(0, 2);
 };
 
-const generateRationale = (suggestion: string, item: string): string => {
+const similarFashionPhrases = (phrase1: string, phrase2: string): boolean => {
+  const words1 = phrase1.toLowerCase().split(/\s+/);
+  const words2 = phrase2.toLowerCase().split(/\s+/);
+  
+  // Check if they share significant clothing-related words
+  const commonWords = words1.filter(word => words2.includes(word));
+  const clothingWords = commonWords.filter(word => 
+    ['shirt', 'top', 'sweater', 'cardigan', 'jacket', 'blazer', 'dress', 'pants', 'jeans', 'shoes', 'sneakers', 'boots'].includes(word)
+  );
+  
+  return clothingWords.length > 0;
+};
+
+const generateRationale = (suggestion: string, fullPhrase: string): string => {
   const lowerSuggestion = suggestion.toLowerCase();
   
   if (lowerSuggestion.includes('professional') || lowerSuggestion.includes('work')) {
@@ -84,42 +99,46 @@ const generateRationale = (suggestion: string, item: string): string => {
     return 'Structure Addition';
   }
   
-  // Item-based fallback
-  if (item.includes('shoe') || item.includes('boot') || item.includes('sneaker')) {
+  // Item-based fallback using full phrase
+  const lowerPhrase = fullPhrase.toLowerCase();
+  if (lowerPhrase.includes('shoe') || lowerPhrase.includes('boot') || lowerPhrase.includes('sneaker')) {
     return 'Foundation Upgrade';
   }
-  if (item.includes('jacket') || item.includes('blazer') || item.includes('cardigan')) {
+  if (lowerPhrase.includes('jacket') || lowerPhrase.includes('blazer') || lowerPhrase.includes('cardigan')) {
     return 'Layer Addition';
   }
-  if (item.includes('necklace') || item.includes('belt') || item.includes('watch')) {
+  if (lowerPhrase.includes('necklace') || lowerPhrase.includes('belt') || lowerPhrase.includes('watch')) {
     return 'Finishing Touch';
   }
   
   return 'Style Enhancement';
 };
 
-const extractContextFromSuggestion = (suggestion: string, item: string): string => {
+const extractContextFromSuggestion = (suggestion: string, fullPhrase: string): string => {
   // Extract the key benefit or reason from the suggestion
   const lowerSuggestion = suggestion.toLowerCase();
   
   if (lowerSuggestion.includes('elevate') || lowerSuggestion.includes('polish')) {
-    return `This ${item} will elevate your overall look with a more polished appearance.`;
+    return `This ${fullPhrase} will elevate your overall look with a more polished appearance.`;
   }
   if (lowerSuggestion.includes('professional') || lowerSuggestion.includes('work')) {
-    return `Perfect for a professional setting, this ${item} adds workplace-appropriate style.`;
+    return `Perfect for a professional setting, this ${fullPhrase} adds workplace-appropriate style.`;
   }
   if (lowerSuggestion.includes('casual') || lowerSuggestion.includes('comfortable')) {
-    return `This ${item} brings comfort and casual sophistication to your outfit.`;
+    return `This ${fullPhrase} brings comfort and casual sophistication to your outfit.`;
   }
   if (lowerSuggestion.includes('color') || lowerSuggestion.includes('complement')) {
-    return `This ${item} will create better color harmony in your outfit.`;
+    return `This ${fullPhrase} will create better color harmony in your outfit.`;
   }
   if (lowerSuggestion.includes('structure') || lowerSuggestion.includes('shape')) {
-    return `This ${item} adds structure and improves your outfit's silhouette.`;
+    return `This ${fullPhrase} adds structure and improves your outfit's silhouette.`;
   }
   if (lowerSuggestion.includes('summer') || lowerSuggestion.includes('breezy')) {
-    return `This ${item} is perfect for warm weather and summer styling.`;
+    return `This ${fullPhrase} is perfect for warm weather and summer styling.`;
+  }
+  if (lowerSuggestion.includes('lightweight') || lowerSuggestion.includes('breathable')) {
+    return `This ${fullPhrase} offers comfort and breathability for all-day wear.`;
   }
   
-  return `This ${item} will complement your personal style and enhance your overall appearance.`;
+  return `This ${fullPhrase} will complement your personal style and enhance your overall appearance.`;
 };
