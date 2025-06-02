@@ -63,7 +63,7 @@ export const extractProductsFromSuggestions = (
         if (!isDuplicate) {
           // Use the full match for more specific product naming
           const specificName = getSpecificProductName(fullMatch, gender);
-          const searchTerm = createCleanSearchTerm(fullMatch, gender);
+          const searchTerm = createPreservativeSearchTerm(fullMatch, gender);
           const category = categorizeProduct(item);
           const rationale = generateRationale(suggestion, fullMatch);
           
@@ -89,22 +89,29 @@ export const extractProductsFromSuggestions = (
   return products.slice(0, 2);
 };
 
-const createCleanSearchTerm = (productMatch: string, gender: Gender): string => {
-  // Clean the product match and create a focused search term
+const createPreservativeSearchTerm = (productMatch: string, gender: Gender): string => {
+  // NEW: More preservative approach that keeps descriptive terms
+  console.log('Creating preservative search term for:', productMatch);
+  
+  // Minimal cleaning - only normalize spacing and basic formatting
   const cleanProduct = productMatch
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
+    .replace(/[^\w\s\-']/g, ' ') // Keep hyphens and apostrophes
     .replace(/\s+/g, ' ')
     .trim();
   
   const genderPrefix = gender === 'male' ? 'mens' : 'womens';
   
-  // Don't add gender prefix if it's already there
-  if (cleanProduct.includes('mens') || cleanProduct.includes('womens')) {
+  // Check if gender is already included
+  if (cleanProduct.includes('mens') || cleanProduct.includes('womens') || 
+      cleanProduct.includes('men\'s') || cleanProduct.includes('women\'s')) {
+    console.log('Gender already included, returning:', cleanProduct);
     return cleanProduct;
   }
   
-  return `${genderPrefix} ${cleanProduct}`;
+  const finalTerm = `${genderPrefix} ${cleanProduct}`;
+  console.log('Final preservative search term:', finalTerm);
+  return finalTerm;
 };
 
 const generateRationale = (suggestion: string, item: string): string => {

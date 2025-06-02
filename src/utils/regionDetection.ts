@@ -51,38 +51,50 @@ export const generateAmazonSearchUrl = (
   
   console.log('Generating Amazon URL for product:', productName);
   
+  // Start with the exact product name - this is key to preserving descriptive terms
   let searchTerms = productName;
   
-  // Use enhanced search generation only if we have specific occasion context
-  const hasSpecificOccasion = occasionContext?.eventContext && 
+  // Only use enhanced search generation for very specific occasions
+  const hasVerySpecificOccasion = occasionContext?.eventContext && 
     !occasionContext.eventContext.toLowerCase().includes('neutral') &&
-    !occasionContext.eventContext.toLowerCase().includes('general');
+    !occasionContext.eventContext.toLowerCase().includes('general') &&
+    occasionContext.eventContext.length > 10; // More specific occasions
   
-  if (gender && category && hasSpecificOccasion) {
-    console.log('Using enhanced search with occasion context');
+  if (gender && category && hasVerySpecificOccasion) {
+    console.log('Using enhanced search with very specific occasion context');
     searchTerms = generateContextualSearchTerm(productName, {
       occasion: occasionContext?.eventContext || undefined,
       feedback: feedback,
       userGender: gender,
       productCategory: category
     });
-  } else if (gender) {
-    // Simple gender targeting - ensure we don't double-add gender
-    const genderPrefix = gender === 'male' ? 'mens' : 'womens';
-    if (!searchTerms.toLowerCase().includes('mens') && !searchTerms.toLowerCase().includes('womens')) {
+  } else {
+    // Minimal processing - preserve the exact search term structure
+    console.log('Using minimal processing to preserve exact product terms');
+    
+    // Only add gender prefix if it's absolutely not already there
+    const lowerSearchTerms = searchTerms.toLowerCase();
+    const hasGenderAlready = lowerSearchTerms.includes('mens') || 
+                            lowerSearchTerms.includes('womens') || 
+                            lowerSearchTerms.includes('men\'s') || 
+                            lowerSearchTerms.includes('women\'s');
+    
+    if (gender && !hasGenderAlready) {
+      const genderPrefix = gender === 'male' ? 'mens' : 'womens';
       searchTerms = `${genderPrefix} ${searchTerms}`;
     }
   }
   
   // Clean and encode the search terms
   const cleanedTerms = searchTerms
-    .replace(/[^\w\s-]/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/[^\w\s\-']/g, ' ') // Keep apostrophes and hyphens which are common in product names
+    .replace(/\s{2,}/g, ' ') // Replace multiple spaces with single space
     .trim()
-    .replace(/\s/g, '+');
+    .replace(/\s/g, '+'); // Replace spaces with + for URL encoding
   
-  const finalUrl = `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
+  const finalUrl = `https://www.${selectedRegion.domain}/s?k=${cleanedTerms}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
   console.log('Final Amazon search URL:', finalUrl);
+  console.log('Search terms used:', cleanedTerms);
   
   return finalUrl;
 };
