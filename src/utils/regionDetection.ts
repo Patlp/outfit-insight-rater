@@ -49,10 +49,17 @@ export const generateAmazonSearchUrl = (
 ): string => {
   const selectedRegion = region || detectUserRegion();
   
+  console.log('Generating Amazon URL for product:', productName);
+  
   let searchTerms = productName;
   
-  // Use enhanced search generation if we have enough context
-  if (gender && category) {
+  // Use enhanced search generation only if we have specific occasion context
+  const hasSpecificOccasion = occasionContext?.eventContext && 
+    !occasionContext.eventContext.toLowerCase().includes('neutral') &&
+    !occasionContext.eventContext.toLowerCase().includes('general');
+  
+  if (gender && category && hasSpecificOccasion) {
+    console.log('Using enhanced search with occasion context');
     searchTerms = generateContextualSearchTerm(productName, {
       occasion: occasionContext?.eventContext || undefined,
       feedback: feedback,
@@ -60,7 +67,7 @@ export const generateAmazonSearchUrl = (
       productCategory: category
     });
   } else if (gender) {
-    // Fallback to simple gender targeting
+    // Simple gender targeting - ensure we don't double-add gender
     const genderPrefix = gender === 'male' ? 'mens' : 'womens';
     if (!searchTerms.toLowerCase().includes('mens') && !searchTerms.toLowerCase().includes('womens')) {
       searchTerms = `${genderPrefix} ${searchTerms}`;
@@ -74,7 +81,8 @@ export const generateAmazonSearchUrl = (
     .trim()
     .replace(/\s/g, '+');
   
-  console.log('Final Amazon search URL:', `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}`);
+  const finalUrl = `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
+  console.log('Final Amazon search URL:', finalUrl);
   
-  return `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
+  return finalUrl;
 };
