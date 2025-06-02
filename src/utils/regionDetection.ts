@@ -1,6 +1,5 @@
 
 import { Gender, OccasionContext } from '@/context/RatingContext';
-import { generateContextualSearchTerm } from './product/enhancedSearchGenerator';
 
 export interface AmazonRegionConfig {
   domain: string;
@@ -40,7 +39,7 @@ export const detectUserRegion = (): AmazonRegionConfig => {
 };
 
 export const generateAmazonSearchUrl = (
-  productName: string, 
+  searchTerm: string, 
   region?: AmazonRegionConfig, 
   gender?: Gender,
   occasionContext?: OccasionContext | null,
@@ -49,32 +48,20 @@ export const generateAmazonSearchUrl = (
 ): string => {
   const selectedRegion = region || detectUserRegion();
   
-  let searchTerms = productName;
-  
-  // Use enhanced search generation if we have enough context
-  if (gender && category) {
-    searchTerms = generateContextualSearchTerm(productName, {
-      occasion: occasionContext?.eventContext || undefined,
-      feedback: feedback,
-      userGender: gender,
-      productCategory: category
-    });
-  } else if (gender) {
-    // Fallback to simple gender targeting
-    const genderPrefix = gender === 'male' ? 'mens' : 'womens';
-    if (!searchTerms.toLowerCase().includes('mens') && !searchTerms.toLowerCase().includes('womens')) {
-      searchTerms = `${genderPrefix} ${searchTerms}`;
-    }
-  }
+  // Use the search term as-is since it's now generated with proper attributes
+  let finalSearchTerms = searchTerm;
   
   // Clean and encode the search terms
-  const cleanedTerms = searchTerms
+  const cleanedTerms = finalSearchTerms
     .replace(/[^\w\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/\s/g, '+');
   
-  console.log('Final Amazon search URL:', `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}`);
+  const finalUrl = `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
   
-  return `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
+  console.log('Generated Amazon search URL:', finalUrl);
+  console.log('Search terms used:', cleanedTerms);
+  
+  return finalUrl;
 };

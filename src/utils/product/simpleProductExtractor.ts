@@ -1,7 +1,7 @@
+
 import { Gender } from '@/context/RatingContext';
-import { createGenderSpecificSearchTerm } from './searchTermGenerator';
 import { categorizeProduct } from './productClassifier';
-import { getSpecificProductName } from './productNameMapper';
+import { extractFashionAttributes, buildAmazonSearchQuery, createCleanProductName } from './fashionAttributeExtractor';
 
 export interface SimpleExtractedProduct {
   name: string;
@@ -22,54 +22,41 @@ export const extractProductsFromSuggestions = (
   
   const products: SimpleExtractedProduct[] = [];
   
-  // Define clothing item patterns - focusing on common fashion items
-  const clothingPatterns = [
-    // Basic clothing items
-    /(shirt|blouse|top|tee|sweater|cardigan|jacket|blazer|coat|vest)/gi,
-    /(pants|jeans|trousers|skirt|dress|shorts|leggings)/gi,
-    /(shoes|sneakers|boots|heels|flats|sandals|pumps|loafers)/gi,
-    /(necklace|bracelet|watch|belt|bag|purse|scarf|hat|earrings)/gi
-  ];
-  
   // Process each suggestion
   suggestions.forEach((suggestion, index) => {
     console.log(`Processing suggestion ${index + 1}: "${suggestion}"`);
     
-    clothingPatterns.forEach((pattern) => {
-      let match;
-      pattern.lastIndex = 0;
+    if (products.length < 2) {
+      // Extract fashion attributes from the entire suggestion
+      const attributes = extractFashionAttributes(suggestion, gender);
       
-      while ((match = pattern.exec(suggestion.toLowerCase())) !== null && products.length < 2) {
-        const item = match[1];
+      // Check if we already have a similar item
+      const isDuplicate = products.some(p => 
+        p.category === categorizeProduct(attributes.clothingType) ||
+        p.searchTerm.toLowerCase().includes(attributes.clothingType)
+      );
+      
+      if (!isDuplicate) {
+        const cleanProductName = createCleanProductName(attributes);
+        const searchTerm = buildAmazonSearchQuery(attributes);
+        const category = categorizeProduct(attributes.clothingType);
+        const rationale = generateRationale(suggestion, attributes.clothingType);
         
-        // Check if we already have a similar item
-        const isDuplicate = products.some(p => 
-          p.searchTerm.toLowerCase().includes(item) || 
-          item.includes(p.searchTerm.toLowerCase().split(' ').pop() || '')
-        );
+        // Extract context from the suggestion
+        const context = extractContextFromSuggestion(suggestion, attributes.clothingType);
         
-        if (!isDuplicate) {
-          const specificName = getSpecificProductName(item, gender);
-          const searchTerm = createGenderSpecificSearchTerm(item, gender);
-          const category = categorizeProduct(item);
-          const rationale = generateRationale(suggestion, item);
-          
-          // Extract context from the suggestion
-          const context = extractContextFromSuggestion(suggestion, item);
-          
-          const product: SimpleExtractedProduct = {
-            name: `${rationale}: ${specificName}`,
-            context: context,
-            category,
-            searchTerm,
-            rationale
-          };
-          
-          console.log('Adding product:', product);
-          products.push(product);
-        }
+        const product: SimpleExtractedProduct = {
+          name: `${rationale}: ${cleanProductName}`,
+          context: context,
+          category,
+          searchTerm,
+          rationale
+        };
+        
+        console.log('Adding product:', product);
+        products.push(product);
       }
-    });
+    }
   });
   
   console.log(`Extracted ${products.length} products`);
@@ -127,6 +114,9 @@ const extractContextFromSuggestion = (suggestion: string, item: string): string 
   }
   if (lowerSuggestion.includes('structure') || lowerSuggestion.includes('shape')) {
     return `This ${item} adds structure and improves your outfit's silhouette.`;
+  }
+  if (lowerSuggestion.includes('summer') || lowerSuggestion.includes('breezy')) {
+    return `This ${item} is perfect for warm weather and summer styling.`;
   }
   
   return `This ${item} will complement your personal style and enhance your overall appearance.`;
