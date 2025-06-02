@@ -4,6 +4,7 @@ import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { parseProductSuggestions } from '@/utils/productSuggestionParser';
 import { generateAmazonSearchUrl } from '@/utils/regionDetection';
+import { useRating } from '@/context/RatingContext';
 
 interface ProductRecommendationsSectionProps {
   feedback: string;
@@ -14,7 +15,8 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
   feedback, 
   suggestions 
 }) => {
-  const productSuggestions = parseProductSuggestions(feedback, suggestions);
+  const { selectedGender } = useRating();
+  const productSuggestions = parseProductSuggestions(feedback, suggestions, selectedGender);
 
   if (!productSuggestions || productSuggestions.length === 0) {
     return null;
@@ -54,7 +56,7 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
               className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
             >
               <a 
-                href={generateAmazonSearchUrl(product.name)} 
+                href={generateAmazonSearchUrl(product.searchTerm, undefined, selectedGender)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2"
@@ -85,7 +87,7 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
               className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
             >
               <a 
-                href={generateAmazonSearchUrl(product.name)} 
+                href={generateAmazonSearchUrl(product.searchTerm, undefined, selectedGender)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2"

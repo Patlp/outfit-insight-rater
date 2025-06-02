@@ -1,4 +1,6 @@
 
+import { Gender } from '@/context/RatingContext';
+
 export interface AmazonRegionConfig {
   domain: string;
   affiliateTag: string;
@@ -36,9 +38,29 @@ export const detectUserRegion = (): AmazonRegionConfig => {
   return AMAZON_REGIONS.UK;
 };
 
-export const generateAmazonSearchUrl = (productName: string, region?: AmazonRegionConfig): string => {
+export const generateAmazonSearchUrl = (
+  productName: string, 
+  region?: AmazonRegionConfig, 
+  gender?: Gender
+): string => {
   const selectedRegion = region || detectUserRegion();
-  const searchTerms = productName.replace(/\s+/g, '+').replace(/[^\w+]/g, '');
   
-  return `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(searchTerms)}&tag=${selectedRegion.affiliateTag}`;
+  // Create enhanced search terms with gender targeting if provided
+  let searchTerms = productName;
+  if (gender) {
+    // The productName should already include gender from TextProcessor, but ensure it's there
+    if (!searchTerms.toLowerCase().includes('mens') && !searchTerms.toLowerCase().includes('womens')) {
+      const genderPrefix = gender === 'male' ? 'mens' : 'womens';
+      searchTerms = `${genderPrefix} ${searchTerms}`;
+    }
+  }
+  
+  // Clean and encode the search terms
+  const cleanedTerms = searchTerms
+    .replace(/[^\w\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\s/g, '+');
+  
+  return `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
 };
