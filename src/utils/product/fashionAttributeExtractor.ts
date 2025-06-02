@@ -1,4 +1,3 @@
-
 import { Gender } from '@/context/RatingContext';
 
 export interface FashionAttributes {
@@ -19,8 +18,8 @@ export const extractFashionAttributes = (recommendation: string, gender: Gender)
   console.log('Input:', recommendation);
   console.log('Gender:', gender);
   
-  // Extract the full fashion phrase using improved logic
-  const fullPhrase = extractFullFashionPhrase(recommendation);
+  // Extract the full fashion phrase using improved chunking logic
+  const fullPhrase = extractFullFashionPhraseWithChunking(recommendation);
   console.log('Extracted full phrase:', fullPhrase);
   
   // Extract clothing type from the full phrase
@@ -50,6 +49,68 @@ export const extractFashionAttributes = (recommendation: string, gender: Gender)
   
   console.log('Final attributes:', attributes);
   return attributes;
+};
+
+const extractFullFashionPhraseWithChunking = (text: string): string => {
+  console.log('Extracting fashion phrase with chunking from:', text);
+  
+  // Primary chunking pattern as specified - captures compound fashion phrases
+  const chunkingPattern = /(?:add|try|wear|swap|consider|incorporate)\s+(?:a|an|some)?\s*((?:\w+-?\w*\s*){0,3}?(?:sweater|shirt|coat|jeans|blazer|cardigan|pants|scarf|hat|gloves|sneakers|shoes|skirt|dress|boots|shorts|jacket|trousers|turtleneck|tank|suit|tracksuit|tights|tunic|top|blouse|polo|hoodie|vest|leggings|chinos|sandals|flats|heels|pumps|loafers|oxfords|belt|bag|purse|necklace|bracelet|watch|earrings|ring))\b/gi;
+  
+  const chunkMatches = [];
+  let match;
+  
+  while ((match = chunkingPattern.exec(text)) !== null) {
+    const extracted = match[1].trim();
+    if (extracted) {
+      chunkMatches.push(extracted);
+      console.log('Found chunked phrase:', extracted);
+    }
+  }
+  
+  // Select the best chunked match if available
+  if (chunkMatches.length > 0) {
+    const bestChunkMatch = selectMostSpecificMatch(chunkMatches);
+    console.log('Selected best chunk match:', bestChunkMatch);
+    return cleanPhrase(bestChunkMatch);
+  }
+  
+  // Fallback to previous extraction methods
+  console.log('No chunked matches found, falling back to previous methods');
+  return extractFullFashionPhrase(text);
+};
+
+const selectMostSpecificMatch = (matches: string[]): string => {
+  // Sort by specificity - more words and descriptors = more specific
+  return matches
+    .sort((a, b) => {
+      const aWords = a.split(/\s+/).length;
+      const bWords = b.split(/\s+/).length;
+      
+      // Prefer longer phrases
+      if (aWords !== bWords) {
+        return bWords - aWords;
+      }
+      
+      // Prefer phrases with material/color descriptors
+      const aHasDescriptors = hasQualityDescriptors(a);
+      const bHasDescriptors = hasQualityDescriptors(b);
+      
+      if (aHasDescriptors && !bHasDescriptors) return -1;
+      if (!aHasDescriptors && bHasDescriptors) return 1;
+      
+      return 0;
+    })[0];
+};
+
+const hasQualityDescriptors = (phrase: string): boolean => {
+  const descriptors = [
+    'white', 'black', 'blue', 'navy', 'red', 'green', 'grey', 'gray', 'beige', 'cream',
+    'cotton', 'linen', 'silk', 'wool', 'cashmere', 'denim', 'leather',
+    'oversized', 'fitted', 'slim', 'loose', 'structured', 'lightweight', 'heavy'
+  ];
+  
+  return descriptors.some(descriptor => phrase.toLowerCase().includes(descriptor));
 };
 
 const extractFullFashionPhrase = (text: string): string => {
