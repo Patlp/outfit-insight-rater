@@ -1,4 +1,3 @@
-
 import { Gender } from '@/context/RatingContext';
 import { createGenderSpecificSearchTerm } from './searchTermGenerator';
 import { categorizeProduct } from './productClassifier';
@@ -40,7 +39,7 @@ export const extractProductsFromSuggestions = (
       let match;
       pattern.lastIndex = 0;
       
-      while ((match = pattern.exec(suggestion.toLowerCase())) !== null && products.length < 3) {
+      while ((match = pattern.exec(suggestion.toLowerCase())) !== null && products.length < 2) {
         const item = match[1];
         
         // Check if we already have a similar item
@@ -74,7 +73,7 @@ export const extractProductsFromSuggestions = (
   });
   
   console.log(`Extracted ${products.length} products`);
-  return products.slice(0, 3);
+  return products.slice(0, 2);
 };
 
 const generateRationale = (suggestion: string, item: string): string => {
