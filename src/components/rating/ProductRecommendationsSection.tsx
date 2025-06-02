@@ -2,7 +2,7 @@
 import React from 'react';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { parseProductSuggestions } from '@/utils/productSuggestionParser';
+import { parseProductSuggestions } from '@/utils/product/productSuggestionParserV2';
 import { generateAmazonSearchUrl } from '@/utils/regionDetection';
 import { useRating } from '@/context/RatingContext';
 
