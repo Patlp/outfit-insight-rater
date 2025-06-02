@@ -2,8 +2,7 @@
 import React from 'react';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { parseProductSuggestionsSimplified } from '@/utils/product/simplifiedProductParser';
-import { generateAmazonSearchUrl } from '@/utils/regionDetection';
+import { extractSimplifiedProducts } from '@/utils/product/simplifiedExtractor';
 import { useRating } from '@/context/RatingContext';
 
 interface ProductRecommendationsSectionProps {
@@ -15,10 +14,10 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
   feedback, 
   suggestions 
 }) => {
-  const { selectedGender, occasionContext } = useRating();
+  const { selectedGender } = useRating();
   
-  // Use the simplified parser
-  const productSuggestions = parseProductSuggestionsSimplified(suggestions, selectedGender, feedback);
+  // Use the new simplified extraction logic
+  const productSuggestions = extractSimplifiedProducts(suggestions, selectedGender);
 
   if (!productSuggestions || productSuggestions.length === 0) {
     return null;
@@ -44,27 +43,26 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
               {product.context}
             </p>
-            <Button 
-              asChild 
-              className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
-            >
-              <a 
-                href={generateAmazonSearchUrl(
-                  product.searchTerm, 
-                  undefined, 
-                  selectedGender,
-                  occasionContext,
-                  feedback,
-                  product.category
-                )} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2"
+            {product.amazonUrl ? (
+              <Button 
+                asChild 
+                className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
               >
-                Shop on Amazon
-                <ExternalLink size={14} />
-              </a>
-            </Button>
+                <a 
+                  href={product.amazonUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2"
+                >
+                  Shop on Amazon
+                  <ExternalLink size={14} />
+                </a>
+              </Button>
+            ) : (
+              <div className="text-sm text-gray-400 italic text-center py-2">
+                Product suggestion only
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -82,27 +80,26 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
               {product.context}
             </p>
-            <Button 
-              asChild 
-              className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
-            >
-              <a 
-                href={generateAmazonSearchUrl(
-                  product.searchTerm, 
-                  undefined, 
-                  selectedGender,
-                  occasionContext,
-                  feedback,
-                  product.category
-                )} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2"
+            {product.amazonUrl ? (
+              <Button 
+                asChild 
+                className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
               >
-                Shop on Amazon
-                <ExternalLink size={14} />
-              </a>
-            </Button>
+                <a 
+                  href={product.amazonUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2"
+                >
+                  Shop on Amazon
+                  <ExternalLink size={14} />
+                </a>
+              </Button>
+            ) : (
+              <div className="text-sm text-gray-400 italic text-center py-2">
+                Product suggestion only
+              </div>
+            )}
           </div>
         ))}
       </div>
