@@ -27,13 +27,13 @@ export const parseProductSuggestionsSimplified = (
   // Extract products directly from AI suggestions
   const extractedProducts = extractProductsFromSuggestions(suggestions, gender, feedback);
   
-  // If we have fewer than 3 products, add some basic fallbacks
-  if (extractedProducts.length < 3) {
+  // If we have fewer than 2 products, add some basic fallbacks
+  if (extractedProducts.length < 2) {
     const fallbacks = generateBasicFallbacks(gender, extractedProducts);
-    extractedProducts.push(...fallbacks.slice(0, 3 - extractedProducts.length));
+    extractedProducts.push(...fallbacks.slice(0, 2 - extractedProducts.length));
   }
 
-  const finalProducts = extractedProducts.slice(0, 3);
+  const finalProducts = extractedProducts.slice(0, 2);
   console.log(`=== FINAL SIMPLIFIED PRODUCTS (${finalProducts.length}) ===`);
   finalProducts.forEach((product, index) => {
     console.log(`${index + 1}. ${product.name}`);
@@ -57,7 +57,7 @@ const generateBasicFallbacks = (gender: Gender, existingProducts: SimplifiedProd
   ];
   
   for (const { item, category, rationale } of basicItems) {
-    if (!existingCategories.includes(category) && fallbacks.length < 2) {
+    if (!existingCategories.includes(category) && fallbacks.length < 1) {
       const genderPrefix = gender === 'male' ? 'mens' : 'womens';
       fallbacks.push({
         name: `${rationale}: ${item}`,

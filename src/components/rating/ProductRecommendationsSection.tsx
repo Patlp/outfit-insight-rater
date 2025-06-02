@@ -31,8 +31,8 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
         Recommended Products
       </h3>
       
-      {/* Desktop: side-by-side layout */}
-      <div className="hidden md:grid md:grid-cols-3 gap-4">
+      {/* Desktop: side-by-side layout for 2 products */}
+      <div className="hidden md:grid md:grid-cols-2 gap-4">
         {productSuggestions.map((product, index) => (
           <div 
             key={index} 
