@@ -1,4 +1,3 @@
-
 import { Gender } from '@/context/RatingContext';
 
 export interface ProductSuggestion {
