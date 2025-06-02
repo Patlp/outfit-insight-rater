@@ -1,14 +1,15 @@
 
 import { Gender } from '@/context/RatingContext';
-import { TextProcessor } from './textProcessor';
 
 export interface ProductSuggestion {
   name: string;
   context: string;
   category: string;
   searchTerm: string;
+  rationale: string;
 }
 
+// Specific product name mappings with gender variants
 const SPECIFIC_PRODUCT_NAMES: Record<string, { female: string; male: string }> = {
   // Footwear
   'white sneakers': { female: 'White Leather Sneakers', male: 'White Leather Sneakers' },
@@ -17,6 +18,7 @@ const SPECIFIC_PRODUCT_NAMES: Record<string, { female: string; male: string }> =
   'dress shoes': { female: 'Pointed Toe Flats', male: 'Oxford Dress Shoes' },
   'ballet flats': { female: 'Classic Ballet Flats', male: 'Loafers' },
   'strappy sandals': { female: 'Strappy Heeled Sandals', male: 'Leather Sandals' },
+  'sandals': { female: 'Strappy Sandals', male: 'Leather Sandals' },
   
   // Accessories
   'statement necklace': { female: 'Statement Gold Necklace', male: 'Chain Necklace' },
@@ -25,6 +27,8 @@ const SPECIFIC_PRODUCT_NAMES: Record<string, { female: string; male: string }> =
   'leather belt': { female: 'Slim Leather Belt', male: 'Brown Leather Belt' },
   'stud earrings': { female: 'Gold Stud Earrings', male: 'Cufflinks' },
   'silk scarf': { female: 'Silk Square Scarf', male: 'Pocket Square' },
+  'white cardigan': { female: 'White Knit Cardigan', male: 'White Cardigan' },
+  'cardigan': { female: 'Knit Cardigan', male: 'Cardigan Sweater' },
   
   // Clothing
   'structured blazer': { female: 'Tailored Blazer', male: 'Navy Blazer' },
@@ -35,50 +39,165 @@ const SPECIFIC_PRODUCT_NAMES: Record<string, { female: string; male: string }> =
   'knit cardigan': { female: 'Oversized Knit Cardigan', male: 'V-Neck Sweater' },
   'fitted top': { female: 'Fitted Blouse', male: 'Fitted T-Shirt' },
   'midi skirt': { female: 'A-Line Midi Skirt', male: 'Chino Shorts' },
+  'patterned shirt': { female: 'Patterned Blouse', male: 'Patterned Shirt' },
+  'black patterned shirt': { female: 'Black Patterned Blouse', male: 'Black Patterned Shirt' },
+  'knee-high socks': { female: 'Knee-High Socks', male: 'Crew Socks' },
 };
 
 export const parseProductSuggestions = (
-  feedback: string, 
   suggestions: string[], 
   gender: Gender
 ): ProductSuggestion[] => {
-  console.log('Parsing product suggestions with gender:', gender);
+  console.log('Parsing product suggestions from style suggestions only, gender:', gender);
   
-  // Combine all text sources
-  const combinedText = `${feedback} ${suggestions.join(' ')}`;
+  if (!suggestions || suggestions.length === 0) {
+    return [];
+  }
+
+  const extractedProducts: ProductSuggestion[] = [];
+  const seenProducts = new Set<string>();
   
-  // Extract products using our enhanced text processor
-  const extractedProducts = TextProcessor.extractProductMentions(combinedText);
-  
-  console.log('Extracted products:', extractedProducts);
-  
-  // Convert to ProductSuggestion format with specific names
-  const productSuggestions: ProductSuggestion[] = extractedProducts.map(product => {
-    const genderSpecificSearchTerm = TextProcessor.createGenderSpecificSearchTerm(
-      product.searchTerm, 
-      gender
-    );
-    
-    // Get specific product name based on gender
-    const specificName = getSpecificProductName(product.searchTerm, gender);
-    
-    return {
-      name: specificName,
-      context: generateContextualDescription(product.category, combinedText),
-      category: product.category,
-      searchTerm: genderSpecificSearchTerm
-    };
+  // Process each suggestion to find specific clothing items
+  suggestions.forEach(suggestion => {
+    const products = extractProductsFromSuggestion(suggestion, gender);
+    products.forEach(product => {
+      const key = `${product.searchTerm.toLowerCase()}_${product.rationale.toLowerCase()}`;
+      if (!seenProducts.has(key) && extractedProducts.length < 3) {
+        seenProducts.add(key);
+        extractedProducts.push(product);
+      }
+    });
   });
 
-  // If we have fewer than 3 products, add some smart fallbacks based on the feedback content
-  if (productSuggestions.length < 3) {
-    const fallbackSuggestions = generateFallbackSuggestions(combinedText, gender, productSuggestions);
-    productSuggestions.push(...fallbackSuggestions);
+  // If we have fewer than 3 products, add smart fallbacks
+  if (extractedProducts.length < 3) {
+    const fallbackSuggestions = generateStrictFallbacks(suggestions, gender, extractedProducts);
+    extractedProducts.push(...fallbackSuggestions);
   }
 
   // Return exactly 3 suggestions
-  return productSuggestions.slice(0, 3);
+  return extractedProducts.slice(0, 3);
 };
+
+function extractProductsFromSuggestion(suggestion: string, gender: Gender): ProductSuggestion[] {
+  const products: ProductSuggestion[] = [];
+  
+  // Regex patterns to find specific clothing items with action phrases
+  const actionPatterns = [
+    // "swap for a white cardigan" or "replace with sandals"
+    /(?:swap|replace|substitute)(?:\s+(?:the|your|this))?\s+(?:for|with)\s+(?:a|an|some)?\s*([a-zA-Z\s]{3,30}?)(?:\s+(?:that|which|to|for|instead)|\.|,|$)/gi,
+    
+    // "try a black patterned shirt" or "consider white sneakers"
+    /(?:try|consider|opt for|choose|wear)\s+(?:a|an|some)?\s*([a-zA-Z\s]{3,30}?)(?:\s+(?:that|which|to|for|instead)|\.|,|$)/gi,
+    
+    // "add a statement necklace" or "include leather belt"
+    /(?:add|include|incorporate)\s+(?:a|an|some)?\s*([a-zA-Z\s]{3,30}?)(?:\s+(?:that|which|to|for)|\.|,|$)/gi,
+    
+    // Direct mentions like "white cardigan would" or "black shoes could"
+    /([a-zA-Z\s]{3,30}?)\s+(?:would|could|might|will)\s+(?:help|improve|enhance|add|complement)/gi,
+  ];
+
+  const lowerSuggestion = suggestion.toLowerCase();
+  
+  actionPatterns.forEach(pattern => {
+    let match;
+    pattern.lastIndex = 0; // Reset regex
+    
+    while ((match = pattern.exec(lowerSuggestion)) !== null && products.length < 2) {
+      const extractedItem = match[1]?.trim();
+      if (!extractedItem || extractedItem.length < 3) continue;
+      
+      const cleanedItem = cleanProductName(extractedItem);
+      if (!cleanedItem || !isValidClothingItem(cleanedItem)) continue;
+      
+      const rationale = extractStyleRationale(suggestion, cleanedItem);
+      const specificName = getSpecificProductName(cleanedItem, gender);
+      const searchTerm = createGenderSpecificSearchTerm(cleanedItem, gender);
+      const category = categorizeProduct(cleanedItem);
+      
+      products.push({
+        name: `${rationale}: ${specificName}`,
+        context: generateContextualDescription(category, suggestion),
+        category,
+        searchTerm,
+        rationale
+      });
+    }
+  });
+
+  return products;
+}
+
+function cleanProductName(text: string): string {
+  return text
+    .replace(/\b(?:the|a|an|some|any|your|my|his|her|their)\b/gi, '')
+    .replace(/\b(?:that|which|this|these|those)\b/gi, '')
+    .replace(/\b(?:very|really|quite|pretty|so|too)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isValidClothingItem(item: string): boolean {
+  const clothingKeywords = [
+    'shoe', 'sneaker', 'boot', 'heel', 'flat', 'sandal', 'pump',
+    'shirt', 'blouse', 'top', 'tee', 'sweater', 'cardigan',
+    'pants', 'jean', 'trouser', 'skirt', 'short', 'dress',
+    'jacket', 'blazer', 'coat', 'cardigan',
+    'necklace', 'bracelet', 'watch', 'belt', 'bag', 'purse', 'earring', 'scarf', 'hat',
+    'sock', 'stocking'
+  ];
+  
+  const words = item.toLowerCase().split(' ');
+  return words.some(word => 
+    clothingKeywords.some(keyword => 
+      word.includes(keyword) || keyword.includes(word)
+    )
+  );
+}
+
+function extractStyleRationale(suggestion: string, item: string): string {
+  const lowerSuggestion = suggestion.toLowerCase();
+  
+  // Look for style reasons in the suggestion
+  if (lowerSuggestion.includes('visual interest') || lowerSuggestion.includes('interest')) {
+    return 'Visual Interest';
+  }
+  if (lowerSuggestion.includes('professional') || lowerSuggestion.includes('work')) {
+    return 'Professional Polish';
+  }
+  if (lowerSuggestion.includes('color') || lowerSuggestion.includes('coordinate')) {
+    return 'Color Coordination';
+  }
+  if (lowerSuggestion.includes('proportion') || lowerSuggestion.includes('balance')) {
+    return 'Better Proportions';
+  }
+  if (lowerSuggestion.includes('casual') || lowerSuggestion.includes('relax')) {
+    return 'Casual Refinement';
+  }
+  if (lowerSuggestion.includes('elevate') || lowerSuggestion.includes('upgrade')) {
+    return 'Style Elevation';
+  }
+  if (lowerSuggestion.includes('texture') || lowerSuggestion.includes('material')) {
+    return 'Texture Balance';
+  }
+  if (lowerSuggestion.includes('accessorize') || lowerSuggestion.includes('complete')) {
+    return 'Complete Look';
+  }
+  
+  // Default rationales based on item type
+  const itemLower = item.toLowerCase();
+  if (itemLower.includes('shoe') || itemLower.includes('sneaker') || itemLower.includes('boot')) {
+    return 'Foundation Upgrade';
+  }
+  if (itemLower.includes('accessory') || itemLower.includes('necklace') || itemLower.includes('belt')) {
+    return 'Finishing Touch';
+  }
+  if (itemLower.includes('cardigan') || itemLower.includes('blazer') || itemLower.includes('jacket')) {
+    return 'Layer Addition';
+  }
+  
+  return 'Style Enhancement';
+}
 
 function getSpecificProductName(searchTerm: string, gender: Gender): string {
   const cleanedTerm = searchTerm.toLowerCase().replace(/mens|womens/g, '').trim();
@@ -104,89 +223,110 @@ function getSpecificProductName(searchTerm: string, gender: Gender): string {
     .trim();
 }
 
-function generateContextualDescription(category: string, fullText: string): string {
-  const lowerText = fullText.toLowerCase();
+function createGenderSpecificSearchTerm(productTerm: string, gender: Gender): string {
+  const genderModifier = gender === 'male' ? 'mens' : 'womens';
+  return `${genderModifier} ${productTerm}`;
+}
+
+function categorizeProduct(productName: string): string {
+  const words = productName.toLowerCase().split(' ');
   
-  // Context-aware descriptions based on the feedback content
+  if (words.some(w => ['shoe', 'boot', 'sneaker', 'heel', 'flat', 'sandal', 'pump'].includes(w))) {
+    return 'footwear';
+  }
+  if (words.some(w => ['necklace', 'bracelet', 'watch', 'belt', 'bag', 'earring', 'scarf', 'hat'].includes(w))) {
+    return 'accessories';
+  }
+  if (words.some(w => ['jacket', 'blazer', 'cardigan', 'coat'].includes(w))) {
+    return 'outerwear';
+  }
+  if (words.some(w => ['shirt', 'blouse', 'top', 'tee', 'sweater'].includes(w))) {
+    return 'tops';
+  }
+  if (words.some(w => ['pants', 'jean', 'trouser', 'skirt', 'short'].includes(w))) {
+    return 'bottoms';
+  }
+  if (words.some(w => ['dress'].includes(w))) {
+    return 'dresses';
+  }
+  
+  return 'fashion';
+}
+
+function generateContextualDescription(category: string, suggestionText: string): string {
+  const lowerText = suggestionText.toLowerCase();
+  
+  // Context-aware descriptions based on the suggestion content
   if (lowerText.includes('professional') || lowerText.includes('work')) {
-    switch (category) {
-      case 'footwear': return 'Professional footwear that maintains comfort while elevating your workplace style';
-      case 'accessories': return 'Sophisticated accessories that add polish to your professional wardrobe';
-      case 'outerwear': return 'Professional outerwear that creates structure and authority in your look';
-      default: return 'This piece will enhance your professional appearance and boost confidence';
-    }
+    return 'This piece will enhance your professional appearance and boost confidence in workplace settings.';
   }
   
-  if (lowerText.includes('casual') || lowerText.includes('weekend')) {
-    switch (category) {
-      case 'footwear': return 'Versatile shoes that work for casual occasions while keeping you looking put-together';
-      case 'accessories': return 'Effortless accessories that elevate casual looks without being overdressed';
-      default: return 'Perfect for creating polished casual looks that feel authentic to your style';
-    }
+  if (lowerText.includes('visual interest') || lowerText.includes('interest')) {
+    return 'Adding this will create visual interest and prevent your outfit from looking too plain or monotonous.';
   }
   
-  if (lowerText.includes('color') || lowerText.includes('palette')) {
-    return 'This piece will help coordinate your color palette and create more cohesive outfits';
+  if (lowerText.includes('color') || lowerText.includes('coordinate')) {
+    return 'This piece will help coordinate your color palette and create a more cohesive, intentional look.';
   }
   
-  if (lowerText.includes('fit') || lowerText.includes('silhouette')) {
-    return 'Designed to enhance your silhouette and create a more flattering overall appearance';
+  if (lowerText.includes('proportion') || lowerText.includes('balance')) {
+    return 'This will help balance your proportions and create a more flattering overall silhouette.';
   }
   
   // Default descriptions by category
   const defaultDescriptions: Record<string, string> = {
-    footwear: 'The right shoes can completely transform your look and add the perfect finishing touch',
-    accessories: 'Strategic accessories add personality and polish to elevate your entire outfit',
-    outerwear: 'A well-chosen outer layer adds structure and sophistication to your style',
-    tops: 'The right top creates a strong foundation for your overall look',
-    bottoms: 'Well-fitted bottoms are essential for a polished, put-together appearance',
-    dresses: 'The perfect dress makes getting dressed effortless while looking effortlessly chic',
-    fashion: 'This piece would complement your personal style perfectly'
+    footwear: 'The right shoes can completely transform your look and provide the perfect foundation.',
+    accessories: 'Strategic accessories add personality and polish to elevate your entire outfit.',
+    outerwear: 'A well-chosen outer layer adds structure and sophistication to your style.',
+    tops: 'The right top creates a strong foundation for your overall look.',
+    bottoms: 'Well-fitted bottoms are essential for a polished, put-together appearance.',
+    dresses: 'The perfect dress makes getting dressed effortless while looking effortlessly chic.',
+    fashion: 'This piece will complement your personal style perfectly.'
   };
   
   return defaultDescriptions[category] || defaultDescriptions.fashion;
 }
 
-function generateFallbackSuggestions(
-  text: string, 
+function generateStrictFallbacks(
+  suggestions: string[], 
   gender: Gender, 
   existingSuggestions: ProductSuggestion[]
 ): ProductSuggestion[] {
   const fallbacks: ProductSuggestion[] = [];
   const existingCategories = new Set(existingSuggestions.map(s => s.category));
+  const combinedSuggestionText = suggestions.join(' ').toLowerCase();
   
-  // Gender-specific fallback suggestions with specific names
+  // Only add fallbacks if there are clear style needs mentioned but no specific items found
+  const needsAccessories = combinedSuggestionText.includes('accessory') || combinedSuggestionText.includes('complete');
+  const needsFootwear = combinedSuggestionText.includes('shoe') || combinedSuggestionText.includes('foundation');
+  const needsStructure = combinedSuggestionText.includes('structure') || combinedSuggestionText.includes('layer');
+  
+  // Gender-specific strict fallbacks - only specific clothing items
   const genderFallbacks = gender === 'female' 
     ? [
-        { name: 'Gold Stud Earrings', category: 'accessories', searchTerm: 'gold stud earrings' },
-        { name: 'Block Heel Pumps', category: 'footwear', searchTerm: 'block heel pumps' },
-        { name: 'Tailored Blazer', category: 'outerwear', searchTerm: 'structured blazer' },
-        { name: 'A-Line Midi Dress', category: 'dresses', searchTerm: 'midi dress' },
-        { name: 'Structured Crossbody Bag', category: 'accessories', searchTerm: 'crossbody bag' }
+        { name: 'Gold Stud Earrings', category: 'accessories', searchTerm: 'gold stud earrings', rationale: 'Finishing Touch', condition: needsAccessories },
+        { name: 'White Leather Sneakers', category: 'footwear', searchTerm: 'white leather sneakers', rationale: 'Foundation Upgrade', condition: needsFootwear },
+        { name: 'Tailored Blazer', category: 'outerwear', searchTerm: 'structured blazer', rationale: 'Professional Polish', condition: needsStructure }
       ]
     : [
-        { name: 'Leather Strap Watch', category: 'accessories', searchTerm: 'leather strap watch' },
-        { name: 'White Leather Sneakers', category: 'footwear', searchTerm: 'white leather sneakers' },
-        { name: 'White Button Down Shirt', category: 'tops', searchTerm: 'button down shirt' },
-        { name: 'Tailored Chinos', category: 'bottoms', searchTerm: 'chino pants' },
-        { name: 'Navy Blazer', category: 'outerwear', searchTerm: 'casual blazer' }
+        { name: 'Leather Strap Watch', category: 'accessories', searchTerm: 'leather strap watch', rationale: 'Finishing Touch', condition: needsAccessories },
+        { name: 'White Leather Sneakers', category: 'footwear', searchTerm: 'white leather sneakers', rationale: 'Foundation Upgrade', condition: needsFootwear },
+        { name: 'Navy Blazer', category: 'outerwear', searchTerm: 'casual blazer', rationale: 'Style Elevation', condition: needsStructure }
       ];
 
-  // Add fallbacks that don't conflict with existing categories
+  // Add fallbacks only if their condition is met and category isn't filled
   for (const fallback of genderFallbacks) {
     if (fallbacks.length >= 3 - existingSuggestions.length) break;
     
-    if (!existingCategories.has(fallback.category)) {
-      const genderSpecificSearchTerm = TextProcessor.createGenderSpecificSearchTerm(
-        fallback.searchTerm, 
-        gender
-      );
+    if (fallback.condition && !existingCategories.has(fallback.category)) {
+      const genderSpecificSearchTerm = createGenderSpecificSearchTerm(fallback.searchTerm, gender);
       
       fallbacks.push({
-        name: fallback.name,
-        context: generateContextualDescription(fallback.category, text),
+        name: `${fallback.rationale}: ${fallback.name}`,
+        context: generateContextualDescription(fallback.category, suggestions.join(' ')),
         category: fallback.category,
-        searchTerm: genderSpecificSearchTerm
+        searchTerm: genderSpecificSearchTerm,
+        rationale: fallback.rationale
       });
       
       existingCategories.add(fallback.category);
