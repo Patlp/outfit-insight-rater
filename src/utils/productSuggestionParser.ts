@@ -38,15 +38,19 @@ export const parseProductSuggestions = (
       // Generate context for each product
       product.context = generateContextualDescription(product.category, suggestion);
       
+      // Create a more comprehensive key for duplicate detection
       const key = `${product.searchTerm.toLowerCase()}_${product.category}`;
       console.log(`Checking product key: ${key}`);
       
       if (!seenProducts.has(key) && extractedProducts.length < 3) {
         seenProducts.add(key);
         extractedProducts.push(product);
-        console.log(`Added product: ${product.name}`);
+        console.log(`✓ Added product: ${product.name}`);
+        console.log(`  Category: ${product.category}`);
+        console.log(`  Search term: ${product.searchTerm}`);
+        console.log(`  Rationale: ${product.rationale}`);
       } else {
-        console.log(`Skipped product (duplicate or limit reached): ${product.name}`);
+        console.log(`✗ Skipped product (duplicate or limit reached): ${product.name}`);
       }
     });
   });
@@ -58,16 +62,25 @@ export const parseProductSuggestions = (
     console.log('Adding fallbacks to reach 3 products...');
     const fallbackSuggestions = generateStrictFallbacks(suggestions, gender, extractedProducts);
     console.log(`Generated ${fallbackSuggestions.length} fallbacks`);
-    extractedProducts.push(...fallbackSuggestions);
+    
+    // Add fallbacks up to limit of 3 total
+    const remainingSlots = 3 - extractedProducts.length;
+    const fallbacksToAdd = fallbackSuggestions.slice(0, remainingSlots);
+    extractedProducts.push(...fallbacksToAdd);
+    
+    console.log(`Added ${fallbacksToAdd.length} fallbacks`);
   }
 
-  // Return exactly 3 suggestions
+  // Return exactly 3 suggestions (or fewer if that's all we have)
   const finalProducts = extractedProducts.slice(0, 3);
   console.log(`\n=== FINAL PRODUCTS (${finalProducts.length}) ===`);
   finalProducts.forEach((product, index) => {
-    console.log(`${index + 1}. ${product.name} (${product.category})`);
+    console.log(`${index + 1}. ${product.name}`);
+    console.log(`   Category: ${product.category}`);
     console.log(`   Search: ${product.searchTerm}`);
     console.log(`   Context: ${product.context}`);
+    console.log(`   Rationale: ${product.rationale}`);
+    console.log('');
   });
   console.log('=== PRODUCT SUGGESTION PARSING END ===\n');
   

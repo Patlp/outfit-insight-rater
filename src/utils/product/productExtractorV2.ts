@@ -13,31 +13,34 @@ export interface ExtractedProductV2 {
 }
 
 export const extractProductsFromSuggestion = (suggestion: string, gender: Gender): ExtractedProductV2[] => {
-  console.log('Extracting products from suggestion:', suggestion);
+  console.log('=== EXTRACTING PRODUCTS ===');
+  console.log('Suggestion:', suggestion);
+  console.log('Gender:', gender);
+  
   const products: ExtractedProductV2[] = [];
   
-  // Expanded regex patterns to find more specific clothing items
+  // Enhanced regex patterns with more comprehensive coverage
   const actionPatterns = [
-    // "swap for a white cardigan" or "replace with sandals"
-    /(?:swap|replace|substitute|change)(?:\s+(?:the|your|this|it))?\s+(?:for|with|to)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,35}?)(?:\s+(?:that|which|to|for|instead|would|could)|\.|,|;|$)/gi,
+    // Direct action patterns: "try a white cardigan", "add dark jeans"
+    /(?:try|add|wear|choose|opt for|consider|include|incorporate|get)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,40}?)(?:\s+(?:that|which|to|for|instead|would|could|might)|\.|,|;|$)/gi,
     
-    // "try a black patterned shirt" or "consider white sneakers"
-    /(?:try|consider|opt for|choose|wear|get|add|include)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,35}?)(?:\s+(?:that|which|to|for|instead|would|could)|\.|,|;|$)/gi,
+    // Replacement patterns: "swap for sandals", "replace with blazer"
+    /(?:swap|replace|substitute|change)(?:\s+(?:the|your|this|it))?\s+(?:for|with|to)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,40}?)(?:\s+(?:that|which|to|for|would|could)|\.|,|;|$)/gi,
     
-    // "add a statement necklace" or "include leather belt"
-    /(?:add|include|incorporate|introduce)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,35}?)(?:\s+(?:that|which|to|for|would|could)|\.|,|;|$)/gi,
+    // Pairing patterns: "pair with black boots", "match with cardigan"
+    /(?:pair|match|combine|go)\s+(?:with|alongside)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,40}?)(?:\s+(?:that|which|to|for)|\.|,|;|$)/gi,
     
-    // Direct mentions like "white cardigan would" or "black shoes could"
-    /(?:a|an|some)?\s*([a-zA-Z\s-]{3,35}?)\s+(?:would|could|might|will|can)\s+(?:help|improve|enhance|add|complement|work|look|be)/gi,
+    // Suggestion patterns: "cardigan would help", "blazer could work"
+    /(?:a|an|some)?\s*([a-zA-Z\s-]{3,40}?)\s+(?:would|could|might|will|can)\s+(?:help|improve|enhance|add|complement|work|look|be|provide)/gi,
     
-    // "pair with denim jacket" or "go with black boots"
-    /(?:pair|match|combine|go)\s+(?:with|alongside)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,35}?)(?:\s+(?:that|which|to|for)|\.|,|;|$)/gi,
+    // Color/style modification: "lighter cardigan", "darker jeans", "fitted top"
+    /(?:lighter|darker|brighter|softer|bolder|fitted|loose|structured|tailored|casual|formal)\s+(?:colored?)?\s*([a-zA-Z\s-]{3,40}?)(?:\s+(?:would|could|might)|\.|,|;|$)/gi,
     
-    // "wear light wash jeans" or "choose dark sneakers"
-    /(?:wear|choose|select|pick)\s+(?:a|an|some)?\s*([a-zA-Z\s-]{3,35}?)(?:\s+(?:that|which|to|for|instead)|\.|,|;|$)/gi,
+    // Direct clothing mentions: "white sneakers", "black blazer"
+    /\b(?:white|black|blue|red|green|yellow|pink|purple|brown|gray|grey|navy|beige|cream|tan)\s+([a-zA-Z\s-]{3,40}?)(?:\s+(?:would|could|might|that|which)|\.|,|;|$)/gi,
     
-    // "lighter colored cardigan" or "darker wash jeans"
-    /(?:lighter|darker|brighter|softer|bolder)\s+(?:colored?)?\s*([a-zA-Z\s-]{3,35}?)(?:\s+(?:would|could|might)|\.|,|;|$)/gi,
+    // Material-based: "leather jacket", "denim shirt", "cotton cardigan"
+    /\b(?:leather|denim|cotton|wool|silk|linen|knit|velvet|cashmere)\s+([a-zA-Z\s-]{3,40}?)(?:\s+(?:would|could|might|that|which)|\.|,|;|$)/gi,
   ];
 
   const lowerSuggestion = suggestion.toLowerCase();
@@ -47,9 +50,9 @@ export const extractProductsFromSuggestion = (suggestion: string, gender: Gender
     let match;
     pattern.lastIndex = 0; // Reset regex
     
-    while ((match = pattern.exec(lowerSuggestion)) !== null && products.length < 3) {
+    while ((match = pattern.exec(lowerSuggestion)) !== null && products.length < 5) {
       const extractedItem = match[1]?.trim();
-      console.log(`Pattern ${index + 1} matched:`, extractedItem);
+      console.log(`Pattern ${index + 1} found:`, extractedItem);
       
       if (!extractedItem || extractedItem.length < 3) {
         console.log('Skipping - too short:', extractedItem);
@@ -60,18 +63,19 @@ export const extractProductsFromSuggestion = (suggestion: string, gender: Gender
       console.log('Cleaned item:', cleanedItem);
       
       if (!cleanedItem || !isValidClothingItem(cleanedItem)) {
-        console.log('Skipping - not valid clothing item:', cleanedItem);
+        console.log('Skipping - not valid clothing:', cleanedItem);
         continue;
       }
       
-      // Check for duplicates
+      // Enhanced duplicate checking
       const isDuplicate = products.some(p => 
-        p.searchTerm.toLowerCase() === cleanedItem.toLowerCase() ||
+        p.searchTerm.toLowerCase().includes(cleanedItem.toLowerCase()) ||
+        cleanedItem.toLowerCase().includes(p.searchTerm.toLowerCase()) ||
         p.name.toLowerCase().includes(cleanedItem.toLowerCase())
       );
       
       if (isDuplicate) {
-        console.log('Skipping - duplicate item:', cleanedItem);
+        console.log('Skipping - duplicate:', cleanedItem);
         continue;
       }
       
@@ -80,147 +84,148 @@ export const extractProductsFromSuggestion = (suggestion: string, gender: Gender
       const searchTerm = createGenderSpecificSearchTerm(cleanedItem, gender);
       const category = categorizeProduct(cleanedItem);
       
-      console.log('Creating product:', {
-        name: `${rationale}: ${specificName}`,
-        category,
-        searchTerm,
-        rationale
-      });
-      
-      products.push({
+      const product = {
         name: `${rationale}: ${specificName}`,
         context: '', // Will be set by context generator
         category,
         searchTerm,
         rationale
-      });
+      };
+      
+      console.log('Adding product:', product);
+      products.push(product);
     }
   });
 
-  console.log('Extracted products count:', products.length);
-  return products;
+  console.log(`Found ${products.length} products from suggestion`);
+  return products.slice(0, 3); // Limit to 3 products
 };
 
 const cleanProductName = (text: string): string => {
   return text
     .replace(/\b(?:the|a|an|some|any|your|my|his|her|their|this|that|these|those)\b/gi, '')
-    .replace(/\b(?:very|really|quite|pretty|so|too|more|most|less|least)\b/gi, '')
-    .replace(/\b(?:colored?|toned?|style|styled|looking)\b/gi, '')
+    .replace(/\b(?:very|really|quite|pretty|so|too|more|most|less|least|such)\b/gi, '')
+    .replace(/\b(?:colored?|toned?|style|styled|looking|type|kind)\b/gi, '')
+    .replace(/\b(?:would|could|might|will|can|should|may)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 };
 
 const isValidClothingItem = (item: string): boolean => {
-  // Expanded clothing keywords for better detection
+  // Comprehensive clothing keywords organized by category
   const clothingKeywords = [
     // Footwear
     'shoe', 'shoes', 'sneaker', 'sneakers', 'boot', 'boots', 'heel', 'heels', 
     'flat', 'flats', 'sandal', 'sandals', 'pump', 'pumps', 'loafer', 'loafers',
-    'oxford', 'oxfords', 'derby', 'chelsea', 'ankle boot', 'combat boot',
+    'oxford', 'oxfords', 'derby', 'chelsea', 'ankle boot', 'combat boot', 'running shoe',
     
     // Tops
-    'shirt', 'shirts', 'blouse', 'blouses', 'top', 'tops', 'tee', 'tees', 
-    'sweater', 'sweaters', 'cardigan', 'cardigans', 'hoodie', 'hoodies',
+    'shirt', 'shirts', 'blouse', 'blouses', 'top', 'tops', 'tee', 'tees', 't-shirt',
+    'sweater', 'sweaters', 'cardigan', 'cardigans', 'hoodie', 'hoodies', 'pullover',
     'tank', 'tanks', 'camisole', 'polo', 'henley', 'button-down', 'button down',
+    'jersey', 'tunic', 'crop top', 'tube top',
     
     // Bottoms
     'pants', 'pant', 'jean', 'jeans', 'trouser', 'trousers', 'skirt', 'skirts',
     'short', 'shorts', 'legging', 'leggings', 'jogger', 'joggers', 'chino', 'chinos',
+    'slacks', 'capri', 'palazzo', 'wide leg', 'skinny', 'straight leg', 'bootcut',
     
-    // Dresses
+    // Dresses & One-pieces
     'dress', 'dresses', 'gown', 'gowns', 'frock', 'midi dress', 'maxi dress',
+    'mini dress', 'cocktail dress', 'sundress', 'wrap dress', 'shift dress',
+    'jumpsuit', 'romper', 'playsuit', 'overall', 'overalls',
     
     // Outerwear
     'jacket', 'jackets', 'blazer', 'blazers', 'coat', 'coats', 'vest', 'vests',
     'windbreaker', 'puffer', 'bomber', 'denim jacket', 'leather jacket',
+    'trench coat', 'peacoat', 'raincoat', 'parka', 'cardigan coat',
     
     // Accessories
     'necklace', 'necklaces', 'bracelet', 'bracelets', 'watch', 'watches',
     'belt', 'belts', 'bag', 'bags', 'purse', 'purses', 'earring', 'earrings',
     'scarf', 'scarves', 'hat', 'hats', 'cap', 'caps', 'sunglasses', 'glasses',
-    'ring', 'rings', 'chain', 'chains', 'pendant', 'brooch',
+    'ring', 'rings', 'chain', 'chains', 'pendant', 'brooch', 'pin',
+    'backpack', 'tote', 'clutch', 'crossbody', 'messenger bag', 'handbag',
     
     // Undergarments & basics
-    'sock', 'socks', 'stocking', 'stockings', 'tights', 'pantyhose'
+    'sock', 'socks', 'stocking', 'stockings', 'tights', 'pantyhose', 'hosiery'
   ];
   
-  // Exclude non-clothing descriptive words
+  // Enhanced exclusion list
   const excludeWords = [
     'color', 'colors', 'tone', 'tones', 'shade', 'shades', 'fabric', 'fabrics',
     'material', 'materials', 'texture', 'textures', 'pattern', 'patterns',
     'style', 'styles', 'look', 'looks', 'feel', 'feels', 'fit', 'fits',
     'size', 'sizes', 'length', 'lengths', 'cut', 'cuts', 'design', 'designs',
-    'wash', 'washes', 'finish', 'finishes', 'detail', 'details',
+    'wash', 'washes', 'finish', 'finishes', 'detail', 'details', 'piece', 'pieces',
+    'item', 'items', 'thing', 'things', 'something', 'anything', 'everything',
+    'outfit', 'outfits', 'ensemble', 'wardrobe', 'clothing', 'clothes',
     'cotton', 'wool', 'silk', 'linen', 'polyester', 'denim', 'leather',
-    'light', 'dark', 'bright', 'soft', 'bold', 'neutral', 'warm', 'cool'
+    'light', 'dark', 'bright', 'soft', 'bold', 'neutral', 'warm', 'cool',
+    'casual', 'formal', 'dressy', 'professional', 'smart', 'elegant'
   ];
   
   const words = item.toLowerCase().split(' ');
   const itemLower = item.toLowerCase();
   
-  // Check if it contains excluded words only
-  if (excludeWords.some(exclude => itemLower === exclude || words.every(word => excludeWords.includes(word)))) {
-    console.log('Excluded descriptive word:', item);
+  // Skip if it's only excluded words
+  if (words.every(word => excludeWords.includes(word))) {
+    console.log('Item contains only excluded words:', item);
     return false;
   }
   
-  // Check if it contains any clothing keywords
-  const hasClothingKeyword = words.some(word => 
-    clothingKeywords.some(keyword => 
-      word.includes(keyword) || keyword.includes(word) || 
-      // Handle compound words
-      (keyword.includes(' ') && itemLower.includes(keyword))
-    )
-  );
+  // Check for clothing keywords with improved matching
+  const hasClothingKeyword = clothingKeywords.some(keyword => {
+    // Exact match or contains keyword
+    if (itemLower === keyword || itemLower.includes(keyword) || keyword.includes(itemLower)) {
+      return true;
+    }
+    
+    // Check individual words
+    return words.some(word => {
+      return word === keyword || word.includes(keyword) || keyword.includes(word);
+    });
+  });
   
-  console.log('Clothing validation for:', item, 'Result:', hasClothingKeyword);
+  console.log(`Clothing validation for "${item}":`, hasClothingKeyword);
   return hasClothingKeyword;
 };
 
 const extractStyleRationale = (suggestion: string, item: string): string => {
   const lowerSuggestion = suggestion.toLowerCase();
   
-  // Look for style reasons in the suggestion with expanded patterns
-  if (lowerSuggestion.includes('visual interest') || lowerSuggestion.includes('add interest') || lowerSuggestion.includes('more interesting')) {
-    return 'Visual Interest';
-  }
-  if (lowerSuggestion.includes('professional') || lowerSuggestion.includes('work') || lowerSuggestion.includes('office')) {
-    return 'Professional Polish';
-  }
-  if (lowerSuggestion.includes('color') || lowerSuggestion.includes('coordinate') || lowerSuggestion.includes('complement')) {
-    return 'Color Coordination';
-  }
-  if (lowerSuggestion.includes('proportion') || lowerSuggestion.includes('balance') || lowerSuggestion.includes('flattering')) {
-    return 'Better Proportions';
-  }
-  if (lowerSuggestion.includes('casual') || lowerSuggestion.includes('relax') || lowerSuggestion.includes('comfortable')) {
-    return 'Casual Refinement';
-  }
-  if (lowerSuggestion.includes('elevate') || lowerSuggestion.includes('upgrade') || lowerSuggestion.includes('polished')) {
-    return 'Style Elevation';
-  }
-  if (lowerSuggestion.includes('texture') || lowerSuggestion.includes('material') || lowerSuggestion.includes('fabric')) {
-    return 'Texture Balance';
-  }
-  if (lowerSuggestion.includes('accessorize') || lowerSuggestion.includes('complete') || lowerSuggestion.includes('finishing touch')) {
-    return 'Complete Look';
-  }
-  if (lowerSuggestion.includes('structure') || lowerSuggestion.includes('structured') || lowerSuggestion.includes('tailored')) {
-    return 'Structure Addition';
-  }
-  if (lowerSuggestion.includes('layer') || lowerSuggestion.includes('layering') || lowerSuggestion.includes('depth')) {
-    return 'Layer Addition';
+  // Enhanced rationale detection with more patterns
+  const rationaleMap = [
+    { keywords: ['visual interest', 'add interest', 'more interesting', 'dynamic'], rationale: 'Visual Interest' },
+    { keywords: ['professional', 'work', 'office', 'business', 'formal'], rationale: 'Professional Polish' },
+    { keywords: ['color', 'coordinate', 'complement', 'palette', 'tone'], rationale: 'Color Coordination' },
+    { keywords: ['proportion', 'balance', 'flattering', 'silhouette', 'shape'], rationale: 'Better Proportions' },
+    { keywords: ['casual', 'relax', 'comfortable', 'laid-back', 'easy'], rationale: 'Casual Refinement' },
+    { keywords: ['elevate', 'upgrade', 'polished', 'sophisticated', 'refined'], rationale: 'Style Elevation' },
+    { keywords: ['texture', 'material', 'fabric', 'contrast', 'dimension'], rationale: 'Texture Balance' },
+    { keywords: ['accessorize', 'complete', 'finishing touch', 'detail', 'accent'], rationale: 'Complete Look' },
+    { keywords: ['structure', 'structured', 'tailored', 'fitted', 'sharp'], rationale: 'Structure Addition' },
+    { keywords: ['layer', 'layering', 'depth', 'dimension', 'warmth'], rationale: 'Layer Addition' },
+    { keywords: ['foundation', 'base', 'anchor', 'ground', 'establish'], rationale: 'Foundation Upgrade' },
+    { keywords: ['versatile', 'adaptable', 'flexible', 'multi'], rationale: 'Versatility Boost' }
+  ];
+
+  // Check suggestion content for rationale
+  for (const { keywords, rationale } of rationaleMap) {
+    if (keywords.some(keyword => lowerSuggestion.includes(keyword))) {
+      return rationale;
+    }
   }
   
-  // Default rationales based on item type
+  // Item-based rationale as fallback
   const itemLower = item.toLowerCase();
-  if (itemLower.includes('shoe') || itemLower.includes('sneaker') || itemLower.includes('boot') || itemLower.includes('sandal')) {
+  if (itemLower.includes('shoe') || itemLower.includes('sneaker') || itemLower.includes('boot')) {
     return 'Foundation Upgrade';
   }
   if (itemLower.includes('necklace') || itemLower.includes('bracelet') || itemLower.includes('earring') || itemLower.includes('watch') || itemLower.includes('belt')) {
     return 'Finishing Touch';
   }
-  if (itemLower.includes('cardigan') || itemLower.includes('blazer') || itemLower.includes('jacket') || itemLower.includes('coat')) {
+  if (itemLower.includes('cardigan') || itemLower.includes('blazer') || itemLower.includes('jacket')) {
     return 'Layer Addition';
   }
   if (itemLower.includes('bag') || itemLower.includes('purse') || itemLower.includes('scarf')) {
