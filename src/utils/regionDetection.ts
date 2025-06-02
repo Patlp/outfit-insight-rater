@@ -1,5 +1,6 @@
 
 import { Gender, OccasionContext } from '@/context/RatingContext';
+import { generateContextualSearchTerm } from './product/enhancedSearchGenerator';
 
 export interface AmazonRegionConfig {
   domain: string;
@@ -39,7 +40,7 @@ export const detectUserRegion = (): AmazonRegionConfig => {
 };
 
 export const generateAmazonSearchUrl = (
-  searchTerm: string, 
+  productName: string, 
   region?: AmazonRegionConfig, 
   gender?: Gender,
   occasionContext?: OccasionContext | null,
@@ -48,20 +49,40 @@ export const generateAmazonSearchUrl = (
 ): string => {
   const selectedRegion = region || detectUserRegion();
   
-  // Use the search term as-is since it's now generated with proper attributes
-  let finalSearchTerms = searchTerm;
+  console.log('Generating Amazon URL for product:', productName);
+  
+  let searchTerms = productName;
+  
+  // Use enhanced search generation only if we have specific occasion context
+  const hasSpecificOccasion = occasionContext?.eventContext && 
+    !occasionContext.eventContext.toLowerCase().includes('neutral') &&
+    !occasionContext.eventContext.toLowerCase().includes('general');
+  
+  if (gender && category && hasSpecificOccasion) {
+    console.log('Using enhanced search with occasion context');
+    searchTerms = generateContextualSearchTerm(productName, {
+      occasion: occasionContext?.eventContext || undefined,
+      feedback: feedback,
+      userGender: gender,
+      productCategory: category
+    });
+  } else if (gender) {
+    // Simple gender targeting - ensure we don't double-add gender
+    const genderPrefix = gender === 'male' ? 'mens' : 'womens';
+    if (!searchTerms.toLowerCase().includes('mens') && !searchTerms.toLowerCase().includes('womens')) {
+      searchTerms = `${genderPrefix} ${searchTerms}`;
+    }
+  }
   
   // Clean and encode the search terms
-  const cleanedTerms = finalSearchTerms
+  const cleanedTerms = searchTerms
     .replace(/[^\w\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/\s/g, '+');
   
   const finalUrl = `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
-  
-  console.log('Generated Amazon search URL:', finalUrl);
-  console.log('Search terms used:', cleanedTerms);
+  console.log('Final Amazon search URL:', finalUrl);
   
   return finalUrl;
 };

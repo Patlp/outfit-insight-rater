@@ -27,13 +27,13 @@ export const parseProductSuggestionsSimplified = (
   // Extract products directly from AI suggestions
   const extractedProducts = extractProductsFromSuggestions(suggestions, gender, feedback);
   
-  // If we have fewer than 2 products, add some basic fallbacks
-  if (extractedProducts.length < 2) {
+  // If we have fewer than 3 products, add some basic fallbacks
+  if (extractedProducts.length < 3) {
     const fallbacks = generateBasicFallbacks(gender, extractedProducts);
-    extractedProducts.push(...fallbacks.slice(0, 2 - extractedProducts.length));
+    extractedProducts.push(...fallbacks.slice(0, 3 - extractedProducts.length));
   }
 
-  const finalProducts = extractedProducts.slice(0, 2);
+  const finalProducts = extractedProducts.slice(0, 3);
   console.log(`=== FINAL SIMPLIFIED PRODUCTS (${finalProducts.length}) ===`);
   finalProducts.forEach((product, index) => {
     console.log(`${index + 1}. ${product.name}`);
@@ -52,11 +52,12 @@ const generateBasicFallbacks = (gender: Gender, existingProducts: SimplifiedProd
   // Basic fallback items that work for most situations
   const basicItems = [
     { item: 'white sneakers', category: 'footwear', rationale: 'Foundation Upgrade' },
-    { item: 'classic watch', category: 'accessories', rationale: 'Finishing Touch' }
+    { item: 'classic watch', category: 'accessories', rationale: 'Finishing Touch' },
+    { item: 'structured blazer', category: 'outerwear', rationale: 'Professional Polish' }
   ];
   
   for (const { item, category, rationale } of basicItems) {
-    if (!existingCategories.includes(category) && fallbacks.length < 1) {
+    if (!existingCategories.includes(category) && fallbacks.length < 2) {
       const genderPrefix = gender === 'male' ? 'mens' : 'womens';
       fallbacks.push({
         name: `${rationale}: ${item}`,

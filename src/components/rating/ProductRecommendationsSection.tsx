@@ -2,7 +2,8 @@
 import React from 'react';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { extractSimplifiedProducts } from '@/utils/product/simplifiedExtractor';
+import { parseProductSuggestionsSimplified } from '@/utils/product/simplifiedProductParser';
+import { generateAmazonSearchUrl } from '@/utils/regionDetection';
 import { useRating } from '@/context/RatingContext';
 
 interface ProductRecommendationsSectionProps {
@@ -14,10 +15,10 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
   feedback, 
   suggestions 
 }) => {
-  const { selectedGender } = useRating();
+  const { selectedGender, occasionContext } = useRating();
   
-  // Use the new simplified extraction logic
-  const productSuggestions = extractSimplifiedProducts(suggestions, selectedGender);
+  // Use the simplified parser
+  const productSuggestions = parseProductSuggestionsSimplified(suggestions, selectedGender, feedback);
 
   if (!productSuggestions || productSuggestions.length === 0) {
     return null;
@@ -30,8 +31,8 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
         Recommended Products
       </h3>
       
-      {/* Desktop: side-by-side layout for 2 products */}
-      <div className="hidden md:grid md:grid-cols-2 gap-4">
+      {/* Desktop: side-by-side layout */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4">
         {productSuggestions.map((product, index) => (
           <div 
             key={index} 
@@ -43,26 +44,27 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
               {product.context}
             </p>
-            {product.amazonUrl ? (
-              <Button 
-                asChild 
-                className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
+            <Button 
+              asChild 
+              className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
+            >
+              <a 
+                href={generateAmazonSearchUrl(
+                  product.searchTerm, 
+                  undefined, 
+                  selectedGender,
+                  occasionContext,
+                  feedback,
+                  product.category
+                )} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2"
               >
-                <a 
-                  href={product.amazonUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2"
-                >
-                  Shop on Amazon
-                  <ExternalLink size={14} />
-                </a>
-              </Button>
-            ) : (
-              <div className="text-sm text-gray-400 italic text-center py-2">
-                Product suggestion only
-              </div>
-            )}
+                Shop on Amazon
+                <ExternalLink size={14} />
+              </a>
+            </Button>
           </div>
         ))}
       </div>
@@ -80,26 +82,27 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
               {product.context}
             </p>
-            {product.amazonUrl ? (
-              <Button 
-                asChild 
-                className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
+            <Button 
+              asChild 
+              className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
+            >
+              <a 
+                href={generateAmazonSearchUrl(
+                  product.searchTerm, 
+                  undefined, 
+                  selectedGender,
+                  occasionContext,
+                  feedback,
+                  product.category
+                )} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2"
               >
-                <a 
-                  href={product.amazonUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2"
-                >
-                  Shop on Amazon
-                  <ExternalLink size={14} />
-                </a>
-              </Button>
-            ) : (
-              <div className="text-sm text-gray-400 italic text-center py-2">
-                Product suggestion only
-              </div>
-            )}
+                Shop on Amazon
+                <ExternalLink size={14} />
+              </a>
+            </Button>
           </div>
         ))}
       </div>

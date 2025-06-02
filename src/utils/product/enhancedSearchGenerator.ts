@@ -14,96 +14,65 @@ export const generateContextualSearchTerm = (
 ): string => {
   console.log('Generating contextual search term:', { baseProductTerm, context });
   
-  const { occasion, feedback, userGender, productCategory } = context;
+  const { occasion, userGender } = context;
   
-  // Start with gender-specific base
+  // Clean the base product term
+  let searchTerm = baseProductTerm
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Only add gender prefix if not already present
   const genderPrefix = userGender === 'male' ? 'mens' : 'womens';
-  let searchTerm = `${genderPrefix} ${baseProductTerm}`;
+  if (!searchTerm.includes('mens') && !searchTerm.includes('womens')) {
+    searchTerm = `${genderPrefix} ${searchTerm}`;
+  }
   
-  // Add occasion context if available
-  if (occasion && !occasion.toLowerCase().includes('neutral')) {
-    const occasionKeywords = extractOccasionKeywords(occasion);
-    if (occasionKeywords) {
+  // Only add occasion context if it's specific and relevant
+  if (occasion && !occasion.toLowerCase().includes('neutral') && !occasion.toLowerCase().includes('general')) {
+    const occasionKeywords = extractRelevantOccasionKeywords(occasion);
+    if (occasionKeywords && isOccasionRelevant(searchTerm, occasionKeywords)) {
       searchTerm = `${searchTerm} ${occasionKeywords}`;
     }
   }
   
-  // Add style context from feedback
-  if (feedback) {
-    const styleKeywords = extractStyleKeywords(feedback, productCategory);
-    if (styleKeywords) {
-      searchTerm = `${searchTerm} ${styleKeywords}`;
-    }
-  }
-  
-  // Clean up the search term
+  // Final cleanup
   searchTerm = searchTerm
     .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+    .trim();
   
   console.log('Generated contextual search term:', searchTerm);
   return searchTerm;
 };
 
-const extractOccasionKeywords = (occasion: string): string => {
+const extractRelevantOccasionKeywords = (occasion: string): string => {
   const occasionLower = occasion.toLowerCase();
   
+  // Only return keywords for very specific occasions
   if (occasionLower.includes('work') || occasionLower.includes('office') || occasionLower.includes('business')) {
-    return 'business professional office';
-  }
-  if (occasionLower.includes('date') || occasionLower.includes('dinner') || occasionLower.includes('romantic')) {
-    return 'date night elegant';
-  }
-  if (occasionLower.includes('casual') || occasionLower.includes('everyday') || occasionLower.includes('weekend')) {
-    return 'casual comfortable everyday';
-  }
-  if (occasionLower.includes('party') || occasionLower.includes('event') || occasionLower.includes('celebration')) {
-    return 'party dressy special occasion';
+    return 'office';
   }
   if (occasionLower.includes('formal') || occasionLower.includes('wedding') || occasionLower.includes('gala')) {
-    return 'formal elegant special event';
+    return 'formal';
   }
   if (occasionLower.includes('athletic') || occasionLower.includes('gym') || occasionLower.includes('workout')) {
-    return 'athletic sporty active';
+    return 'athletic';
   }
   
+  // Don't add keywords for casual, date, party contexts as they're too generic
   return '';
 };
 
-const extractStyleKeywords = (feedback: string, category: string): string => {
-  const feedbackLower = feedback.toLowerCase();
-  const keywords: string[] = [];
+const isOccasionRelevant = (searchTerm: string, occasionKeywords: string): boolean => {
+  // Only add occasion context for certain product types
+  const relevantForOffice = searchTerm.includes('shirt') || searchTerm.includes('blazer') || searchTerm.includes('pants') || searchTerm.includes('dress');
+  const relevantForFormal = searchTerm.includes('shirt') || searchTerm.includes('dress') || searchTerm.includes('suit') || searchTerm.includes('shoes');
+  const relevantForAthletic = searchTerm.includes('shoes') || searchTerm.includes('shorts') || searchTerm.includes('top');
   
-  // Color-related keywords
-  if (feedbackLower.includes('color') || feedbackLower.includes('bright') || feedbackLower.includes('vibrant')) {
-    keywords.push('colorful');
-  }
-  if (feedbackLower.includes('neutral') || feedbackLower.includes('muted')) {
-    keywords.push('neutral');
-  }
+  if (occasionKeywords === 'office' && relevantForOffice) return true;
+  if (occasionKeywords === 'formal' && relevantForFormal) return true;
+  if (occasionKeywords === 'athletic' && relevantForAthletic) return true;
   
-  // Style-related keywords
-  if (feedbackLower.includes('professional') || feedbackLower.includes('polished')) {
-    keywords.push('professional');
-  }
-  if (feedbackLower.includes('casual') || feedbackLower.includes('relaxed')) {
-    keywords.push('casual');
-  }
-  if (feedbackLower.includes('structured') || feedbackLower.includes('tailored')) {
-    keywords.push('structured');
-  }
-  if (feedbackLower.includes('comfortable') || feedbackLower.includes('soft')) {
-    keywords.push('comfortable');
-  }
-  
-  // Category-specific enhancements
-  if (category === 'tops' && feedbackLower.includes('fitted')) {
-    keywords.push('fitted');
-  }
-  if (category === 'shoes' && feedbackLower.includes('comfortable')) {
-    keywords.push('comfortable walking');
-  }
-  
-  return keywords.join(' ');
+  return false;
 };
