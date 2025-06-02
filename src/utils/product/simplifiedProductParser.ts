@@ -51,9 +51,9 @@ const generateBasicFallbacks = (gender: Gender, existingProducts: SimplifiedProd
   
   // Basic fallback items that work for most situations
   const basicItems = [
-    { item: 'white sneakers', category: 'shoes', rationale: 'Versatile Foundation' },
-    { item: 'classic watch', category: 'accessories', rationale: 'Timeless Accent' },
-    { item: 'structured blazer', category: 'outerwear', rationale: 'Instant Polish' }
+    { item: 'white sneakers', category: 'footwear', rationale: 'Foundation Upgrade' },
+    { item: 'classic watch', category: 'accessories', rationale: 'Finishing Touch' },
+    { item: 'structured blazer', category: 'outerwear', rationale: 'Professional Polish' }
   ];
   
   for (const { item, category, rationale } of basicItems) {
