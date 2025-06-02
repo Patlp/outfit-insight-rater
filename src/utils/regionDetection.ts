@@ -1,5 +1,6 @@
 
-import { Gender } from '@/context/RatingContext';
+import { Gender, OccasionContext } from '@/context/RatingContext';
+import { generateContextualSearchTerm } from './product/enhancedSearchGenerator';
 
 export interface AmazonRegionConfig {
   domain: string;
@@ -41,16 +42,27 @@ export const detectUserRegion = (): AmazonRegionConfig => {
 export const generateAmazonSearchUrl = (
   productName: string, 
   region?: AmazonRegionConfig, 
-  gender?: Gender
+  gender?: Gender,
+  occasionContext?: OccasionContext | null,
+  feedback?: string,
+  category?: string
 ): string => {
   const selectedRegion = region || detectUserRegion();
   
-  // Create enhanced search terms with gender targeting if provided
   let searchTerms = productName;
-  if (gender) {
-    // The productName should already include gender from TextProcessor, but ensure it's there
+  
+  // Use enhanced search generation if we have enough context
+  if (gender && category) {
+    searchTerms = generateContextualSearchTerm(productName, {
+      occasion: occasionContext?.eventContext || undefined,
+      feedback: feedback,
+      userGender: gender,
+      productCategory: category
+    });
+  } else if (gender) {
+    // Fallback to simple gender targeting
+    const genderPrefix = gender === 'male' ? 'mens' : 'womens';
     if (!searchTerms.toLowerCase().includes('mens') && !searchTerms.toLowerCase().includes('womens')) {
-      const genderPrefix = gender === 'male' ? 'mens' : 'womens';
       searchTerms = `${genderPrefix} ${searchTerms}`;
     }
   }
@@ -61,6 +73,8 @@ export const generateAmazonSearchUrl = (
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/\s/g, '+');
+  
+  console.log('Final Amazon search URL:', `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}`);
   
   return `https://www.${selectedRegion.domain}/s?k=${encodeURIComponent(cleanedTerms)}&tag=${selectedRegion.affiliateTag}&ref=sr_pg_1`;
 };

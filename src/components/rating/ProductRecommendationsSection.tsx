@@ -2,7 +2,7 @@
 import React from 'react';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { parseProductSuggestions } from '@/utils/product/productSuggestionParserV2';
+import { parseProductSuggestionsSimplified } from '@/utils/product/simplifiedProductParser';
 import { generateAmazonSearchUrl } from '@/utils/regionDetection';
 import { useRating } from '@/context/RatingContext';
 
@@ -15,17 +15,14 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
   feedback, 
   suggestions 
 }) => {
-  const { selectedGender } = useRating();
-  const productSuggestions = parseProductSuggestions(suggestions, selectedGender);
+  const { selectedGender, occasionContext } = useRating();
+  
+  // Use the simplified parser
+  const productSuggestions = parseProductSuggestionsSimplified(suggestions, selectedGender, feedback);
 
   if (!productSuggestions || productSuggestions.length === 0) {
     return null;
   }
-
-  const generateRecommendationExplanation = (product: any): string => {
-    // Use the context that's already provided in the product object
-    return product.context || "This piece will complement your personal style perfectly and help elevate your overall appearance.";
-  };
 
   return (
     <div className="mb-6">
@@ -45,14 +42,21 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
               {product.name}
             </h4>
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              {generateRecommendationExplanation(product)}
+              {product.context}
             </p>
             <Button 
               asChild 
               className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
             >
               <a 
-                href={generateAmazonSearchUrl(product.searchTerm, undefined, selectedGender)} 
+                href={generateAmazonSearchUrl(
+                  product.searchTerm, 
+                  undefined, 
+                  selectedGender,
+                  occasionContext,
+                  feedback,
+                  product.category
+                )} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2"
@@ -76,14 +80,21 @@ const ProductRecommendationsSection: React.FC<ProductRecommendationsSectionProps
               {product.name}
             </h4>
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              {generateRecommendationExplanation(product)}
+              {product.context}
             </p>
             <Button 
               asChild 
               className="w-full bg-fashion-500 hover:bg-fashion-600 text-white font-medium"
             >
               <a 
-                href={generateAmazonSearchUrl(product.searchTerm, undefined, selectedGender)} 
+                href={generateAmazonSearchUrl(
+                  product.searchTerm, 
+                  undefined, 
+                  selectedGender,
+                  occasionContext,
+                  feedback,
+                  product.category
+                )} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2"
