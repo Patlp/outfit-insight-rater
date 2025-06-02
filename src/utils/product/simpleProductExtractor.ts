@@ -43,8 +43,9 @@ export const extractProductsFromSuggestions = (
         const rationale = generateRationale(suggestion, attributes.clothingType);
         
         // Extract context from the suggestion
-        const context = extractContextFromSuggestion(suggestion, attributes.clothingType);
+        const context = extractContextFromSuggestion(suggestion, attributes.fullPhrase || attributes.clothingType);
         
+        // Use the full fashion phrase in the product name
         const product: SimpleExtractedProduct = {
           name: `${rationale}: ${cleanProductName}`,
           context: context,
@@ -54,6 +55,7 @@ export const extractProductsFromSuggestions = (
         };
         
         console.log('Adding product:', product);
+        console.log('Full phrase used:', attributes.fullPhrase);
         products.push(product);
       }
     }
