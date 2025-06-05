@@ -16,7 +16,8 @@ import {
   Target,
   Layers,
   Palette,
-  Shirt
+  Shirt,
+  Play
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,6 +82,10 @@ const AcademicProcessingPanel: React.FC = () => {
       setProcessingProgress(0);
       setProcessingResult(null);
 
+      toast.info('Starting academic paper processing...', {
+        description: 'This will extract fashion knowledge from all pending papers.'
+      });
+
       // Get all pending papers
       const { data: papers, error } = await supabase
         .from('academic_papers')
@@ -93,22 +98,41 @@ const AcademicProcessingPanel: React.FC = () => {
 
       if (!papers || papers.length === 0) {
         toast.info('No pending papers found for processing');
+        setIsProcessing(false);
         return;
       }
 
-      toast.info(`Starting processing of ${papers.length} academic papers...`);
-      setProcessingProgress(10);
-
       const paperIds = papers.map(p => p.id);
+      console.log(`Processing ${paperIds.length} academic papers...`);
+      
+      // Start with some initial progress
+      setProcessingProgress(5);
+
+      // Process papers and update progress incrementally
+      const progressInterval = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev < 90) {
+            return prev + Math.random() * 10;
+          }
+          return prev;
+        });
+      }, 1000);
+
       const result = await processBulkAcademicPapers(paperIds);
 
+      // Clear the interval and set final progress
+      clearInterval(progressInterval);
       setProcessingProgress(100);
       setProcessingResult(result);
 
       if (result.success) {
-        toast.success(`Successfully processed ${result.processedCount} papers and extracted ${result.extractedData.terminology + result.extractedData.principles} knowledge items!`);
+        toast.success(`Successfully processed ${result.processedCount} papers!`, {
+          description: `Extracted ${result.extractedData.terminology + result.extractedData.principles + result.extractedData.materials} knowledge items.`
+        });
       } else {
-        toast.error(`Processing completed with ${result.errors.length} errors`);
+        toast.error(`Processing completed with ${result.errors.length} errors`, {
+          description: 'Check the detailed results below for more information.'
+        });
       }
 
       // Reload stats and counts
@@ -191,7 +215,7 @@ const AcademicProcessingPanel: React.FC = () => {
             <Button 
               onClick={handleProcessPendingPapers}
               disabled={isProcessing || pendingPapers === 0}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
             >
               {isProcessing ? (
                 <>
@@ -200,7 +224,7 @@ const AcademicProcessingPanel: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Brain size={16} />
+                  <Play size={16} />
                   Process {pendingPapers} Papers
                 </>
               )}
@@ -211,9 +235,12 @@ const AcademicProcessingPanel: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Processing Progress</span>
-                <span>{processingProgress}%</span>
+                <span>{Math.round(processingProgress)}%</span>
               </div>
               <Progress value={processingProgress} className="w-full" />
+              <p className="text-xs text-gray-500">
+                Extracting fashion terminology, styling principles, and material properties...
+              </p>
             </div>
           )}
         </div>
@@ -244,12 +271,12 @@ const AcademicProcessingPanel: React.FC = () => {
                         <span>{processingResult.extractedData.principles} Principles</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Shirt className="text-purple-500" size={14} />
-                        <span>{processingResult.extractedData.categories} Categories</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
                         <Palette className="text-orange-500" size={14} />
                         <span>{processingResult.extractedData.materials} Materials</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <BookOpen className="text-purple-500" size={14} />
+                        <span>{processingResult.processedCount} Papers</span>
                       </div>
                     </div>
                   )}
@@ -258,9 +285,12 @@ const AcademicProcessingPanel: React.FC = () => {
                     <details className="text-sm mt-2">
                       <summary className="cursor-pointer">View Errors ({processingResult.errors.length})</summary>
                       <ul className="list-disc list-inside mt-1 space-y-1 text-red-600">
-                        {processingResult.errors.map((error, index) => (
+                        {processingResult.errors.slice(0, 10).map((error, index) => (
                           <li key={index}>{error}</li>
                         ))}
+                        {processingResult.errors.length > 10 && (
+                          <li>... and {processingResult.errors.length - 10} more errors</li>
+                        )}
                       </ul>
                     </details>
                   )}
