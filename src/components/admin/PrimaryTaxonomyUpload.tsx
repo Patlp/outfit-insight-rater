@@ -168,7 +168,7 @@ const PrimaryTaxonomyUpload: React.FC = () => {
               disabled={isUploading}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Expected fields: item_name, category, style_descriptors, common_materials, etc.
+              Supports CSV, JSON, and TXT formats. Expected fields: item_name, category, style_descriptors, common_materials, etc.
             </p>
           </div>
 
@@ -227,9 +227,10 @@ const PrimaryTaxonomyUpload: React.FC = () => {
           <p><strong>Expected CSV Format:</strong></p>
           <p>• item_name (required): Name of the clothing item</p>
           <p>• category (required): Main category (shirt, pants, etc.)</p>
-          <p>• style_descriptors: Comma-separated style descriptors</p>
-          <p>• common_materials: Comma-separated materials</p>
-          <p>• seasonal_tags, gender_association, etc.: Additional attributes</p>
+          <p>• style_descriptors: Pipe-separated style descriptors (fitted|oversized|casual)</p>
+          <p>• common_materials: Pipe-separated materials (cotton|polyester|silk)</p>
+          <p>• seasonal_tags, gender_association, etc.: Additional attributes (pipe-separated)</p>
+          <p><strong>Note:</strong> Use pipe (|) or semicolon (;) to separate multiple values in array fields</p>
         </div>
       </CardContent>
     </Card>
