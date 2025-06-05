@@ -24,9 +24,17 @@ export const saveOutfitToWardrobe = async (
   feedbackMode: string = 'normal'
 ): Promise<{ data: WardrobeItem | null; error: any }> => {
   try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return { data: null, error: { message: 'User not authenticated' } };
+    }
+
     const { data, error } = await supabase
       .from('wardrobe_items')
       .insert({
+        user_id: user.id,
         image_url: imageUrl,
         rating_score: ratingResult.score,
         feedback: ratingResult.feedback,

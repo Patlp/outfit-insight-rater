@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useState } from 'react';
 
 export type Gender = 'male' | 'female' | 'neutral';
+export type FeedbackMode = 'normal' | 'roast';
 
 export interface RatingResult {
   score: number;
@@ -11,6 +13,7 @@ export interface RatingResult {
 export interface OccasionContext {
   eventContext: string | null;
   weatherContext: string | null;
+  isNeutral?: boolean;
 }
 
 interface RatingContextType {
@@ -24,6 +27,25 @@ interface RatingContextType {
   setIsRoastMode: (isRoast: boolean) => void;
   uploadedImage: string | null;
   setUploadedImage: (imageUrl: string | null) => void;
+  // Image upload properties
+  imageFile: File | null;
+  setImageFile: (file: File | null) => void;
+  imageSrc: string | null;
+  setImageSrc: (src: string | null) => void;
+  // UI state properties
+  currentStep: 'upload' | 'analyze';
+  setCurrentStep: (step: 'upload' | 'analyze') => void;
+  isAnalyzing: boolean;
+  setIsAnalyzing: (analyzing: boolean) => void;
+  // Roast mode properties
+  feedbackMode: FeedbackMode;
+  setFeedbackMode: (mode: FeedbackMode) => void;
+  hasUnlockedRoastMode: boolean;
+  setHasUnlockedRoastMode: (unlocked: boolean) => void;
+  showInviteWall: boolean;
+  setShowInviteWall: (show: boolean) => void;
+  // Reset function
+  resetState: () => void;
 }
 
 const RatingContext = createContext<RatingContextType | undefined>(undefined);
@@ -42,6 +64,29 @@ export const RatingProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [occasionContext, setOccasionContext] = useState<OccasionContext | null>(null);
   const [isRoastMode, setIsRoastMode] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  
+  // UI state
+  const [currentStep, setCurrentStep] = useState<'upload' | 'analyze'>('upload');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Roast mode state
+  const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>('normal');
+  const [hasUnlockedRoastMode, setHasUnlockedRoastMode] = useState(false);
+  const [showInviteWall, setShowInviteWall] = useState(false);
+
+  const resetState = () => {
+    setImageFile(null);
+    setImageSrc(null);
+    setCurrentStep('upload');
+    setIsAnalyzing(false);
+    setRatingResult(null);
+    setUploadedImage(null);
+    setOccasionContext(null);
+  };
 
   const value = {
     ratingResult,
@@ -54,6 +99,21 @@ export const RatingProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsRoastMode,
     uploadedImage,
     setUploadedImage,
+    imageFile,
+    setImageFile,
+    imageSrc,
+    setImageSrc,
+    currentStep,
+    setCurrentStep,
+    isAnalyzing,
+    setIsAnalyzing,
+    feedbackMode,
+    setFeedbackMode,
+    hasUnlockedRoastMode,
+    setHasUnlockedRoastMode,
+    showInviteWall,
+    setShowInviteWall,
+    resetState,
   };
 
   return <RatingContext.Provider value={value}>{children}</RatingContext.Provider>;
