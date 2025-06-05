@@ -48,40 +48,22 @@ serve(async (req) => {
     // Combine feedback and suggestions for analysis
     const fullText = [feedback, ...suggestions].join(' ')
 
-    // Create the prompt for OpenAI
-    const prompt = `
-Analyze the following fashion feedback and extract clothing items with their descriptive phrases. 
-Return a JSON array of clothing items, each with name, descriptors, category, and confidence score.
+    // New improved prompt for clean clothing phrase extraction
+    const prompt = `You are a clothing item extractor. Given a paragraph describing an outfit, extract a list of physical clothing items mentioned. Format each item as a short phrase with one or two adjectives followed by a noun (e.g. "yellow graphic tee").
 
-Categories should be one of: tops, bottoms, dresses, footwear, accessories, outerwear, other
+Rules:
+• Each item must describe an actual clothing or accessory item.
+• Format: "[adjective] [clothing noun]" or "[adjective] [adjective] [clothing noun]"
+• DO NOT include:
+  • Phrases with verbs (e.g. "layering", "balancing", "featuring")
+  • Commentary (e.g. "mix of casual elements")
+  • Words like "with", "and", "style", or "elements"
+• Limit output to 3–6 items only.
+• Return result as a clean JSON array of strings.
 
 Text to analyze: "${fullText}"
 
-Example response format:
-[
-  {
-    "name": "graphic tee",
-    "descriptors": ["graphic", "casual", "fitted"],
-    "category": "tops",
-    "confidence": 0.9
-  },
-  {
-    "name": "dark jeans",
-    "descriptors": ["dark", "denim", "slim-fit"],
-    "category": "bottoms", 
-    "confidence": 0.85
-  }
-]
-
-Focus on:
-- Actual clothing items mentioned (not just colors or styles alone)
-- Include descriptive adjectives that add meaning
-- Assign appropriate categories
-- Provide confidence scores (0-1) based on how clearly the item is described
-- Limit to 6 most relevant items
-- Only include items with confidence > 0.7
-
-Return only the JSON array, no additional text.`
+Return only a JSON array of clothing item phrases, no additional text.`
 
     // Call OpenAI API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -95,15 +77,15 @@ Return only the JSON array, no additional text.`
         messages: [
           {
             role: 'system',
-            content: 'You are a fashion expert that extracts clothing items and their descriptors from text. Always respond with valid JSON only.'
+            content: 'You are a clothing item extractor that returns clean JSON arrays of clothing phrases. Always respond with valid JSON only.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 800,
-        temperature: 0.3
+        max_tokens: 400,
+        temperature: 0.2
       })
     })
 
@@ -121,26 +103,71 @@ Return only the JSON array, no additional text.`
     }
 
     // Parse the JSON response
-    let clothingItems: ClothingItem[]
+    let rawClothingPhrases: string[]
     try {
-      clothingItems = JSON.parse(extractedText)
+      rawClothingPhrases = JSON.parse(extractedText)
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', extractedText)
       throw new Error('Invalid JSON response from OpenAI')
     }
 
-    // Validate and filter results
-    const validItems = clothingItems
-      .filter(item => 
-        item.name && 
-        item.category && 
-        Array.isArray(item.descriptors) &&
-        typeof item.confidence === 'number' &&
-        item.confidence > 0.7
-      )
-      .slice(0, 6) // Limit to 6 items
+    // Post-filter logic to ensure clean phrases
+    const clothingNounWhitelist = [
+      "tee", "shirt", "skirt", "pants", "jeans", "jacket", "coat",
+      "socks", "shoes", "sneakers", "boots", "hoodie", "sweater",
+      "blazer", "beanie", "hat", "shorts", "top", "turtleneck",
+      "dress", "cardigan", "vest", "flannel", "polo", "tank"
+    ];
 
-    console.log(`Extracted ${validItems.length} clothing items for wardrobe item ${wardrobeItemId}`)
+    const bannedWords = ["with", "and", "style", "elements", "layering", "balancing", "mix", "featuring"];
+
+    const cleanedPhrases = rawClothingPhrases
+      .filter(phrase => {
+        if (!phrase || typeof phrase !== 'string') return false;
+        
+        const lowerPhrase = phrase.toLowerCase().trim();
+        
+        // Remove phrases with banned words
+        if (bannedWords.some(word => lowerPhrase.includes(word))) return false;
+        
+        // Remove phrases with more than 4 words
+        if (lowerPhrase.split(' ').length > 4) return false;
+        
+        // Check if last word is a valid clothing noun
+        const words = lowerPhrase.split(' ');
+        const lastWord = words[words.length - 1];
+        if (!clothingNounWhitelist.includes(lastWord)) return false;
+        
+        return true;
+      })
+      .slice(0, 6); // Limit to 6 items max
+
+    // Convert cleaned phrases to the expected ClothingItem format
+    const validItems: ClothingItem[] = cleanedPhrases.map(phrase => {
+      const words = phrase.toLowerCase().split(' ');
+      const clothingNoun = words[words.length - 1];
+      const descriptors = words.slice(0, -1);
+      
+      // Determine category based on clothing noun
+      const getCategory = (noun: string): string => {
+        if (['tee', 'shirt', 'hoodie', 'sweater', 'blazer', 'top', 'tank', 'polo', 'flannel', 'cardigan', 'vest'].includes(noun)) return 'tops';
+        if (['skirt', 'pants', 'jeans', 'shorts'].includes(noun)) return 'bottoms';
+        if (['dress'].includes(noun)) return 'dresses';
+        if (['shoes', 'sneakers', 'boots'].includes(noun)) return 'footwear';
+        if (['jacket', 'coat'].includes(noun)) return 'outerwear';
+        if (['socks', 'beanie', 'hat'].includes(noun)) return 'accessories';
+        return 'other';
+      };
+
+      return {
+        name: phrase,
+        descriptors: descriptors,
+        category: getCategory(clothingNoun),
+        confidence: 0.85 // High confidence since we've filtered thoroughly
+      };
+    });
+
+    console.log(`Extracted ${validItems.length} clean clothing items for wardrobe item ${wardrobeItemId}`);
 
     // Update the wardrobe item with extracted clothing phrases
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
