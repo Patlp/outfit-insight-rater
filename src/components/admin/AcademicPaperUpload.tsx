@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle, BookOpen, Info, Upload } from 'lucide-react';
+import { CheckCircle, AlertCircle, BookOpen, Info, Upload, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 import { insertAcademicPaper, getAcademicPapersCount, type AcademicPaper } from '@/services/academicPaperService';
+import UploadProgressDisplay from './UploadProgressDisplay';
 
 interface UploadResult {
   success: boolean;
@@ -221,6 +221,7 @@ const AcademicPaperUpload: React.FC = () => {
           <AlertDescription className="text-sm">
             Upload PDF academic papers about fashion to improve AI categorization and insights. 
             You can select multiple files for bulk upload. Paper titles will be automatically extracted from filenames.
+            After uploading, use the Academic Processing panel to extract fashion knowledge.
           </AlertDescription>
         </Alert>
 
@@ -280,15 +281,7 @@ const AcademicPaperUpload: React.FC = () => {
           )}
         </Button>
 
-        {isUploading && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Upload Progress</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <Progress value={uploadProgress} className="w-full" />
-          </div>
-        )}
+        <UploadProgressDisplay isUploading={isUploading} uploadProgress={uploadProgress} />
 
         {uploadResult && (
           <Alert className={uploadResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
@@ -311,6 +304,12 @@ const AcademicPaperUpload: React.FC = () => {
                       {uploadResult.errors && uploadResult.errors > 0 && (
                         <p>• Errors: {uploadResult.errors} files</p>
                       )}
+                      <div className="flex items-center gap-2 mt-2 p-2 bg-blue-50 rounded">
+                        <Brain className="text-blue-500" size={14} />
+                        <span className="text-xs text-blue-700">
+                          Next: Process papers to extract fashion knowledge using the Academic Processing panel
+                        </span>
+                      </div>
                     </div>
                   )}
                   {uploadResult.errorDetails && uploadResult.errorDetails.length > 0 && (

@@ -9,6 +9,88 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      academic_integration_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_details: string | null
+          id: string
+          paper_id: string | null
+          process_type: string
+          processing_time_ms: number | null
+          results: Json | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_details?: string | null
+          id?: string
+          paper_id?: string | null
+          process_type: string
+          processing_time_ms?: number | null
+          results?: Json | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_details?: string | null
+          id?: string
+          paper_id?: string | null
+          process_type?: string
+          processing_time_ms?: number | null
+          results?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_integration_log_paper_id_fkey"
+            columns: ["paper_id"]
+            isOneToOne: false
+            referencedRelation: "academic_papers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      academic_paper_content: {
+        Row: {
+          confidence_score: number | null
+          content_type: string
+          created_at: string
+          extracted_text: string
+          id: string
+          paper_id: string | null
+          processing_metadata: Json | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          content_type: string
+          created_at?: string
+          extracted_text: string
+          id?: string
+          paper_id?: string | null
+          processing_metadata?: Json | null
+        }
+        Update: {
+          confidence_score?: number | null
+          content_type?: string
+          created_at?: string
+          extracted_text?: string
+          id?: string
+          paper_id?: string | null
+          processing_metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_paper_content_paper_id_fkey"
+            columns: ["paper_id"]
+            isOneToOne: false
+            referencedRelation: "academic_papers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       academic_papers: {
         Row: {
           abstract: string | null
@@ -60,6 +142,51 @@ export type Database = {
         }
         Relationships: []
       }
+      academic_tagging_rules: {
+        Row: {
+          academic_rationale: string | null
+          actions: Json
+          conditions: Json
+          confidence_threshold: number | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          source_papers: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          academic_rationale?: string | null
+          actions: Json
+          conditions: Json
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          source_papers?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          academic_rationale?: string | null
+          actions?: Json
+          conditions?: Json
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          source_papers?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_records: {
         Row: {
           created_at: string
@@ -78,6 +205,57 @@ export type Database = {
           email?: string
           id?: string
           source?: string
+        }
+        Relationships: []
+      }
+      enhanced_clothing_categories: {
+        Row: {
+          academic_definition: string | null
+          category_name: string
+          color_associations: string[] | null
+          common_materials: string[] | null
+          confidence_score: number | null
+          created_at: string
+          fit_characteristics: Json | null
+          id: string
+          parent_category: string | null
+          source_papers: string[] | null
+          styling_contexts: string[] | null
+          subcategories: string[] | null
+          typical_descriptors: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          academic_definition?: string | null
+          category_name: string
+          color_associations?: string[] | null
+          common_materials?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          fit_characteristics?: Json | null
+          id?: string
+          parent_category?: string | null
+          source_papers?: string[] | null
+          styling_contexts?: string[] | null
+          subcategories?: string[] | null
+          typical_descriptors?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          academic_definition?: string | null
+          category_name?: string
+          color_associations?: string[] | null
+          common_materials?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          fit_characteristics?: Json | null
+          id?: string
+          parent_category?: string | null
+          source_papers?: string[] | null
+          styling_contexts?: string[] | null
+          subcategories?: string[] | null
+          typical_descriptors?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -171,6 +349,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fashion_material_properties: {
+        Row: {
+          academic_classification: string | null
+          care_instructions: string[] | null
+          confidence_score: number | null
+          created_at: string
+          id: string
+          material_name: string
+          material_type: string | null
+          properties: Json | null
+          seasonal_appropriateness: string[] | null
+          source_papers: string[] | null
+          typical_uses: string[] | null
+        }
+        Insert: {
+          academic_classification?: string | null
+          care_instructions?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          material_name: string
+          material_type?: string | null
+          properties?: Json | null
+          seasonal_appropriateness?: string[] | null
+          source_papers?: string[] | null
+          typical_uses?: string[] | null
+        }
+        Update: {
+          academic_classification?: string | null
+          care_instructions?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          material_name?: string
+          material_type?: string | null
+          properties?: Json | null
+          seasonal_appropriateness?: string[] | null
+          source_papers?: string[] | null
+          typical_uses?: string[] | null
+        }
+        Relationships: []
+      }
+      fashion_styling_principles: {
+        Row: {
+          academic_evidence: string | null
+          applicable_items: string[] | null
+          category: string
+          confidence_score: number | null
+          created_at: string
+          description: string
+          id: string
+          practical_applications: Json | null
+          principle_name: string
+          source_papers: string[] | null
+        }
+        Insert: {
+          academic_evidence?: string | null
+          applicable_items?: string[] | null
+          category: string
+          confidence_score?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          practical_applications?: Json | null
+          principle_name: string
+          source_papers?: string[] | null
+        }
+        Update: {
+          academic_evidence?: string | null
+          applicable_items?: string[] | null
+          category?: string
+          confidence_score?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          practical_applications?: Json | null
+          principle_name?: string
+          source_papers?: string[] | null
+        }
+        Relationships: []
+      }
+      fashion_terminology: {
+        Row: {
+          academic_references: string[] | null
+          category: string
+          confidence_score: number | null
+          created_at: string
+          definition: string | null
+          id: string
+          related_terms: string[] | null
+          source_papers: string[] | null
+          synonyms: string[] | null
+          term: string
+          updated_at: string
+          usage_context: string | null
+        }
+        Insert: {
+          academic_references?: string[] | null
+          category: string
+          confidence_score?: number | null
+          created_at?: string
+          definition?: string | null
+          id?: string
+          related_terms?: string[] | null
+          source_papers?: string[] | null
+          synonyms?: string[] | null
+          term: string
+          updated_at?: string
+          usage_context?: string | null
+        }
+        Update: {
+          academic_references?: string[] | null
+          category?: string
+          confidence_score?: number | null
+          created_at?: string
+          definition?: string | null
+          id?: string
+          related_terms?: string[] | null
+          source_papers?: string[] | null
+          synonyms?: string[] | null
+          term?: string
+          updated_at?: string
+          usage_context?: string | null
+        }
+        Relationships: []
       }
       fashion_whitelist: {
         Row: {
