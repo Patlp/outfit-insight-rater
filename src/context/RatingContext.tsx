@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Gender = 'male' | 'female' | 'neutral';
 export type FeedbackMode = 'normal' | 'roast';
@@ -58,26 +58,98 @@ export const useRating = () => {
   return context;
 };
 
+// LocalStorage keys for persistence
+const STORAGE_KEYS = {
+  RATING_RESULT: 'ratemyfit_rating_result',
+  UPLOADED_IMAGE: 'ratemyfit_uploaded_image',
+  SELECTED_GENDER: 'ratemyfit_selected_gender',
+  OCCASION_CONTEXT: 'ratemyfit_occasion_context',
+  FEEDBACK_MODE: 'ratemyfit_feedback_mode'
+};
+
+// Helper functions for localStorage operations
+const saveToStorage = (key: string, value: any) => {
+  try {
+    if (value === null || value === undefined) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch (error) {
+    console.warn('Failed to save to localStorage:', error);
+  }
+};
+
+const loadFromStorage = (key: string) => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  } catch (error) {
+    console.warn('Failed to load from localStorage:', error);
+    return null;
+  }
+};
+
+const clearPersistedData = () => {
+  Object.values(STORAGE_KEYS).forEach(key => {
+    localStorage.removeItem(key);
+  });
+};
+
 export const RatingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ratingResult, setRatingResult] = useState<RatingResult | null>(null);
-  const [selectedGender, setSelectedGender] = useState<Gender>('female');
-  const [occasionContext, setOccasionContext] = useState<OccasionContext | null>(null);
-  const [isRoastMode, setIsRoastMode] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // Initialize state from localStorage or defaults
+  const [ratingResult, setRatingResultState] = useState<RatingResult | null>(() => 
+    loadFromStorage(STORAGE_KEYS.RATING_RESULT)
+  );
+  const [selectedGender, setSelectedGenderState] = useState<Gender>(() => 
+    loadFromStorage(STORAGE_KEYS.SELECTED_GENDER) || 'female'
+  );
+  const [occasionContext, setOccasionContextState] = useState<OccasionContext | null>(() => 
+    loadFromStorage(STORAGE_KEYS.OCCASION_CONTEXT)
+  );
+  const [uploadedImage, setUploadedImageState] = useState<string | null>(() => 
+    loadFromStorage(STORAGE_KEYS.UPLOADED_IMAGE)
+  );
+  const [feedbackMode, setFeedbackModeState] = useState<FeedbackMode>(() => 
+    loadFromStorage(STORAGE_KEYS.FEEDBACK_MODE) || 'normal'
+  );
   
-  // Image upload state
+  // Non-persisted state
+  const [isRoastMode, setIsRoastMode] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
-  
-  // UI state
   const [currentStep, setCurrentStep] = useState<'upload' | 'analyze'>('upload');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
-  // Roast mode state
-  const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>('normal');
   const [hasUnlockedRoastMode, setHasUnlockedRoastMode] = useState(false);
   const [showInviteWall, setShowInviteWall] = useState(false);
 
+  // Wrapper functions that persist to localStorage
+  const setRatingResult = (result: RatingResult | null) => {
+    setRatingResultState(result);
+    saveToStorage(STORAGE_KEYS.RATING_RESULT, result);
+  };
+
+  const setSelectedGender = (gender: Gender) => {
+    setSelectedGenderState(gender);
+    saveToStorage(STORAGE_KEYS.SELECTED_GENDER, gender);
+  };
+
+  const setOccasionContext = (context: OccasionContext | null) => {
+    setOccasionContextState(context);
+    saveToStorage(STORAGE_KEYS.OCCASION_CONTEXT, context);
+  };
+
+  const setUploadedImage = (imageUrl: string | null) => {
+    setUploadedImageState(imageUrl);
+    saveToStorage(STORAGE_KEYS.UPLOADED_IMAGE, imageUrl);
+  };
+
+  const setFeedbackMode = (mode: FeedbackMode) => {
+    setFeedbackModeState(mode);
+    saveToStorage(STORAGE_KEYS.FEEDBACK_MODE, mode);
+  };
+
+  // Reset function that clears both state and localStorage
   const resetState = () => {
     setImageFile(null);
     setImageSrc(null);
@@ -86,7 +158,18 @@ export const RatingProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setRatingResult(null);
     setUploadedImage(null);
     setOccasionContext(null);
+    
+    // Clear persisted data
+    clearPersistedData();
   };
+
+  // Effect to restore imageSrc and currentStep from uploadedImage on mount
+  useEffect(() => {
+    if (uploadedImage && !imageSrc) {
+      setImageSrc(uploadedImage);
+      setCurrentStep('analyze');
+    }
+  }, [uploadedImage, imageSrc]);
 
   const value = {
     ratingResult,

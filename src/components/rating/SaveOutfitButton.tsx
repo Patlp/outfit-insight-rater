@@ -16,10 +16,13 @@ interface SaveOutfitButtonProps {
 const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { ratingResult, selectedGender, occasionContext, isRoastMode } = useRating();
+  const { ratingResult, selectedGender, occasionContext, feedbackMode, uploadedImage } = useRating();
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Use uploadedImage from context if imageUrl prop is not provided
+  const finalImageUrl = imageUrl || uploadedImage;
 
   const handleSaveOutfit = async () => {
     if (!user) {
@@ -27,7 +30,8 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
       return;
     }
 
-    if (!ratingResult || !imageUrl) {
+    if (!ratingResult || !finalImageUrl) {
+      console.log('Missing data for save:', { ratingResult, finalImageUrl });
       toast.error('No outfit data to save');
       return;
     }
@@ -36,11 +40,11 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
 
     try {
       const { data, error } = await saveOutfitToWardrobe(
-        imageUrl,
+        finalImageUrl,
         ratingResult,
         selectedGender,
         occasionContext?.eventContext,
-        isRoastMode ? 'roast' : 'normal'
+        feedbackMode
       );
 
       if (error) {
@@ -64,10 +68,11 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
-    // Try to save again after successful authentication
+    // After successful authentication, attempt to save again
+    // The data should still be available from localStorage via context
     setTimeout(() => {
       handleSaveOutfit();
-    }, 100);
+    }, 500); // Small delay to ensure auth state is updated
   };
 
   const handleViewWardrobe = () => {
