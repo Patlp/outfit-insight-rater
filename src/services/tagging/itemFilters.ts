@@ -3,13 +3,14 @@ import { AIClothingItem } from '@/services/clothingExtractionService';
 import { categorizeClothingItem } from '@/utils/clothingExtractor';
 
 export const filterIndividualClothingItems = (items: AIClothingItem[]): AIClothingItem[] => {
-  console.log('=== FILTERING FOR INDIVIDUAL CLOTHING ITEMS (3 WORDS MAX) ===');
+  console.log('=== FILTERING WITH 90% CONFIDENCE THRESHOLD ===');
   
   const filteredItems: AIClothingItem[] = [];
   
   // Words that indicate combinations or styling rather than individual items
   const combinationWords = ['and', 'with', 'of', 'pairing', 'combination', 'choice', 'providing', 'against', 'complements', 'ensemble'];
   const invalidPhrases = ['pairing of', 'choice of', 'with', 'providing', 'contrast against', 'complements', 'tones of'];
+  const forbiddenWords = ['of', 'with', 'and', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'from', 'by', 'against'];
   
   // Valid single clothing items from our whitelist structure
   const validClothingNouns = [
@@ -23,10 +24,26 @@ export const filterIndividualClothingItems = (items: AIClothingItem[]): AIClothi
   for (const item of items) {
     const itemName = item.name.toLowerCase();
     const wordCount = item.name.trim().split(/\s+/).length;
+    const confidence = item.confidence || 0;
     
-    // Reject if more than 3 words
-    if (wordCount > 3) {
-      console.log(`❌ Rejecting (too many words): "${item.name}" (${wordCount} words)`);
+    // STRICT: Reject if confidence is below 90%
+    if (confidence < 0.9) {
+      console.log(`❌ Rejecting low confidence: "${item.name}" (${Math.round(confidence * 100)}% < 90%)`);
+      continue;
+    }
+    
+    // Reject if more than 2 words (should be descriptor + item only)
+    if (wordCount > 2) {
+      console.log(`❌ Rejecting (too many words): "${item.name}" (${wordCount} words, max 2)`);
+      continue;
+    }
+    
+    // Check for forbidden words (prepositions, etc.)
+    const containsForbiddenWords = forbiddenWords.some(forbidden => 
+      itemName.split(' ').includes(forbidden)
+    );
+    if (containsForbiddenWords) {
+      console.log(`❌ Rejecting forbidden words: "${item.name}"`);
       continue;
     }
     
@@ -57,12 +74,12 @@ export const filterIndividualClothingItems = (items: AIClothingItem[]): AIClothi
     // Clean and validate the item
     const cleanedItem = cleanAndValidateItem(item, validClothingNouns);
     if (cleanedItem) {
-      console.log(`✅ Accepting individual item: "${cleanedItem.name}" (${cleanedItem.name.split(' ').length} words)`);
+      console.log(`✅ Accepting high-confidence item: "${cleanedItem.name}" (${Math.round(cleanedItem.confidence * 100)}%, ${cleanedItem.name.split(' ').length} words)`);
       filteredItems.push(cleanedItem);
     }
   }
   
-  console.log(`Filtered ${items.length} items down to ${filteredItems.length} valid individual clothing items`);
+  console.log(`Filtered ${items.length} items down to ${filteredItems.length} high-confidence individual clothing items (≥90%)`);
   return filteredItems;
 };
 
@@ -73,13 +90,21 @@ export const cleanAndValidateItem = (item: AIClothingItem, validNouns: string[])
   cleanName = cleanName.replace(/^(the|a|an)\s+/i, '');
   cleanName = cleanName.replace(/\b(pairing|choice|providing|contrast|complements|tones)\s*(of\s*)?/gi, '');
   
+  // Remove any remaining prepositions
+  cleanName = cleanName.replace(/\b(of|with|and|in|on|at|to|for|from|by|against)\b/gi, '');
+  
   // Clean up spacing and capitalization
   cleanName = cleanName.replace(/\s+/g, ' ').trim();
   
   // Check word count after cleaning
-  const words = cleanName.split(' ');
-  if (words.length > 3) {
+  const words = cleanName.split(' ').filter(word => word.length > 0);
+  if (words.length > 2) {
     console.log(`❌ Still too many words after cleaning: "${cleanName}" (${words.length} words)`);
+    return null;
+  }
+  
+  if (words.length === 0) {
+    console.log(`❌ No words left after cleaning: "${item.name}"`);
     return null;
   }
   
