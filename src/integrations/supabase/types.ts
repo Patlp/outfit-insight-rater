@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      academic_papers: {
+        Row: {
+          abstract: string | null
+          authors: string[] | null
+          created_at: string
+          doi: string | null
+          id: string
+          journal: string | null
+          keywords: string[] | null
+          metadata: Json | null
+          pdf_content: string | null
+          pdf_url: string | null
+          processing_status: string | null
+          publication_year: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          abstract?: string | null
+          authors?: string[] | null
+          created_at?: string
+          doi?: string | null
+          id?: string
+          journal?: string | null
+          keywords?: string[] | null
+          metadata?: Json | null
+          pdf_content?: string | null
+          pdf_url?: string | null
+          processing_status?: string | null
+          publication_year?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          abstract?: string | null
+          authors?: string[] | null
+          created_at?: string
+          doi?: string | null
+          id?: string
+          journal?: string | null
+          keywords?: string[] | null
+          metadata?: Json | null
+          pdf_content?: string | null
+          pdf_url?: string | null
+          processing_status?: string | null
+          publication_year?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_records: {
         Row: {
           created_at: string
@@ -29,6 +80,97 @@ export type Database = {
           source?: string
         }
         Relationships: []
+      }
+      fashion_attributes: {
+        Row: {
+          attribute_name: string
+          attribute_type: string
+          confidence_score: number | null
+          context: string | null
+          created_at: string
+          extraction_method: string | null
+          id: string
+          metadata: Json | null
+          page_number: number | null
+          paper_id: string | null
+        }
+        Insert: {
+          attribute_name: string
+          attribute_type: string
+          confidence_score?: number | null
+          context?: string | null
+          created_at?: string
+          extraction_method?: string | null
+          id?: string
+          metadata?: Json | null
+          page_number?: number | null
+          paper_id?: string | null
+        }
+        Update: {
+          attribute_name?: string
+          attribute_type?: string
+          confidence_score?: number | null
+          context?: string | null
+          created_at?: string
+          extraction_method?: string | null
+          id?: string
+          metadata?: Json | null
+          page_number?: number | null
+          paper_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fashion_attributes_paper_id_fkey"
+            columns: ["paper_id"]
+            isOneToOne: false
+            referencedRelation: "academic_papers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fashion_insights: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          insight_type: string
+          metadata: Json | null
+          paper_id: string | null
+          relevance_score: number | null
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          insight_type: string
+          metadata?: Json | null
+          paper_id?: string | null
+          relevance_score?: number | null
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          insight_type?: string
+          metadata?: Json | null
+          paper_id?: string | null
+          relevance_score?: number | null
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fashion_insights_paper_id_fkey"
+            columns: ["paper_id"]
+            isOneToOne: false
+            referencedRelation: "academic_papers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fashion_whitelist: {
         Row: {

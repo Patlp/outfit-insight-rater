@@ -2,9 +2,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, TestTube, Settings, FileText } from 'lucide-react';
+import { Database, TestTube, Settings, FileText, BookOpen } from 'lucide-react';
 import KaggleIntegrationTest from '@/components/admin/KaggleIntegrationTest';
 import FashionpediaDataUpload from '@/components/admin/FashionpediaDataUpload';
+import AcademicPaperUpload from '@/components/admin/AcademicPaperUpload';
+import AcademicPapersList from '@/components/admin/AcademicPapersList';
 
 const Admin: React.FC = () => {
   console.log('Admin component rendering...');
@@ -18,7 +20,7 @@ const Admin: React.FC = () => {
         </div>
 
         <Tabs defaultValue="kaggle" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="kaggle" className="flex items-center gap-2">
               <Database size={16} />
               Kaggle Integration
@@ -26,6 +28,10 @@ const Admin: React.FC = () => {
             <TabsTrigger value="fashionpedia" className="flex items-center gap-2">
               <FileText size={16} />
               Fashionpedia
+            </TabsTrigger>
+            <TabsTrigger value="academic" className="flex items-center gap-2">
+              <BookOpen size={16} />
+              Academic Papers
             </TabsTrigger>
             <TabsTrigger value="testing" className="flex items-center gap-2">
               <TestTube size={16} />
@@ -43,6 +49,13 @@ const Admin: React.FC = () => {
 
           <TabsContent value="fashionpedia">
             <FashionpediaDataUpload />
+          </TabsContent>
+
+          <TabsContent value="academic">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AcademicPaperUpload />
+              <AcademicPapersList />
+            </div>
           </TabsContent>
 
           <TabsContent value="testing">
