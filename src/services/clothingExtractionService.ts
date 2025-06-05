@@ -75,20 +75,28 @@ export const getExtractedClothingItems = async (wardrobeItemId: string): Promise
       return null;
     }
 
+    // Cast to unknown[] first to avoid direct type assertion issues
+    const unknownItems = extractedItems as unknown[];
+
     // Type guard to ensure each item has the required properties
-    const isValidAIClothingItem = (item: any): item is AIClothingItem => {
+    const isValidAIClothingItem = (item: unknown): item is AIClothingItem => {
       return (
         typeof item === 'object' &&
         item !== null &&
-        typeof item.name === 'string' &&
-        Array.isArray(item.descriptors) &&
-        typeof item.category === 'string' &&
-        typeof item.confidence === 'number'
+        typeof (item as any).name === 'string' &&
+        Array.isArray((item as any).descriptors) &&
+        typeof (item as any).category === 'string' &&
+        typeof (item as any).confidence === 'number'
       );
     };
 
-    // Filter and validate the items, then cast to the correct type
-    const validItems = extractedItems.filter(isValidAIClothingItem) as AIClothingItem[];
+    // Filter and validate the items with explicit type narrowing
+    const validItems: AIClothingItem[] = [];
+    for (const item of unknownItems) {
+      if (isValidAIClothingItem(item)) {
+        validItems.push(item);
+      }
+    }
     
     return validItems.length > 0 ? validItems : null;
   } catch (error) {
