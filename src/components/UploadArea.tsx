@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useRating } from '@/context/RatingContext';
 import CombinedUploadForm from '@/components/upload/CombinedUploadForm';
@@ -21,7 +20,11 @@ const UploadArea: React.FC = () => {
   const handleFileProcessed = (file: File, src: string, occasionData: { eventContext: string | null; isNeutral: boolean }) => {
     setImageFile(file);
     setImageSrc(src);
-    setOccasionContext(occasionData);
+    setOccasionContext({
+      eventContext: occasionData.eventContext,
+      weatherContext: null,
+      isNeutral: occasionData.isNeutral
+    });
     setCurrentStep('analyze');
   };
 
