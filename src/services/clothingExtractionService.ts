@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
 import { getFashionWhitelist } from './fashionWhitelistService';
+import { enhancedClothingMatcher, convertToAIClothingItems } from './enhancedClothingMatcher';
 
 export interface AIClothingItem {
   name: string;
@@ -12,11 +13,13 @@ export interface AIClothingItem {
 
 export interface HybridExtractionResult {
   items: AIClothingItem[];
-  method: 'ai' | 'regex' | 'hybrid';
+  method: 'ai' | 'regex' | 'hybrid' | 'enhanced';
   aiSuccess: boolean;
   regexFallbackUsed: boolean;
+  enhancedMatchingUsed: boolean;
   aiItemCount: number;
   regexItemCount: number;
+  enhancedItemCount: number;
   totalItemCount: number;
 }
 
@@ -26,7 +29,7 @@ export const extractClothingPhrasesHybrid = async (
   wardrobeItemId: string
 ): Promise<{ success: boolean; result?: HybridExtractionResult; error?: string }> => {
   try {
-    console.log(`=== HYBRID CLOTHING EXTRACTION START ===`);
+    console.log(`=== ENHANCED HYBRID CLOTHING EXTRACTION START ===`);
     console.log(`Wardrobe item: ${wardrobeItemId}`);
     console.log(`Feedback length: ${feedback.length} characters`);
     console.log(`Suggestions count: ${suggestions.length}`);
@@ -34,6 +37,7 @@ export const extractClothingPhrasesHybrid = async (
     let aiItems: AIClothingItem[] = [];
     let aiSuccess = false;
     let regexFallbackUsed = false;
+    let enhancedMatchingUsed = false;
 
     // Step 1: Try AI extraction first
     console.log(`Step 1: Attempting AI extraction...`);
@@ -50,26 +54,46 @@ export const extractClothingPhrasesHybrid = async (
       }
     }
 
-    // Step 2: Determine if we need regex fallback
+    // Step 2: Enhanced matching with Kaggle dataset (always run for better results)
+    console.log(`Step 2: Running enhanced matching with Kaggle dataset...`);
+    let enhancedItems: AIClothingItem[] = [];
+    
+    try {
+      const fullText = [feedback, ...suggestions].join(' ');
+      const enhancedMatches = await enhancedClothingMatcher(fullText, 'neutral'); // TODO: Get gender from context
+      enhancedItems = convertToAIClothingItems(enhancedMatches);
+      
+      if (enhancedItems.length > 0) {
+        enhancedMatchingUsed = true;
+        console.log(`✅ Enhanced matching successful: ${enhancedItems.length} items found`);
+      }
+    } catch (error) {
+      console.warn('Enhanced matching failed:', error);
+    }
+
+    // Step 3: Regex fallback if needed
     let regexItems: AIClothingItem[] = [];
-    if (!aiSuccess || aiItems.length === 0) {
-      console.log(`Step 2: Triggering regex fallback extraction...`);
+    if (!aiSuccess && !enhancedMatchingUsed) {
+      console.log(`Step 3: Triggering regex fallback extraction...`);
       regexFallbackUsed = true;
       
-      // Extract using regex
       const regexResults = extractClothingItems(feedback);
       console.log(`Regex extracted ${regexResults.length} raw items:`, regexResults);
       
-      // Convert regex results to AIClothingItem format and cross-reference with whitelist
       regexItems = await convertRegexToAIFormat(regexResults);
       console.log(`Converted to ${regexItems.length} validated items`);
     }
 
-    // Step 3: Combine results and determine final method
+    // Step 4: Combine and prioritize results
     let finalItems: AIClothingItem[] = [];
-    let method: 'ai' | 'regex' | 'hybrid' = 'ai';
+    let method: 'ai' | 'regex' | 'hybrid' | 'enhanced' = 'ai';
 
-    if (aiSuccess && aiItems.length > 0) {
+    if (enhancedMatchingUsed && enhancedItems.length > 0) {
+      // Use enhanced matching results (highest priority)
+      finalItems = enhancedItems;
+      method = 'enhanced';
+      console.log(`Using enhanced results: ${finalItems.length} items`);
+    } else if (aiSuccess && aiItems.length > 0) {
       finalItems = aiItems;
       method = 'ai';
       console.log(`Using AI results: ${finalItems.length} items`);
@@ -78,13 +102,13 @@ export const extractClothingPhrasesHybrid = async (
       method = 'regex';
       console.log(`Using regex results: ${finalItems.length} items`);
     } else {
-      console.log(`No items found from either method`);
-      method = 'ai'; // Default method designation
+      console.log(`No items found from any method`);
+      method = 'enhanced'; // Default method designation
     }
 
-    // Step 4: Update wardrobe item with results
+    // Step 5: Update wardrobe item with results
     if (finalItems.length > 0) {
-      console.log(`Step 4: Updating wardrobe item with ${finalItems.length} final items...`);
+      console.log(`Step 5: Updating wardrobe item with ${finalItems.length} final items...`);
       const { error: updateError } = await supabase
         .from('wardrobe_items')
         .update({ 
@@ -99,27 +123,30 @@ export const extractClothingPhrasesHybrid = async (
       }
     }
 
-    // Step 5: Prepare result summary
+    // Step 6: Prepare result summary
     const result: HybridExtractionResult = {
       items: finalItems,
       method,
       aiSuccess,
       regexFallbackUsed,
+      enhancedMatchingUsed,
       aiItemCount: aiItems.length,
       regexItemCount: regexItems.length,
+      enhancedItemCount: enhancedItems.length,
       totalItemCount: finalItems.length
     };
 
-    console.log(`=== HYBRID EXTRACTION COMPLETE ===`);
+    console.log(`=== ENHANCED HYBRID EXTRACTION COMPLETE ===`);
     console.log(`Final method: ${method}`);
     console.log(`AI success: ${aiSuccess}`);
+    console.log(`Enhanced matching used: ${enhancedMatchingUsed}`);
     console.log(`Regex fallback used: ${regexFallbackUsed}`);
     console.log(`Final item count: ${finalItems.length}`);
 
     return { success: true, result };
 
   } catch (error) {
-    console.error('Error in hybrid clothing extraction:', error);
+    console.error('Error in enhanced hybrid clothing extraction:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

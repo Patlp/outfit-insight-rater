@@ -57,6 +57,69 @@ export type Database = {
         }
         Relationships: []
       }
+      kaggle_clothing_items: {
+        Row: {
+          age_group: string | null
+          brand: string | null
+          category: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          gender: string | null
+          id: string
+          material: string | null
+          normalized_name: string | null
+          price: number | null
+          product_name: string
+          rating: number | null
+          season: string | null
+          size: string | null
+          sub_category: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string | null
+          brand?: string | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          gender?: string | null
+          id?: string
+          material?: string | null
+          normalized_name?: string | null
+          price?: number | null
+          product_name: string
+          rating?: number | null
+          season?: string | null
+          size?: string | null
+          sub_category?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string | null
+          brand?: string | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          gender?: string | null
+          id?: string
+          material?: string | null
+          normalized_name?: string | null
+          price?: number | null
+          product_name?: string
+          rating?: number | null
+          season?: string | null
+          size?: string | null
+          sub_category?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wardrobe_items: {
         Row: {
           created_at: string
