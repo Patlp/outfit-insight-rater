@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { RatingResult, Gender } from '@/context/RatingContext';
 import { extractClothingItems } from '@/utils/clothingExtractor';
-import { extractClothingPhrasesAI } from './clothingExtractionService';
+import { extractClothingPhrasesHybrid } from './clothingExtractionService';
 
 export interface WardrobeItem {
   id: string;
@@ -58,22 +58,27 @@ export const saveOutfitToWardrobe = async (
       return { data: null, error };
     }
 
-    // Background process: Extract AI-powered clothing phrases
+    // Background process: Use hybrid extraction system
     // This runs asynchronously and won't block the main flow
     if (data && ratingResult.feedback) {
-      console.log('Triggering background AI clothing extraction...');
-      extractClothingPhrasesAI(
+      console.log('Triggering background hybrid clothing extraction...');
+      extractClothingPhrasesHybrid(
         ratingResult.feedback,
         ratingResult.suggestions || [],
         data.id
       ).then(result => {
-        if (result.success) {
-          console.log(`Background AI extraction completed for item ${data.id}`);
+        if (result.success && result.result) {
+          const { method, aiSuccess, regexFallbackUsed, totalItemCount } = result.result;
+          console.log(`✅ Hybrid extraction completed for item ${data.id}:`);
+          console.log(`   Method used: ${method}`);
+          console.log(`   AI success: ${aiSuccess}`);
+          console.log(`   Regex fallback: ${regexFallbackUsed}`);
+          console.log(`   Total items: ${totalItemCount}`);
         } else {
-          console.warn(`Background AI extraction failed for item ${data.id}:`, result.error);
+          console.warn(`❌ Hybrid extraction failed for item ${data.id}:`, result.error);
         }
       }).catch(err => {
-        console.warn(`Background AI extraction error for item ${data.id}:`, err);
+        console.warn(`❌ Hybrid extraction error for item ${data.id}:`, err);
       });
     }
 

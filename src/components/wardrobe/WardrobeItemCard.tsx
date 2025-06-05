@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { WardrobeItem, deleteWardrobeItem } from '@/services/wardrobeService';
-import { Star, Trash2, Calendar, Tag, Sparkles, CheckCircle } from 'lucide-react';
+import { Star, Trash2, Calendar, Tag, Sparkles, CheckCircle, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -65,9 +65,40 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
     return null;
   }, [item.extracted_clothing_items, item.id]);
 
-  // Use AI items if available, otherwise fall back to regex items
-  const displayItems = aiClothingItems || regexClothingItems;
-  const isAIExtracted = aiClothingItems !== null;
+  // Determine which method was used and what to display
+  const { displayItems, extractionMethod, hasValidatedTags } = React.useMemo(() => {
+    if (aiClothingItems && aiClothingItems.length > 0) {
+      // Check if items have high confidence (indicating AI extraction) or low confidence (indicating regex fallback)
+      const hasHighConfidence = aiClothingItems.some(item => item.confidence >= 0.8);
+      const hasDescriptors = aiClothingItems.some(item => item.descriptors && item.descriptors.length > 0);
+      
+      return {
+        displayItems: aiClothingItems,
+        extractionMethod: hasHighConfidence && hasDescriptors ? 'ai' : 'hybrid',
+        hasValidatedTags: true
+      };
+    } else if (regexClothingItems.length > 0) {
+      // Convert regex items to display format
+      const regexDisplayItems = regexClothingItems.map(item => ({
+        name: item,
+        descriptors: [],
+        category: categorizeClothingItem(item),
+        confidence: 0.7
+      }));
+      
+      return {
+        displayItems: regexDisplayItems,
+        extractionMethod: 'regex' as const,
+        hasValidatedTags: false
+      };
+    }
+    
+    return {
+      displayItems: [],
+      extractionMethod: 'none' as const,
+      hasValidatedTags: false
+    };
+  }, [aiClothingItems, regexClothingItems]);
 
   // Get category colors for badges
   const getCategoryColor = (itemName: string, category?: string) => {
@@ -83,6 +114,34 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
     };
     return colorMap[itemCategory as keyof typeof colorMap] || colorMap.other;
   };
+
+  // Get the appropriate icon and label for the extraction method
+  const getMethodInfo = () => {
+    switch (extractionMethod) {
+      case 'ai':
+        return {
+          icon: <CheckCircle size={12} className="text-green-500" />,
+          label: 'AI Validated Tags',
+          color: 'text-green-600'
+        };
+      case 'hybrid':
+        return {
+          icon: <Zap size={12} className="text-blue-500" />,
+          label: 'Hybrid Tags',
+          color: 'text-blue-600'
+        };
+      case 'regex':
+        return {
+          icon: <Tag size={12} className="text-gray-400" />,
+          label: 'Basic Tags',
+          color: 'text-gray-500'
+        };
+      default:
+        return null;
+    }
+  };
+
+  const methodInfo = getMethodInfo();
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -122,34 +181,31 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
         
         {displayItems.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
-            <div className="flex items-center gap-1 mb-1 w-full">
-              {isAIExtracted ? (
+            {methodInfo && (
+              <div className="flex items-center gap-1 mb-1 w-full">
                 <div className="flex items-center gap-1">
-                  <CheckCircle size={12} className="text-green-500" />
-                  <span className="text-xs text-green-600 font-medium">Validated Tags</span>
+                  {methodInfo.icon}
+                  <span className={`text-xs font-medium ${methodInfo.color}`}>
+                    {methodInfo.label}
+                  </span>
                 </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Tag size={12} className="text-gray-400" />
-                  <span className="text-xs text-gray-500">Basic Tags</span>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
             {displayItems.map((clothingItem, index) => {
-              // Handle both AI items (objects) and regex items (strings)
-              const itemName = typeof clothingItem === 'string' ? clothingItem : clothingItem.name;
-              const category = typeof clothingItem === 'object' ? clothingItem.category : undefined;
-              const descriptors = typeof clothingItem === 'object' ? clothingItem.descriptors : [];
-              const confidence = typeof clothingItem === 'object' ? clothingItem.confidence : undefined;
+              // Handle both AI items (objects) and converted regex items (objects)
+              const itemName = clothingItem.name;
+              const category = clothingItem.category;
+              const descriptors = clothingItem.descriptors || [];
+              const confidence = clothingItem.confidence;
               
               return (
                 <Badge
                   key={index}
                   variant="secondary"
                   className={`text-xs ${getCategoryColor(itemName, category)}`}
-                  title={isAIExtracted && descriptors.length > 0 ? 
-                    `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%` : 
-                    undefined
+                  title={hasValidatedTags && descriptors.length > 0 ? 
+                    `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nMethod: ${extractionMethod}` : 
+                    `Category: ${category}\nMethod: ${extractionMethod}`
                   }
                 >
                   {itemName}
