@@ -1,4 +1,5 @@
 
+
 import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
 import { extractClothingPhrasesAI, AIClothingItem } from '@/services/clothingExtractionService';
 import { enhancedClothingMatcher, convertToAIClothingItems } from '@/services/enhancedClothingMatcher';
@@ -6,6 +7,7 @@ import { fashionpediaClothingMatcher } from '@/services/fashionpediaClothingMatc
 import { TaggingConfig } from '@/types/tagging';
 import { applyStructuredFormat } from './structuredFormatting';
 import { filterIndividualClothingItems, removeDuplicates } from './itemFilters';
+import { extractItemsFromStyle } from './styleParser';
 
 export const processBasicTagging = async (
   feedback: string, 
@@ -13,6 +15,9 @@ export const processBasicTagging = async (
   config: TaggingConfig
 ): Promise<AIClothingItem[]> => {
   console.log('Processing with BASIC tagging...');
+  
+  // Extract style references for validation
+  const styleReferences = extractItemsFromStyle(feedback);
   
   const regexResults = extractClothingItems(feedback);
   const items: AIClothingItem[] = regexResults.map(item => ({
@@ -23,7 +28,10 @@ export const processBasicTagging = async (
     source: 'regex'
   }));
 
-  return items.slice(0, config.maxItems);
+  // Apply strict filtering with style validation
+  const filteredItems = filterIndividualClothingItems(items, styleReferences);
+
+  return filteredItems.slice(0, config.maxItems);
 };
 
 export const processMediumTagging = async (
@@ -34,11 +42,16 @@ export const processMediumTagging = async (
 ): Promise<AIClothingItem[]> => {
   console.log('Processing with MEDIUM tagging...');
   
+  // Extract style references for validation
+  const styleReferences = extractItemsFromStyle(feedback);
+  
   // Try AI extraction first
   const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
   
   if (aiResult.success && aiResult.extractedItems && aiResult.extractedItems.length > 0) {
-    return aiResult.extractedItems.slice(0, config.maxItems);
+    const structuredItems = await applyStructuredFormat(aiResult.extractedItems, feedback, styleReferences);
+    const filteredItems = filterIndividualClothingItems(structuredItems, styleReferences);
+    return filteredItems.slice(0, config.maxItems);
   }
 
   // Fallback to basic if AI fails
@@ -52,14 +65,19 @@ export const processAdvancedTagging = async (
   wardrobeItemId: string,
   config: TaggingConfig
 ): Promise<AIClothingItem[]> => {
-  console.log('Processing with ADVANCED MULTI-DATASET tagging...');
-  console.log('Enforcing strict 3-word maximum: [Descriptor] + [Clothing Item]');
+  console.log('=== PROCESSING ADVANCED TAGGING WITH STRICT VALIDATION ===');
+  console.log('Enforcing STRICT rules: 2-word max, 90% confidence, Style section cross-check');
   
   const fullText = [feedback, ...suggestions].join(' ');
+  
+  // Step 1: Extract Style section references for validation
+  const styleReferences = extractItemsFromStyle(feedback);
+  console.log(`Style references found: ${styleReferences.length}`);
+  
   const allItems: AIClothingItem[] = [];
   
-  // Step 1: Enhanced matching with Kaggle dataset
-  console.log('Step 1: Enhanced Kaggle dataset matching...');
+  // Step 2: Enhanced matching with Kaggle dataset
+  console.log('Step 2: Enhanced Kaggle dataset matching...');
   try {
     const enhancedMatches = await enhancedClothingMatcher(fullText, 'neutral');
     const enhancedItems = convertToAIClothingItems(enhancedMatches);
@@ -76,8 +94,8 @@ export const processAdvancedTagging = async (
     console.warn('Enhanced matching failed:', error);
   }
 
-  // Step 2: Fashionpedia dataset matching
-  console.log('Step 2: Fashionpedia dataset matching...');
+  // Step 3: Fashionpedia dataset matching
+  console.log('Step 3: Fashionpedia dataset matching...');
   try {
     const fashionpediaMatches = await fashionpediaClothingMatcher(fullText, 5);
     
@@ -96,8 +114,8 @@ export const processAdvancedTagging = async (
     console.warn('Fashionpedia matching failed:', error);
   }
 
-  // Step 3: AI extraction
-  console.log('Step 3: AI extraction...');
+  // Step 4: AI extraction
+  console.log('Step 4: AI extraction...');
   try {
     const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
     
@@ -113,16 +131,18 @@ export const processAdvancedTagging = async (
     console.warn('AI extraction failed:', error);
   }
 
-  // Step 4: Apply strict 3-word structured format
-  const structuredItems = await applyStructuredFormat(allItems, fullText);
+  // Step 5: Apply STRICT structured format with Style validation
+  console.log('Step 5: Applying structured format with Style validation...');
+  const structuredItems = await applyStructuredFormat(allItems, fullText, styleReferences);
 
-  // Step 5: Apply strict individual item filtering (3 words max)
-  const individualItems = filterIndividualClothingItems(structuredItems);
+  // Step 6: Apply STRICT individual item filtering with enhanced validation
+  console.log('Step 6: Applying strict validation (90% confidence, 2-word max, Style cross-check)...');
+  const validatedItems = filterIndividualClothingItems(structuredItems, styleReferences);
 
-  // Step 6: Remove duplicates and rank by confidence
-  const deduplicatedItems = removeDuplicates(individualItems);
+  // Step 7: Remove duplicates and rank by confidence
+  const deduplicatedItems = removeDuplicates(validatedItems);
   
-  // Step 7: Sort by confidence and limit results
+  // Step 8: Sort by confidence and limit results
   const finalItems = deduplicatedItems
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, config.maxItems);
@@ -130,7 +150,7 @@ export const processAdvancedTagging = async (
   console.log(`=== ADVANCED TAGGING COMPLETE ===`);
   console.log(`Total items from all datasets: ${allItems.length}`);
   console.log(`After structured formatting: ${structuredItems.length}`);
-  console.log(`After individual filtering: ${individualItems.length}`);
+  console.log(`After strict validation: ${validatedItems.length}`);
   console.log(`After deduplication: ${deduplicatedItems.length}`);
   console.log(`Final items: ${finalItems.length}`);
 
@@ -141,3 +161,4 @@ export const processAdvancedTagging = async (
 
   return finalItems;
 };
+

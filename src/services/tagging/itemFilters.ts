@@ -1,102 +1,40 @@
 
+
 import { AIClothingItem } from '@/services/clothingExtractionService';
 import { categorizeClothingItem } from '@/utils/clothingExtractor';
+import { StyleReference } from './styleParser';
+import { applyStrictValidation } from './enhancedValidator';
 
-export const filterIndividualClothingItems = (items: AIClothingItem[]): AIClothingItem[] => {
-  console.log('=== FILTERING WITH 90% CONFIDENCE THRESHOLD ===');
+export const filterIndividualClothingItems = (
+  items: AIClothingItem[], 
+  styleReferences: StyleReference[] = []
+): AIClothingItem[] => {
+  console.log('=== FILTERING WITH ENHANCED STRICT VALIDATION ===');
+  console.log(`Input: ${items.length} items, Style references: ${styleReferences.length}`);
   
-  const filteredItems: AIClothingItem[] = [];
+  // Apply the new strict validation system
+  const validatedItems = applyStrictValidation(items, styleReferences);
   
-  // Words that indicate combinations or styling rather than individual items
-  const combinationWords = ['and', 'with', 'of', 'pairing', 'combination', 'choice', 'providing', 'against', 'complements', 'ensemble'];
-  const invalidPhrases = ['pairing of', 'choice of', 'with', 'providing', 'contrast against', 'complements', 'tones of'];
-  const forbiddenWords = ['of', 'with', 'and', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'from', 'by', 'against'];
+  // Additional cleaning and deduplication
+  const cleanedItems = validatedItems
+    .map(item => cleanAndValidateItem(item))
+    .filter(item => item !== null) as AIClothingItem[];
   
-  // Valid single clothing items from our whitelist structure
-  const validClothingNouns = [
-    'shirt', 'blouse', 'top', 'sweater', 'cardigan', 'jacket', 'blazer', 'hoodie', 't-shirt', 'tee', 'polo', 'vest', 'coat', 'turtleneck', 'tank', 'camisole',
-    'pants', 'jeans', 'trousers', 'shorts', 'skirt', 'leggings', 'chinos', 'slacks',
-    'dress', 'gown', 'sundress', 'maxi', 'midi',
-    'shoes', 'sneakers', 'heels', 'boots', 'sandals', 'flats', 'loafers', 'oxfords', 'pumps',
-    'belt', 'bag', 'purse', 'backpack', 'hat', 'cap', 'scarf', 'socks', 'jewelry', 'necklace', 'bracelet', 'earrings', 'watch', 'sunglasses'
-  ];
-
-  for (const item of items) {
-    const itemName = item.name.toLowerCase();
-    const wordCount = item.name.trim().split(/\s+/).length;
-    const confidence = item.confidence || 0;
-    
-    // STRICT: Reject if confidence is below 90%
-    if (confidence < 0.9) {
-      console.log(`❌ Rejecting low confidence: "${item.name}" (${Math.round(confidence * 100)}% < 90%)`);
-      continue;
-    }
-    
-    // Reject if more than 2 words (should be descriptor + item only)
-    if (wordCount > 2) {
-      console.log(`❌ Rejecting (too many words): "${item.name}" (${wordCount} words, max 2)`);
-      continue;
-    }
-    
-    // Check for forbidden words (prepositions, etc.)
-    const containsForbiddenWords = forbiddenWords.some(forbidden => 
-      itemName.split(' ').includes(forbidden)
-    );
-    if (containsForbiddenWords) {
-      console.log(`❌ Rejecting forbidden words: "${item.name}"`);
-      continue;
-    }
-    
-    // Check if this contains invalid combination phrases
-    const hasInvalidPhrase = invalidPhrases.some(phrase => itemName.includes(phrase));
-    if (hasInvalidPhrase) {
-      console.log(`❌ Rejecting invalid phrase: "${item.name}"`);
-      continue;
-    }
-    
-    // Check if this is a combination tag (contains "and", "with", etc.)
-    const isCombination = combinationWords.some(word => itemName.includes(` ${word} `));
-    if (isCombination) {
-      console.log(`❌ Rejecting combination tag: "${item.name}"`);
-      continue;
-    }
-    
-    // Check if it contains a valid clothing noun
-    const containsValidNoun = validClothingNouns.some(noun => 
-      itemName.includes(noun) || item.name.toLowerCase().includes(noun)
-    );
-    
-    if (!containsValidNoun) {
-      console.log(`❌ Rejecting (no clothing noun): "${item.name}"`);
-      continue;
-    }
-    
-    // Clean and validate the item
-    const cleanedItem = cleanAndValidateItem(item, validClothingNouns);
-    if (cleanedItem) {
-      console.log(`✅ Accepting high-confidence item: "${cleanedItem.name}" (${Math.round(cleanedItem.confidence * 100)}%, ${cleanedItem.name.split(' ').length} words)`);
-      filteredItems.push(cleanedItem);
-    }
-  }
+  // Remove duplicates
+  const finalItems = removeDuplicates(cleanedItems);
   
-  console.log(`Filtered ${items.length} items down to ${filteredItems.length} high-confidence individual clothing items (≥90%)`);
-  return filteredItems;
+  console.log(`=== FILTERING COMPLETE: ${finalItems.length}/${items.length} items passed all validation ===`);
+  return finalItems;
 };
 
-export const cleanAndValidateItem = (item: AIClothingItem, validNouns: string[]): AIClothingItem | null => {
+export const cleanAndValidateItem = (item: AIClothingItem): AIClothingItem | null => {
   let cleanName = item.name;
   
-  // Remove common prefixes and styling words
+  // Clean up any remaining formatting issues
   cleanName = cleanName.replace(/^(the|a|an)\s+/i, '');
-  cleanName = cleanName.replace(/\b(pairing|choice|providing|contrast|complements|tones)\s*(of\s*)?/gi, '');
-  
-  // Remove any remaining prepositions
-  cleanName = cleanName.replace(/\b(of|with|and|in|on|at|to|for|from|by|against)\b/gi, '');
-  
-  // Clean up spacing and capitalization
   cleanName = cleanName.replace(/\s+/g, ' ').trim();
   
-  // Check word count after cleaning
+  // Final word count check
   const words = cleanName.split(' ').filter(word => word.length > 0);
   if (words.length > 2) {
     console.log(`❌ Still too many words after cleaning: "${cleanName}" (${words.length} words)`);
@@ -112,16 +50,6 @@ export const cleanAndValidateItem = (item: AIClothingItem, validNouns: string[])
   cleanName = words
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-  
-  // Final validation: must contain a clothing noun
-  const hasValidNoun = validNouns.some(noun => 
-    cleanName.toLowerCase().includes(noun)
-  );
-  
-  if (!hasValidNoun) {
-    console.log(`❌ No valid clothing noun in cleaned name: "${cleanName}"`);
-    return null;
-  }
   
   return {
     ...item,
@@ -150,3 +78,4 @@ export const removeDuplicates = (items: AIClothingItem[]): AIClothingItem[] => {
   
   return unique;
 };
+

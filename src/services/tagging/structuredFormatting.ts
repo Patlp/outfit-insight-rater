@@ -1,8 +1,15 @@
 
-import { AIClothingItem } from '@/services/clothingExtractionService';
 
-export const applyStructuredFormat = async (items: AIClothingItem[], fullText: string): Promise<AIClothingItem[]> => {
-  console.log('Applying STRICT structured format: [Primary Descriptor] + [Clothing Item] - NO PREPOSITIONS');
+import { AIClothingItem } from '@/services/clothingExtractionService';
+import { StyleReference, validateAgainstStyle } from './styleParser';
+
+export const applyStructuredFormat = async (
+  items: AIClothingItem[], 
+  fullText: string,
+  styleReferences: StyleReference[] = []
+): Promise<AIClothingItem[]> => {
+  console.log('=== APPLYING STRICT 2-WORD STRUCTURED FORMAT ===');
+  console.log('ENFORCING: [Color/Descriptor] + [Clothing Item] - NO PREPOSITIONS - MAX 2 WORDS');
   
   // Define core clothing items (nouns) - expanded and more precise
   const clothingNouns = [
@@ -18,7 +25,7 @@ export const applyStructuredFormat = async (items: AIClothingItem[], fullText: s
     'belt', 'bag', 'purse', 'backpack', 'hat', 'cap', 'scarf', 'socks', 'jewelry', 'necklace', 'bracelet', 'earrings', 'watch', 'sunglasses'
   ];
 
-  // Comprehensive color words - more specific and accurate
+  // Enhanced color words with better matching
   const colorWords = [
     'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'black', 'white', 'gray', 'grey', 'brown', 'navy', 'beige', 'cream', 'tan', 'olive', 'maroon', 'teal', 'coral', 'burgundy', 'khaki', 'mint', 'lavender', 'gold', 'silver', 'light', 'dark',
     // Extended colors
@@ -43,8 +50,16 @@ export const applyStructuredFormat = async (items: AIClothingItem[], fullText: s
       return null;
     }
     
-    // Extract the most relevant descriptor with enhanced color detection
-    const primaryDescriptor = extractPrimaryDescriptorEnhanced(words, itemWords, colorWords, materialWords, patternWords, coreNoun);
+    // Extract the most relevant descriptor with enhanced matching against Style section
+    const primaryDescriptor = extractPrimaryDescriptorEnhanced(
+      words, 
+      itemWords, 
+      colorWords, 
+      materialWords, 
+      patternWords, 
+      coreNoun,
+      styleReferences
+    );
     
     // Validate that no forbidden words are included
     if (primaryDescriptor && forbiddenWords.some(forbidden => primaryDescriptor.includes(forbidden))) {
@@ -52,34 +67,38 @@ export const applyStructuredFormat = async (items: AIClothingItem[], fullText: s
       return null;
     }
     
-    // Build the structured tag: [Primary Descriptor] + [Clothing Noun]
+    // Build the structured tag: EXACTLY 2 words: [Primary Descriptor] + [Clothing Noun]
     let structuredName = '';
     if (primaryDescriptor) {
       structuredName = `${capitalizeWord(primaryDescriptor)} ${capitalizeWord(coreNoun)}`;
     } else {
+      // If no descriptor found, use just the clothing item (1 word)
       structuredName = capitalizeWord(coreNoun);
     }
     
-    // Final validation: ensure no forbidden words in final name
+    // STRICT VALIDATION: Final check for word count and forbidden words
     const finalWords = structuredName.toLowerCase().split(' ');
+    if (finalWords.length > 2) {
+      console.log(`❌ Exceeds 2-word limit: "${structuredName}" (${finalWords.length} words)`);
+      return null;
+    }
+    
     if (finalWords.some(word => forbiddenWords.includes(word))) {
       console.log(`❌ Forbidden word in final tag: "${structuredName}"`);
       return null;
     }
     
-    // Ensure exactly 2 words max (descriptor + item)
-    const nameWords = structuredName.split(' ');
-    if (nameWords.length > 2) {
-      structuredName = nameWords.slice(-2).join(' '); // Take last 2 words (descriptor + noun)
-    }
+    // Apply Style section confidence boost
+    const styleConfidence = validateAgainstStyle(structuredName, styleReferences);
+    const boostedConfidence = Math.min(0.98, (item.confidence || 0.7) * styleConfidence);
     
-    console.log(`✅ Structured tag: "${item.name}" → "${structuredName}"`);
+    console.log(`✅ Structured tag: "${item.name}" → "${structuredName}" (confidence: ${boostedConfidence.toFixed(2)})`);
     
     return {
       ...item,
       name: structuredName,
       descriptors: primaryDescriptor ? [primaryDescriptor] : [],
-      confidence: item.confidence + (primaryDescriptor ? 0.05 : 0)
+      confidence: boostedConfidence
     };
   }).filter(item => item !== null) as AIClothingItem[];
 };
@@ -109,25 +128,35 @@ export const extractPrimaryDescriptorEnhanced = (
   colorWords: string[], 
   materialWords: string[], 
   patternWords: string[],
-  coreNoun: string
+  coreNoun: string,
+  styleReferences: StyleReference[] = []
 ): string | null => {
   console.log(`Extracting primary descriptor for: ${coreNoun}`);
   
-  // Enhanced color detection - look for colors specifically near this clothing item
+  // PRIORITY 1: Check Style section references first
+  for (const styleRef of styleReferences) {
+    if (styleRef.item === coreNoun && styleRef.descriptors.length > 0) {
+      const styleDescriptor = styleRef.descriptors[0]; // Use first descriptor from style
+      console.log(`✅ Found STYLE descriptor: ${styleDescriptor} for ${coreNoun}`);
+      return styleDescriptor;
+    }
+  }
+  
+  // PRIORITY 2: Enhanced color detection - look for colors specifically near this clothing item
   const color = extractFromContextEnhanced(allWords, itemWords, colorWords, coreNoun);
   if (color) {
     console.log(`✅ Found primary color: ${color} for ${coreNoun}`);
     return color;
   }
   
-  // Check for patterns second
+  // PRIORITY 3: Check for patterns
   const pattern = extractFromContextEnhanced(allWords, itemWords, patternWords, coreNoun);
   if (pattern) {
     console.log(`✅ Found pattern: ${pattern} for ${coreNoun}`);
     return pattern;
   }
   
-  // Check for materials last
+  // PRIORITY 4: Check for materials last
   const material = extractFromContextEnhanced(allWords, itemWords, materialWords, coreNoun);
   if (material) {
     console.log(`✅ Found material: ${material} for ${coreNoun}`);
@@ -203,3 +232,4 @@ export const extractFromContextEnhanced = (
 export const capitalizeWord = (word: string): string => {
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 };
+
