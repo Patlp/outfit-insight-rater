@@ -3,16 +3,16 @@ import { AIClothingItem } from '@/services/clothingExtractionService';
 import { categorizeClothingItem } from '@/utils/clothingExtractor';
 
 export const filterIndividualClothingItems = (items: AIClothingItem[]): AIClothingItem[] => {
-  console.log('=== FILTERING FOR INDIVIDUAL CLOTHING ITEMS ===');
+  console.log('=== FILTERING FOR INDIVIDUAL CLOTHING ITEMS (3 WORDS MAX) ===');
   
   const filteredItems: AIClothingItem[] = [];
   
   // Words that indicate combinations or styling rather than individual items
-  const combinationWords = ['and', 'with', 'of', 'layering', 'combination', 'pairing', 'styling', 'mix', 'ensemble'];
-  const stylingTerms = ['layering', 'coordination', 'styling', 'outfit', 'look', 'ensemble', 'pairing'];
+  const combinationWords = ['and', 'with', 'of', 'pairing', 'combination', 'choice', 'providing', 'against', 'complements', 'ensemble'];
+  const invalidPhrases = ['pairing of', 'choice of', 'with', 'providing', 'contrast against', 'complements', 'tones of'];
   
   // Valid single clothing items from our whitelist structure
-  const validClothingItems = [
+  const validClothingNouns = [
     'shirt', 'blouse', 'top', 'sweater', 'cardigan', 'jacket', 'blazer', 'hoodie', 't-shirt', 'tee', 'polo', 'vest', 'coat', 'turtleneck', 'tank', 'camisole',
     'pants', 'jeans', 'trousers', 'shorts', 'skirt', 'leggings', 'chinos', 'slacks',
     'dress', 'gown', 'sundress', 'maxi', 'midi',
@@ -22,121 +22,86 @@ export const filterIndividualClothingItems = (items: AIClothingItem[]): AIClothi
 
   for (const item of items) {
     const itemName = item.name.toLowerCase();
+    const wordCount = item.name.trim().split(/\s+/).length;
+    
+    // Reject if more than 3 words
+    if (wordCount > 3) {
+      console.log(`❌ Rejecting (too many words): "${item.name}" (${wordCount} words)`);
+      continue;
+    }
+    
+    // Check if this contains invalid combination phrases
+    const hasInvalidPhrase = invalidPhrases.some(phrase => itemName.includes(phrase));
+    if (hasInvalidPhrase) {
+      console.log(`❌ Rejecting invalid phrase: "${item.name}"`);
+      continue;
+    }
     
     // Check if this is a combination tag (contains "and", "with", etc.)
     const isCombination = combinationWords.some(word => itemName.includes(` ${word} `));
-    
-    // Check if this is a styling description rather than a clothing item
-    const isStylingTerm = stylingTerms.some(term => itemName.includes(term));
-    
-    // Check if it contains a valid clothing item
-    const containsValidItem = validClothingItems.some(clothing => itemName.includes(clothing));
-    
     if (isCombination) {
       console.log(`❌ Rejecting combination tag: "${item.name}"`);
-      
-      // Try to split combination into individual items
-      const splitItems = splitCombinationTag(item);
-      filteredItems.push(...splitItems);
       continue;
     }
     
-    if (isStylingTerm && !containsValidItem) {
-      console.log(`❌ Rejecting styling term: "${item.name}"`);
+    // Check if it contains a valid clothing noun
+    const containsValidNoun = validClothingNouns.some(noun => 
+      itemName.includes(noun) || item.name.toLowerCase().includes(noun)
+    );
+    
+    if (!containsValidNoun) {
+      console.log(`❌ Rejecting (no clothing noun): "${item.name}"`);
       continue;
     }
     
-    if (!containsValidItem) {
-      console.log(`❌ Rejecting non-clothing item: "${item.name}"`);
-      continue;
+    // Clean and validate the item
+    const cleanedItem = cleanAndValidateItem(item, validClothingNouns);
+    if (cleanedItem) {
+      console.log(`✅ Accepting individual item: "${cleanedItem.name}" (${cleanedItem.name.split(' ').length} words)`);
+      filteredItems.push(cleanedItem);
     }
-    
-    // Clean the item name to ensure it follows the structure
-    const cleanedItem = cleanIndividualItemName(item);
-    console.log(`✅ Accepting individual item: "${cleanedItem.name}"`);
-    filteredItems.push(cleanedItem);
   }
   
-  console.log(`Filtered ${items.length} items down to ${filteredItems.length} individual clothing items`);
+  console.log(`Filtered ${items.length} items down to ${filteredItems.length} valid individual clothing items`);
   return filteredItems;
 };
 
-export const splitCombinationTag = (combinationItem: AIClothingItem): AIClothingItem[] => {
-  const itemName = combinationItem.name.toLowerCase();
-  const splitItems: AIClothingItem[] = [];
-  
-  // Common patterns to split
-  const patterns = [
-    /(.+?)\s+and\s+(.+)/,
-    /(.+?)\s+with\s+(.+)/,
-    /(.+?)\s+&\s+(.+)/
-  ];
-  
-  for (const pattern of patterns) {
-    const match = itemName.match(pattern);
-    if (match) {
-      const [, item1, item2] = match;
-      
-      // Create individual items
-      const cleanItem1 = createIndividualItem(item1.trim(), combinationItem);
-      const cleanItem2 = createIndividualItem(item2.trim(), combinationItem);
-      
-      if (cleanItem1) splitItems.push(cleanItem1);
-      if (cleanItem2) splitItems.push(cleanItem2);
-      
-      console.log(`🔄 Split "${combinationItem.name}" into: "${cleanItem1?.name}" and "${cleanItem2?.name}"`);
-      break;
-    }
-  }
-  
-  return splitItems;
-};
-
-export const createIndividualItem = (itemText: string, originalItem: AIClothingItem): AIClothingItem | null => {
-  // Clean up the item text
-  const cleaned = itemText
-    .replace(/^(the|a|an)\s+/, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  if (cleaned.length < 3) return null;
-  
-  // Capitalize properly
-  const capitalizedName = cleaned
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-  
-  return {
-    name: capitalizedName,
-    descriptors: originalItem.descriptors,
-    category: categorizeClothingItem(cleaned),
-    confidence: originalItem.confidence * 0.9, // Slightly lower confidence for split items
-    source: originalItem.source
-  };
-};
-
-export const cleanIndividualItemName = (item: AIClothingItem): AIClothingItem => {
+export const cleanAndValidateItem = (item: AIClothingItem, validNouns: string[]): AIClothingItem | null => {
   let cleanName = item.name;
   
-  // Remove common prefixes that don't add value
+  // Remove common prefixes and styling words
   cleanName = cleanName.replace(/^(the|a|an)\s+/i, '');
+  cleanName = cleanName.replace(/\b(pairing|choice|providing|contrast|complements|tones)\s*(of\s*)?/gi, '');
   
-  // Remove styling words
-  cleanName = cleanName.replace(/\b(layering|styling|combination|pairing|mix)\s+(of\s+)?/gi, '');
-  
-  // Clean up spacing
+  // Clean up spacing and capitalization
   cleanName = cleanName.replace(/\s+/g, ' ').trim();
   
+  // Check word count after cleaning
+  const words = cleanName.split(' ');
+  if (words.length > 3) {
+    console.log(`❌ Still too many words after cleaning: "${cleanName}" (${words.length} words)`);
+    return null;
+  }
+  
   // Ensure proper capitalization
-  cleanName = cleanName
-    .split(' ')
+  cleanName = words
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
   
+  // Final validation: must contain a clothing noun
+  const hasValidNoun = validNouns.some(noun => 
+    cleanName.toLowerCase().includes(noun)
+  );
+  
+  if (!hasValidNoun) {
+    console.log(`❌ No valid clothing noun in cleaned name: "${cleanName}"`);
+    return null;
+  }
+  
   return {
     ...item,
-    name: cleanName
+    name: cleanName,
+    category: categorizeClothingItem(cleanName.toLowerCase())
   };
 };
 

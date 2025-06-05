@@ -5,7 +5,7 @@ import { enhancedClothingMatcher, convertToAIClothingItems } from '@/services/en
 import { fashionpediaClothingMatcher } from '@/services/fashionpediaClothingMatcher';
 import { TaggingConfig } from '@/types/tagging';
 import { applyStructuredFormat } from './structuredFormatting';
-import { removeDuplicates } from './itemFilters';
+import { filterIndividualClothingItems, removeDuplicates } from './itemFilters';
 
 export const processBasicTagging = async (
   feedback: string, 
@@ -53,7 +53,7 @@ export const processAdvancedTagging = async (
   config: TaggingConfig
 ): Promise<AIClothingItem[]> => {
   console.log('Processing with ADVANCED MULTI-DATASET tagging...');
-  console.log('Using structured format: Colour + Clothing Item + Material + Pattern');
+  console.log('Enforcing strict 3-word maximum: [Descriptor] + [Clothing Item]');
   
   const fullText = [feedback, ...suggestions].join(' ');
   const allItems: AIClothingItem[] = [];
@@ -96,8 +96,8 @@ export const processAdvancedTagging = async (
     console.warn('Fashionpedia matching failed:', error);
   }
 
-  // Step 3: AI extraction with structured format
-  console.log('Step 3: AI extraction with structured formatting...');
+  // Step 3: AI extraction
+  console.log('Step 3: AI extraction...');
   try {
     const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
     
@@ -113,13 +113,16 @@ export const processAdvancedTagging = async (
     console.warn('AI extraction failed:', error);
   }
 
-  // Step 4: Apply structured format to all items
+  // Step 4: Apply strict 3-word structured format
   const structuredItems = await applyStructuredFormat(allItems, fullText);
 
-  // Step 5: Remove duplicates and rank by confidence
-  const deduplicatedItems = removeDuplicates(structuredItems);
+  // Step 5: Apply strict individual item filtering (3 words max)
+  const individualItems = filterIndividualClothingItems(structuredItems);
+
+  // Step 6: Remove duplicates and rank by confidence
+  const deduplicatedItems = removeDuplicates(individualItems);
   
-  // Step 6: Sort by confidence and limit results
+  // Step 7: Sort by confidence and limit results
   const finalItems = deduplicatedItems
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, config.maxItems);
@@ -127,11 +130,13 @@ export const processAdvancedTagging = async (
   console.log(`=== ADVANCED TAGGING COMPLETE ===`);
   console.log(`Total items from all datasets: ${allItems.length}`);
   console.log(`After structured formatting: ${structuredItems.length}`);
+  console.log(`After individual filtering: ${individualItems.length}`);
   console.log(`After deduplication: ${deduplicatedItems.length}`);
   console.log(`Final items: ${finalItems.length}`);
 
   finalItems.forEach((item, index) => {
-    console.log(`${index + 1}. ${item.name} (${item.source}, confidence: ${item.confidence.toFixed(2)})`);
+    const wordCount = item.name.split(' ').length;
+    console.log(`${index + 1}. "${item.name}" (${wordCount} words, ${item.source}, confidence: ${item.confidence.toFixed(2)})`);
   });
 
   return finalItems;
