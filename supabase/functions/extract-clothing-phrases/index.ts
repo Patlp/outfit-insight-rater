@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -21,8 +20,8 @@ interface ClothingItem {
   confidence: number;
 }
 
-// Enhanced validation function for strict 2-word formatting
-const validateClothingItem = (phrase: string, whitelistData: any[]): ClothingItem | null => {
+// Enhanced validation function for strict 2-word formatting with primary taxonomy
+const validateClothingItem = (phrase: string, primaryTaxonomy: any[], whitelistData: any[]): ClothingItem | null => {
   console.log(`Validating: "${phrase}"`);
   
   const lowerPhrase = phrase.toLowerCase().trim();
@@ -43,64 +42,64 @@ const validateClothingItem = (phrase: string, whitelistData: any[]): ClothingIte
     return null;
   }
   
-  // Find matching whitelist item
-  const matchingWhitelistItem = whitelistData.find(item => 
+  // PRIMARY TAXONOMY CHECK (highest priority)
+  const primaryMatch = primaryTaxonomy.find(item => {
+    const itemName = item.item_name.toLowerCase();
+    return lowerPhrase.includes(itemName) || itemName.includes(lowerPhrase);
+  });
+  
+  if (primaryMatch) {
+    console.log(`✅ PRIMARY TAXONOMY MATCH: "${phrase}" -> "${primaryMatch.item_name}"`);
+    
+    // Extract descriptors
+    const itemName = primaryMatch.item_name.toLowerCase();
+    const itemIndex = lowerPhrase.indexOf(itemName);
+    const descriptorsPart = lowerPhrase.substring(0, itemIndex).trim();
+    const descriptors = descriptorsPart ? descriptorsPart.split(/\s+/).filter(d => d.length > 0) : [];
+    
+    // Add style descriptors from taxonomy
+    if (primaryMatch.style_descriptors) {
+      descriptors.push(...primaryMatch.style_descriptors);
+    }
+    
+    return {
+      name: formatItemName(phrase),
+      descriptors: [...new Set(descriptors)],
+      category: primaryMatch.category,
+      confidence: 0.98 // High confidence for primary taxonomy matches
+    };
+  }
+  
+  // FALLBACK: Check whitelist if not in primary taxonomy
+  const whitelistMatch = whitelistData.find(item => 
     lowerPhrase.includes(item.item_name.toLowerCase())
   );
   
-  if (!matchingWhitelistItem) {
-    console.log(`❌ Rejected "${phrase}": Not in whitelist`);
-    return null;
+  if (whitelistMatch) {
+    console.log(`⚠️ WHITELIST FALLBACK: "${phrase}" -> "${whitelistMatch.item_name}"`);
+    
+    const itemName = whitelistMatch.item_name.toLowerCase();
+    const itemIndex = lowerPhrase.indexOf(itemName);
+    const descriptorsPart = lowerPhrase.substring(0, itemIndex).trim();
+    const descriptors = descriptorsPart ? descriptorsPart.split(/\s+/).filter(d => d.length > 0) : [];
+    
+    return {
+      name: formatItemName(phrase),
+      descriptors: descriptors,
+      category: whitelistMatch.category,
+      confidence: 0.85 // Lower confidence for whitelist fallback
+    };
   }
   
-  // Extract descriptors (everything before the item name)
-  const itemName = matchingWhitelistItem.item_name.toLowerCase();
-  const itemIndex = lowerPhrase.indexOf(itemName);
-  const descriptorsPart = lowerPhrase.substring(0, itemIndex).trim();
-  const descriptors = descriptorsPart ? descriptorsPart.split(/\s+/).filter(d => d.length > 0) : [];
-  
-  // STRICT RULE 3: If 2 words, first must be descriptor, second must be clothing item
-  if (words.length === 2) {
-    const [firstWord, secondWord] = words;
-    
-    // Validate that second word contains the clothing item
-    if (!secondWord.includes(itemName) && !itemName.includes(secondWord)) {
-      console.log(`❌ Rejected "${phrase}": Second word "${secondWord}" doesn't match clothing item "${itemName}"`);
-      return null;
-    }
-    
-    // Validate that first word is a valid descriptor
-    const validDescriptors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'black', 'white', 'gray', 'grey', 'brown', 'navy', 'beige', 'cream', 'tan', 'cotton', 'denim', 'leather', 'silk', 'wool', 'striped', 'plaid', 'fitted', 'oversized'];
-    const isValidDescriptor = validDescriptors.some(desc => firstWord.includes(desc) || desc.includes(firstWord));
-    
-    if (!isValidDescriptor) {
-      console.log(`⚠️ Warning "${phrase}": First word "${firstWord}" may not be a valid descriptor`);
-    }
-  } else if (words.length === 1) {
-    // Single word must be the clothing item itself
-    if (!words[0].includes(itemName) && !itemName.includes(words[0])) {
-      console.log(`❌ Rejected "${phrase}": Single word doesn't match clothing item "${itemName}"`);
-      return null;
-    }
-  }
-  
-  // Clean and format the final name
-  let cleanName = phrase.trim();
-  
-  // Ensure proper capitalization
-  const finalWords = cleanName.split(' ');
-  cleanName = finalWords
+  console.log(`❌ Rejected "${phrase}": Not found in primary taxonomy or whitelist`);
+  return null;
+};
+
+const formatItemName = (phrase: string): string => {
+  const words = phrase.trim().split(/\s+/);
+  return words
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-  
-  console.log(`✅ Validated: "${phrase}" → "${cleanName}"`);
-  
-  return {
-    name: cleanName,
-    descriptors: descriptors,
-    category: matchingWhitelistItem.category,
-    confidence: 0.95 // High confidence for validated items
-  };
 };
 
 serve(async (req) => {
@@ -138,35 +137,52 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Fetch fashion whitelist from database
+    // Fetch PRIMARY TAXONOMY (highest priority)
+    const { data: primaryTaxonomy, error: taxonomyError } = await supabase
+      .from('primary_fashion_taxonomy')
+      .select('item_name, category, style_descriptors, common_materials, priority_rank')
+      .eq('is_active', true)
+      .order('priority_rank', { ascending: true })
+      .limit(500)
+
+    if (taxonomyError) {
+      console.error('Error fetching primary taxonomy:', taxonomyError)
+      throw new Error('Failed to fetch primary taxonomy')
+    }
+
+    console.log(`PRIMARY TAXONOMY LOADED: ${primaryTaxonomy?.length || 0} items`)
+
+    // Fetch fashion whitelist as fallback
     const { data: whitelistData, error: whitelistError } = await supabase
       .from('fashion_whitelist')
       .select('item_name, category, style_descriptors, common_materials')
 
     if (whitelistError) {
-      console.error('Error fetching fashion whitelist:', whitelistError)
-      throw new Error('Failed to fetch fashion whitelist')
+      console.warn('Warning: Could not fetch fashion whitelist:', whitelistError)
     }
 
-    // Create structured data for the AI prompt
-    const whitelistForPrompt = whitelistData.map(item => ({
+    console.log(`WHITELIST FALLBACK: ${whitelistData?.length || 0} items`)
+
+    // Create structured data for the AI prompt (prioritize primary taxonomy)
+    const taxonomyForPrompt = (primaryTaxonomy || []).map(item => ({
       name: item.item_name,
       category: item.category,
       descriptors: item.style_descriptors || [],
-      materials: item.common_materials || []
+      materials: item.common_materials || [],
+      priority: 'PRIMARY'
     }))
 
     // Combine feedback and suggestions for analysis
     const fullText = [feedback, ...suggestions].join(' ')
 
-    // Enhanced prompt with STRICT formatting rules
-    const prompt = `You are a fashion expert tasked with extracting clothing items from outfit descriptions. Use ONLY the items from the provided fashion whitelist below.
+    // Enhanced prompt with PRIMARY TAXONOMY focus
+    const prompt = `You are a fashion expert tasked with extracting clothing items from outfit descriptions. Use the PRIMARY fashion taxonomy below as your main reference.
 
-FASHION WHITELIST:
-${JSON.stringify(whitelistForPrompt, null, 2)}
+PRIMARY FASHION TAXONOMY (USE THESE FIRST):
+${JSON.stringify(taxonomyForPrompt, null, 2)}
 
 STRICT RULES - FOLLOW EXACTLY:
-1. Extract clothing items mentioned in the text that match items from the whitelist
+1. PRIORITIZE items from the PRIMARY taxonomy above
 2. Format MUST be: "[Color/Descriptor] [Item]" or just "[Item]" (MAX 2 WORDS)
 3. NO prepositions (of, with, and, the, a, an, in, on, at, to, for, from, by, against)
 4. Colors/descriptors: red, blue, black, white, cotton, denim, leather, striped, fitted, etc.
@@ -175,16 +191,10 @@ STRICT RULES - FOLLOW EXACTLY:
 7. NO combinations or styling phrases
 
 EXAMPLES OF CORRECT FORMAT:
-- "Black Jacket"
-- "Denim Jeans" 
-- "White Shirt"
-- "Leather Shoes"
+- "Black Jacket" (if "jacket" is in taxonomy)
+- "Denim Jeans" (if "jeans" is in taxonomy)
+- "White Shirt" (if "shirt" is in taxonomy)
 - "Jacket" (if no descriptor mentioned)
-
-EXAMPLES OF INCORRECT FORMAT (DO NOT USE):
-- "Black leather jacket" (3 words)
-- "Pairing of jeans" (contains preposition)
-- "Shirt and pants" (contains "and")
 
 TEXT TO ANALYZE: "${fullText}"
 
@@ -202,7 +212,7 @@ Return ONLY a clean JSON array of clothing item phrases following the strict for
         messages: [
           {
             role: 'system',
-            content: 'You are a fashion expert that extracts clothing items using STRICT formatting rules. Always respond with valid JSON arrays only. Follow the 2-word maximum rule exactly.'
+            content: 'You are a fashion expert that extracts clothing items using STRICT formatting rules and PRIMARY taxonomy prioritization. Always respond with valid JSON arrays only. Follow the 2-word maximum rule exactly.'
           },
           {
             role: 'user',
@@ -245,13 +255,13 @@ Return ONLY a clean JSON array of clothing item phrases following the strict for
       throw new Error('Invalid JSON response from OpenAI')
     }
 
-    // Apply STRICT validation to each phrase
+    // Apply STRICT validation with PRIMARY TAXONOMY priority
     const validItems: ClothingItem[] = []
     
     for (const phrase of rawClothingPhrases) {
       if (!phrase || typeof phrase !== 'string') continue
       
-      const validatedItem = validateClothingItem(phrase, whitelistData)
+      const validatedItem = validateClothingItem(phrase, primaryTaxonomy || [], whitelistData || [])
       if (validatedItem) {
         validItems.push(validatedItem)
       }
@@ -265,6 +275,7 @@ Return ONLY a clean JSON array of clothing item phrases following the strict for
       .slice(0, 6)
 
     console.log(`Extracted ${uniqueItems.length} STRICTLY validated clothing items for wardrobe item ${wardrobeItemId}`)
+    console.log(`Primary taxonomy matches: ${uniqueItems.filter(item => item.confidence >= 0.95).length}`)
 
     // Update the wardrobe item with extracted clothing phrases
     const { error: updateError } = await supabase
@@ -284,7 +295,8 @@ Return ONLY a clean JSON array of clothing item phrases following the strict for
       JSON.stringify({ 
         success: true, 
         extractedItems: uniqueItems,
-        count: uniqueItems.length 
+        count: uniqueItems.length,
+        primaryTaxonomyUsed: primaryTaxonomy?.length || 0
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -305,4 +317,3 @@ Return ONLY a clean JSON array of clothing item phrases following the strict for
     )
   }
 })
-

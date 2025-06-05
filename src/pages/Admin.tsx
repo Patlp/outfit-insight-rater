@@ -2,9 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, TestTube, Settings, FileText, BookOpen, Brain } from 'lucide-react';
+import { Database, TestTube, Settings, FileText, BookOpen, Brain, Upload } from 'lucide-react';
 import KaggleIntegrationTest from '@/components/admin/KaggleIntegrationTest';
 import FashionpediaDataUpload from '@/components/admin/FashionpediaDataUpload';
+import PrimaryTaxonomyUpload from '@/components/admin/PrimaryTaxonomyUpload';
 import AcademicPaperUpload from '@/components/admin/AcademicPaperUpload';
 import AcademicPapersList from '@/components/admin/AcademicPapersList';
 import AcademicProcessingPanel from '@/components/admin/AcademicProcessingPanel';
@@ -21,8 +22,12 @@ const Admin: React.FC = () => {
           <p className="text-gray-600">Manage RateMyFit data and integrations</p>
         </div>
 
-        <Tabs defaultValue="kaggle" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+        <Tabs defaultValue="taxonomy" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="taxonomy" className="flex items-center gap-2">
+              <Upload size={16} />
+              Primary Taxonomy
+            </TabsTrigger>
             <TabsTrigger value="kaggle" className="flex items-center gap-2">
               <Database size={16} />
               Kaggle Integration
@@ -48,6 +53,10 @@ const Admin: React.FC = () => {
               Settings
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="taxonomy">
+            <PrimaryTaxonomyUpload />
+          </TabsContent>
 
           <TabsContent value="kaggle">
             <KaggleIntegrationTest />

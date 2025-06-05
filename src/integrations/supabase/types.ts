@@ -599,6 +599,78 @@ export type Database = {
         }
         Relationships: []
       }
+      primary_fashion_taxonomy: {
+        Row: {
+          academic_references: string[] | null
+          category: string
+          color_compatibility: string[] | null
+          common_materials: string[] | null
+          confidence_score: number | null
+          created_at: string
+          fit_type: string | null
+          formality_level: string | null
+          gender_association: string[] | null
+          id: string
+          is_active: boolean | null
+          item_name: string
+          occasion_contexts: string[] | null
+          pattern_types: string[] | null
+          priority_rank: number | null
+          seasonal_tags: string[] | null
+          source_file: string | null
+          style_descriptors: string[] | null
+          styling_notes: string | null
+          subcategory: string | null
+          updated_at: string
+        }
+        Insert: {
+          academic_references?: string[] | null
+          category: string
+          color_compatibility?: string[] | null
+          common_materials?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          fit_type?: string | null
+          formality_level?: string | null
+          gender_association?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          item_name: string
+          occasion_contexts?: string[] | null
+          pattern_types?: string[] | null
+          priority_rank?: number | null
+          seasonal_tags?: string[] | null
+          source_file?: string | null
+          style_descriptors?: string[] | null
+          styling_notes?: string | null
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Update: {
+          academic_references?: string[] | null
+          category?: string
+          color_compatibility?: string[] | null
+          common_materials?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          fit_type?: string | null
+          formality_level?: string | null
+          gender_association?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          item_name?: string
+          occasion_contexts?: string[] | null
+          pattern_types?: string[] | null
+          priority_rank?: number | null
+          seasonal_tags?: string[] | null
+          source_file?: string | null
+          style_descriptors?: string[] | null
+          styling_notes?: string | null
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wardrobe_items: {
         Row: {
           created_at: string
