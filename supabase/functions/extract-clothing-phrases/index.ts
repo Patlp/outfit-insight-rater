@@ -45,25 +45,55 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase configuration missing')
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Fetch fashion whitelist from database
+    const { data: whitelistData, error: whitelistError } = await supabase
+      .from('fashion_whitelist')
+      .select('item_name, category, style_descriptors, common_materials')
+
+    if (whitelistError) {
+      console.error('Error fetching fashion whitelist:', whitelistError)
+      throw new Error('Failed to fetch fashion whitelist')
+    }
+
+    // Create structured data for the AI prompt
+    const whitelistForPrompt = whitelistData.map(item => ({
+      name: item.item_name,
+      category: item.category,
+      descriptors: item.style_descriptors || [],
+      materials: item.common_materials || []
+    }))
+
     // Combine feedback and suggestions for analysis
     const fullText = [feedback, ...suggestions].join(' ')
 
-    // New improved prompt for clean clothing phrase extraction
-    const prompt = `You are a clothing item extractor. Given a paragraph describing an outfit, extract a list of physical clothing items mentioned. Format each item as a short phrase with one or two adjectives followed by a noun (e.g. "yellow graphic tee").
+    // Enhanced prompt using the fashion whitelist
+    const prompt = `You are a fashion expert tasked with extracting clothing items from outfit descriptions. Use ONLY the items from the provided fashion whitelist below.
 
-Rules:
-• Each item must describe an actual clothing or accessory item.
-• Format: "[adjective] [clothing noun]" or "[adjective] [adjective] [clothing noun]"
-• DO NOT include:
-  • Phrases with verbs (e.g. "layering", "balancing", "featuring")
-  • Commentary (e.g. "mix of casual elements")
-  • Words like "with", "and", "style", or "elements"
-• Limit output to 3–6 items only.
-• Return result as a clean JSON array of strings.
+FASHION WHITELIST:
+${JSON.stringify(whitelistForPrompt, null, 2)}
 
-Text to analyze: "${fullText}"
+RULES:
+1. Extract clothing items mentioned in the text that match items from the whitelist
+2. For each item, include relevant descriptors (colors, patterns, styles, materials) mentioned in the text
+3. Only use descriptors that are actually mentioned in the text or logically inferred
+4. Return a maximum of 6 items
+5. Format each item as: "[descriptors] [item_name]" (e.g., "black leather jacket", "blue denim jeans")
+6. Do NOT create items that aren't in the whitelist
+7. Return ONLY a clean JSON array of strings, no additional text
 
-Return only a JSON array of clothing item phrases, no additional text.`
+TEXT TO ANALYZE: "${fullText}"
+
+Return a JSON array of clothing item phrases:`
 
     // Call OpenAI API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -77,7 +107,7 @@ Return only a JSON array of clothing item phrases, no additional text.`
         messages: [
           {
             role: 'system',
-            content: 'You are a clothing item extractor that returns clean JSON arrays of clothing phrases. Always respond with valid JSON only.'
+            content: 'You are a fashion expert that extracts clothing items from text using a structured whitelist. Always respond with valid JSON arrays only.'
           },
           {
             role: 'user',
@@ -96,10 +126,19 @@ Return only a JSON array of clothing item phrases, no additional text.`
     }
 
     const openaiData = await openaiResponse.json()
-    const extractedText = openaiData.choices[0]?.message?.content?.trim()
+    let extractedText = openaiData.choices[0]?.message?.content?.trim()
 
     if (!extractedText) {
       throw new Error('No response from OpenAI')
+    }
+
+    console.log('Raw OpenAI response:', extractedText)
+
+    // Clean up the response if it has markdown formatting
+    if (extractedText.startsWith('```json')) {
+      extractedText = extractedText.replace(/```json\n?/, '').replace(/\n?```$/, '')
+    } else if (extractedText.startsWith('```')) {
+      extractedText = extractedText.replace(/```\n?/, '').replace(/\n?```$/, '')
     }
 
     // Parse the JSON response
@@ -111,78 +150,49 @@ Return only a JSON array of clothing item phrases, no additional text.`
       throw new Error('Invalid JSON response from OpenAI')
     }
 
-    // Post-filter logic to ensure clean phrases
-    const clothingNounWhitelist = [
-      "tee", "shirt", "skirt", "pants", "jeans", "jacket", "coat",
-      "socks", "shoes", "sneakers", "boots", "hoodie", "sweater",
-      "blazer", "beanie", "hat", "shorts", "top", "turtleneck",
-      "dress", "cardigan", "vest", "flannel", "polo", "tank"
-    ];
-
-    const bannedWords = ["with", "and", "style", "elements", "layering", "balancing", "mix", "featuring"];
-
-    const cleanedPhrases = rawClothingPhrases
-      .filter(phrase => {
-        if (!phrase || typeof phrase !== 'string') return false;
-        
-        const lowerPhrase = phrase.toLowerCase().trim();
-        
-        // Remove phrases with banned words
-        if (bannedWords.some(word => lowerPhrase.includes(word))) return false;
-        
-        // Remove phrases with more than 4 words
-        if (lowerPhrase.split(' ').length > 4) return false;
-        
-        // Check if last word is a valid clothing noun
-        const words = lowerPhrase.split(' ');
-        const lastWord = words[words.length - 1];
-        if (!clothingNounWhitelist.includes(lastWord)) return false;
-        
-        return true;
-      })
-      .slice(0, 6); // Limit to 6 items max
-
-    // Convert cleaned phrases to the expected ClothingItem format
-    const validItems: ClothingItem[] = cleanedPhrases.map(phrase => {
-      const words = phrase.toLowerCase().split(' ');
-      const clothingNoun = words[words.length - 1];
-      const descriptors = words.slice(0, -1);
-      
-      // Determine category based on clothing noun
-      const getCategory = (noun: string): string => {
-        if (['tee', 'shirt', 'hoodie', 'sweater', 'blazer', 'top', 'tank', 'polo', 'flannel', 'cardigan', 'vest'].includes(noun)) return 'tops';
-        if (['skirt', 'pants', 'jeans', 'shorts'].includes(noun)) return 'bottoms';
-        if (['dress'].includes(noun)) return 'dresses';
-        if (['shoes', 'sneakers', 'boots'].includes(noun)) return 'footwear';
-        if (['jacket', 'coat'].includes(noun)) return 'outerwear';
-        if (['socks', 'beanie', 'hat'].includes(noun)) return 'accessories';
-        return 'other';
-      };
-
-      return {
-        name: phrase,
-        descriptors: descriptors,
-        category: getCategory(clothingNoun),
-        confidence: 0.85 // High confidence since we've filtered thoroughly
-      };
-    });
-
-    console.log(`Extracted ${validItems.length} clean clothing items for wardrobe item ${wardrobeItemId}`);
-
-    // Update the wardrobe item with extracted clothing phrases
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    // Validate and clean the extracted phrases against the whitelist
+    const validItems: ClothingItem[] = []
     
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase configuration missing')
+    for (const phrase of rawClothingPhrases) {
+      if (!phrase || typeof phrase !== 'string') continue
+      
+      const lowerPhrase = phrase.toLowerCase().trim()
+      
+      // Find matching whitelist item
+      const matchingWhitelistItem = whitelistData.find(item => 
+        lowerPhrase.includes(item.item_name.toLowerCase())
+      )
+      
+      if (matchingWhitelistItem) {
+        // Extract descriptors from the phrase (everything before the item name)
+        const itemName = matchingWhitelistItem.item_name.toLowerCase()
+        const itemIndex = lowerPhrase.indexOf(itemName)
+        const descriptorsPart = lowerPhrase.substring(0, itemIndex).trim()
+        const descriptors = descriptorsPart ? descriptorsPart.split(/\s+/).filter(d => d.length > 0) : []
+        
+        validItems.push({
+          name: phrase,
+          descriptors: descriptors,
+          category: matchingWhitelistItem.category,
+          confidence: 0.9 // High confidence since we validated against whitelist
+        })
+      }
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    // Limit to 6 items and remove duplicates
+    const uniqueItems = validItems
+      .filter((item, index, self) => 
+        index === self.findIndex(i => i.name.toLowerCase() === item.name.toLowerCase())
+      )
+      .slice(0, 6)
 
+    console.log(`Extracted ${uniqueItems.length} validated clothing items for wardrobe item ${wardrobeItemId}`)
+
+    // Update the wardrobe item with extracted clothing phrases
     const { error: updateError } = await supabase
       .from('wardrobe_items')
       .update({ 
-        extracted_clothing_items: validItems,
+        extracted_clothing_items: uniqueItems,
         updated_at: new Date().toISOString()
       })
       .eq('id', wardrobeItemId)
@@ -195,8 +205,8 @@ Return only a JSON array of clothing item phrases, no additional text.`
     return new Response(
       JSON.stringify({ 
         success: true, 
-        extractedItems: validItems,
-        count: validItems.length 
+        extractedItems: uniqueItems,
+        count: uniqueItems.length 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

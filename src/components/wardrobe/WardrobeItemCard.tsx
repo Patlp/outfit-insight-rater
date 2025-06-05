@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { WardrobeItem, deleteWardrobeItem } from '@/services/wardrobeService';
-import { Star, Trash2, Calendar, Tag, Sparkles } from 'lucide-react';
+import { Star, Trash2, Calendar, Tag, Sparkles, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -122,11 +122,17 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
         
         {displayItems.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 mb-1 w-full">
               {isAIExtracted ? (
-                <Sparkles size={12} className="text-fashion-500" />
+                <div className="flex items-center gap-1">
+                  <CheckCircle size={12} className="text-green-500" />
+                  <span className="text-xs text-green-600 font-medium">Validated Tags</span>
+                </div>
               ) : (
-                <Tag size={12} className="text-gray-400" />
+                <div className="flex items-center gap-1">
+                  <Tag size={12} className="text-gray-400" />
+                  <span className="text-xs text-gray-500">Basic Tags</span>
+                </div>
               )}
             </div>
             {displayItems.map((clothingItem, index) => {
@@ -134,23 +140,22 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
               const itemName = typeof clothingItem === 'string' ? clothingItem : clothingItem.name;
               const category = typeof clothingItem === 'object' ? clothingItem.category : undefined;
               const descriptors = typeof clothingItem === 'object' ? clothingItem.descriptors : [];
+              const confidence = typeof clothingItem === 'object' ? clothingItem.confidence : undefined;
               
               return (
                 <Badge
                   key={index}
                   variant="secondary"
                   className={`text-xs ${getCategoryColor(itemName, category)}`}
-                  title={isAIExtracted && descriptors.length > 0 ? `Descriptors: ${descriptors.join(', ')}` : undefined}
+                  title={isAIExtracted && descriptors.length > 0 ? 
+                    `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%` : 
+                    undefined
+                  }
                 >
                   {itemName}
                 </Badge>
               );
             })}
-            {isAIExtracted && (
-              <Badge variant="outline" className="text-xs text-fashion-600 border-fashion-300">
-                AI Enhanced
-              </Badge>
-            )}
           </div>
         )}
       </CardContent>

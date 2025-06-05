@@ -30,6 +30,33 @@ export type Database = {
         }
         Relationships: []
       }
+      fashion_whitelist: {
+        Row: {
+          category: string
+          common_materials: string[] | null
+          created_at: string
+          id: string
+          item_name: string
+          style_descriptors: string[] | null
+        }
+        Insert: {
+          category: string
+          common_materials?: string[] | null
+          created_at?: string
+          id?: string
+          item_name: string
+          style_descriptors?: string[] | null
+        }
+        Update: {
+          category?: string
+          common_materials?: string[] | null
+          created_at?: string
+          id?: string
+          item_name?: string
+          style_descriptors?: string[] | null
+        }
+        Relationships: []
+      }
       wardrobe_items: {
         Row: {
           created_at: string
