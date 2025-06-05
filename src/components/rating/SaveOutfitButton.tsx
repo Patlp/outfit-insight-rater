@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Bookmark, BookmarkCheck } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Eye } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRating } from '@/context/RatingContext';
 import { saveOutfitToWardrobe } from '@/services/wardrobeService';
@@ -13,6 +14,7 @@ interface SaveOutfitButtonProps {
 }
 
 const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { ratingResult, selectedGender, occasionContext, isRoastMode } = useRating();
   const [isSaving, setIsSaving] = useState(false);
@@ -47,6 +49,10 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
       } else {
         setIsSaved(true);
         toast.success('Outfit saved to your wardrobe!');
+        // Redirect to wardrobe after a short delay
+        setTimeout(() => {
+          navigate('/wardrobe');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error saving outfit:', error);
@@ -64,12 +70,16 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
     }, 100);
   };
 
+  const handleViewWardrobe = () => {
+    navigate('/wardrobe');
+  };
+
   if (!ratingResult) {
     return null;
   }
 
   return (
-    <>
+    <div className="space-y-3">
       <Button
         onClick={handleSaveOutfit}
         disabled={isSaving || isSaved}
@@ -93,12 +103,23 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
         )}
       </Button>
 
+      {user && (
+        <Button
+          onClick={handleViewWardrobe}
+          variant="ghost"
+          className="w-full flex items-center justify-center gap-2 text-fashion-600 hover:text-fashion-700 hover:bg-fashion-50"
+        >
+          <Eye size={16} />
+          View My Wardrobe
+        </Button>
+      )}
+
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onSuccess={handleAuthSuccess}
       />
-    </>
+    </div>
   );
 };
 
