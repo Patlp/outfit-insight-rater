@@ -6,6 +6,8 @@ export interface TaggingConfig {
   useAIExtraction: boolean;
   useEnhancedMatching: boolean;
   useKaggleData: boolean;
+  useFashionpediaData: boolean;
+  useStructuredFormat: boolean;
   maxItems: number;
   minConfidence: number;
 }
@@ -24,6 +26,8 @@ export const TAGGING_CONFIGS: Record<TaggingLevel, TaggingConfig> = {
     useAIExtraction: false,
     useEnhancedMatching: false,
     useKaggleData: false,
+    useFashionpediaData: false,
+    useStructuredFormat: false,
     maxItems: 3,
     minConfidence: 0.5
   },
@@ -32,6 +36,8 @@ export const TAGGING_CONFIGS: Record<TaggingLevel, TaggingConfig> = {
     useAIExtraction: true,
     useEnhancedMatching: false,
     useKaggleData: false,
+    useFashionpediaData: false,
+    useStructuredFormat: false,
     maxItems: 5,
     minConfidence: 0.7
   },
@@ -40,6 +46,8 @@ export const TAGGING_CONFIGS: Record<TaggingLevel, TaggingConfig> = {
     useAIExtraction: true,
     useEnhancedMatching: true,
     useKaggleData: true,
+    useFashionpediaData: true,
+    useStructuredFormat: true,
     maxItems: 8,
     minConfidence: 0.6
   }

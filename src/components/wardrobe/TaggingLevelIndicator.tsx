@@ -7,7 +7,9 @@ import {
   Sparkles, 
   Tag,
   CheckCircle,
-  Database
+  Database,
+  Brain,
+  Layers
 } from 'lucide-react';
 
 interface TaggingLevelIndicatorProps {
@@ -41,10 +43,10 @@ const TaggingLevelIndicator: React.FC<TaggingLevelIndicatorProps> = ({
         };
       case 'advanced':
         return {
-          icon: <Sparkles size={12} className="text-purple-500" />,
-          label: 'Advanced Tags',
+          icon: <Brain size={12} className="text-purple-500" />,
+          label: 'Multi-Dataset',
           color: 'bg-purple-100 text-purple-700 border-purple-200',
-          description: 'Enhanced AI + Dataset matching'
+          description: 'Structured format: Colour + Item + Material + Pattern'
         };
       default:
         return {
@@ -70,10 +72,16 @@ const TaggingLevelIndicator: React.FC<TaggingLevelIndicatorProps> = ({
       </Badge>
       
       {level === 'advanced' && (
-        <Badge variant="outline" className="text-xs px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
-          <Database size={10} className="mr-1" />
-          Enhanced
-        </Badge>
+        <>
+          <Badge variant="outline" className="text-xs px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
+            <Database size={10} className="mr-1" />
+            Kaggle
+          </Badge>
+          <Badge variant="outline" className="text-xs px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
+            <Layers size={10} className="mr-1" />
+            Fashionpedia
+          </Badge>
+        </>
       )}
       
       <span className="text-xs text-gray-500">
