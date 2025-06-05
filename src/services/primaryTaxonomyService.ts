@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PrimaryTaxonomyItem {
@@ -28,7 +27,7 @@ export const uploadPrimaryTaxonomy = async (
   sourceFile: string
 ): Promise<{ success: boolean; count?: number; error?: string }> => {
   try {
-    console.log(`Uploading ${csvData.length} items from ${sourceFile}`);
+    console.log(`Processing ${csvData.length} items from ${sourceFile}`);
 
     // Transform CSV data to match our schema
     const taxonomyItems: PrimaryTaxonomyItem[] = csvData.map(row => ({
@@ -59,34 +58,75 @@ export const uploadPrimaryTaxonomy = async (
       return { success: false, error: 'No valid items found in CSV data' };
     }
 
-    // Insert in batches to avoid size limits
-    const batchSize = 100;
-    let totalInserted = 0;
+    console.log(`Found ${validItems.length} valid items to process`);
 
-    for (let i = 0; i < validItems.length; i += batchSize) {
-      const batch = validItems.slice(i, i + batchSize);
-      
-      const { error: insertError } = await supabase
-        .from('primary_fashion_taxonomy')
-        .insert(batch);
+    // Check for existing items to avoid duplicates
+    const itemNames = validItems.map(item => item.item_name.toLowerCase());
+    const { data: existingItems, error: checkError } = await supabase
+      .from('primary_fashion_taxonomy')
+      .select('item_name')
+      .in('item_name', itemNames.map(name => name.charAt(0).toUpperCase() + name.slice(1)));
 
-      if (insertError) {
-        console.error(`Batch ${i / batchSize + 1} failed:`, insertError);
-        throw insertError;
-      }
-
-      totalInserted += batch.length;
-      console.log(`Inserted batch ${i / batchSize + 1}: ${batch.length} items`);
+    if (checkError) {
+      console.error('Error checking existing items:', checkError);
+      return { success: false, error: `Database check failed: ${checkError.message}` };
     }
 
-    console.log(`Successfully uploaded ${totalInserted} taxonomy items`);
+    const existingNames = new Set((existingItems || []).map(item => item.item_name.toLowerCase()));
+    const newItems = validItems.filter(item => !existingNames.has(item.item_name.toLowerCase()));
+
+    console.log(`${existingNames.size} items already exist, ${newItems.length} new items to insert`);
+
+    if (newItems.length === 0) {
+      return { success: false, error: 'All items already exist in the database' };
+    }
+
+    // Insert new items in batches
+    const batchSize = 50; // Smaller batch size for better error handling
+    let totalInserted = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < newItems.length; i += batchSize) {
+      const batch = newItems.slice(i, i + batchSize);
+      
+      try {
+        const { error: insertError } = await supabase
+          .from('primary_fashion_taxonomy')
+          .insert(batch);
+
+        if (insertError) {
+          console.error(`Batch ${i / batchSize + 1} failed:`, insertError);
+          errors.push(`Batch ${i / batchSize + 1}: ${insertError.message}`);
+          continue;
+        }
+
+        totalInserted += batch.length;
+        console.log(`Inserted batch ${i / batchSize + 1}: ${batch.length} items`);
+      } catch (batchError) {
+        console.error(`Batch ${i / batchSize + 1} exception:`, batchError);
+        errors.push(`Batch ${i / batchSize + 1}: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
+      }
+    }
+
+    if (totalInserted === 0) {
+      return { 
+        success: false, 
+        error: `Failed to insert any items. Errors: ${errors.join(', ')}` 
+      };
+    }
+
+    const message = totalInserted === newItems.length 
+      ? `Successfully uploaded ${totalInserted} new taxonomy items`
+      : `Uploaded ${totalInserted} items with ${errors.length} errors`;
+
+    console.log(message);
     return { success: true, count: totalInserted };
 
   } catch (error) {
     console.error('Error uploading primary taxonomy:', error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error instanceof Error ? error.message : 'Unknown error during upload' 
     };
   }
 };
@@ -127,6 +167,14 @@ const parseArrayField = (value: any): string[] => {
   if (!value) return [];
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') {
+    // Handle pipe-separated values first (preferred format)
+    if (value.includes('|')) {
+      return value.split('|').map(item => item.trim()).filter(item => item.length > 0);
+    }
+    // Handle semicolon-separated values
+    if (value.includes(';')) {
+      return value.split(';').map(item => item.trim()).filter(item => item.length > 0);
+    }
     // Handle comma-separated values
     return value.split(',').map(item => item.trim()).filter(item => item.length > 0);
   }
