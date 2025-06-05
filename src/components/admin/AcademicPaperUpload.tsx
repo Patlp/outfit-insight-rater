@@ -5,34 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { CheckCircle, AlertCircle, FileText, BookOpen, Info, Upload } from 'lucide-react';
+import { CheckCircle, AlertCircle, BookOpen, Info, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { insertAcademicPaper, getAcademicPapersCount, type AcademicPaper } from '@/services/academicPaperService';
 
 interface UploadResult {
   success: boolean;
   message?: string;
-  paperId?: string;
+  processed?: number;
+  inserted?: number;
+  errors?: number;
+  errorDetails?: string[];
 }
 
 const AcademicPaperUpload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [papersCount, setPapersCount] = useState<number | null>(null);
   const [fileValidationError, setFileValidationError] = useState<string | null>(null);
-  
-  // Form fields
-  const [title, setTitle] = useState('');
-  const [authors, setAuthors] = useState('');
-  const [abstract, setAbstract] = useState('');
-  const [journal, setJournal] = useState('');
-  const [publicationYear, setPublicationYear] = useState('');
-  const [doi, setDoi] = useState('');
-  const [keywords, setKeywords] = useState('');
 
   useEffect(() => {
     loadPapersCount();
@@ -49,68 +41,67 @@ const AcademicPaperUpload: React.FC = () => {
     }
   };
 
-  const validateFile = (file: File): string | null => {
-    console.log('Validating file:', { name: file.name, type: file.type, size: file.size });
-    
-    // Check file extension
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.pdf')) {
-      return 'File must be a PDF';
-    }
-    
-    // Check file size (max 50MB)
-    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
-    if (file.size > maxSize) {
-      return 'File size must be less than 50MB';
-    }
-    
-    // Check if file is empty
-    if (file.size === 0) {
-      return 'File cannot be empty';
+  const validateFiles = (files: File[]): string | null => {
+    for (const file of files) {
+      console.log('Validating file:', { name: file.name, type: file.type, size: file.size });
+      
+      // Check file extension
+      const fileName = file.name.toLowerCase();
+      if (!fileName.endsWith('.pdf')) {
+        return `File "${file.name}" must be a PDF`;
+      }
+      
+      // Check file size (max 50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+      if (file.size > maxSize) {
+        return `File "${file.name}" size must be less than 50MB`;
+      }
+      
+      // Check if file is empty
+      if (file.size === 0) {
+        return `File "${file.name}" cannot be empty`;
+      }
     }
     
     return null;
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files || []);
     setFileValidationError(null);
     setUploadResult(null);
     
-    if (!file) {
-      setSelectedFile(null);
+    if (files.length === 0) {
+      setSelectedFiles([]);
       return;
     }
 
-    console.log('File selected:', { name: file.name, type: file.type, size: file.size });
+    console.log('Files selected:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
     
-    const validationError = validateFile(file);
+    const validationError = validateFiles(files);
     if (validationError) {
       setFileValidationError(validationError);
       toast.error(validationError);
-      setSelectedFile(null);
+      setSelectedFiles([]);
       return;
     }
     
-    setSelectedFile(file);
-    toast.success('PDF selected successfully');
+    setSelectedFiles(files);
+    toast.success(`${files.length} PDF${files.length > 1 ? 's' : ''} selected successfully`);
   };
 
-  const resetForm = () => {
-    setTitle('');
-    setAuthors('');
-    setAbstract('');
-    setJournal('');
-    setPublicationYear('');
-    setDoi('');
-    setKeywords('');
-    setSelectedFile(null);
-    setUploadResult(null);
+  const extractTitleFromFilename = (filename: string): string => {
+    // Remove file extension and clean up the filename
+    return filename
+      .replace(/\.pdf$/i, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase())
+      .trim();
   };
 
   const handleUpload = async () => {
-    if (!title.trim()) {
-      toast.error('Title is required');
+    if (selectedFiles.length === 0) {
+      toast.error('Please select at least one PDF file');
       return;
     }
 
@@ -119,52 +110,76 @@ const AcademicPaperUpload: React.FC = () => {
     setUploadResult(null);
 
     try {
-      console.log('Starting paper upload process...');
-      setUploadProgress(25);
+      console.log('Starting bulk paper upload process...');
+      setUploadProgress(10);
 
-      // Parse authors and keywords
-      const authorsArray = authors.split(',').map(a => a.trim()).filter(a => a.length > 0);
-      const keywordsArray = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+      let processed = 0;
+      let inserted = 0;
+      let errors = 0;
+      const errorDetails: string[] = [];
 
-      const paperData: AcademicPaper = {
-        title: title.trim(),
-        authors: authorsArray.length > 0 ? authorsArray : undefined,
-        abstract: abstract.trim() || undefined,
-        journal: journal.trim() || undefined,
-        publication_year: publicationYear ? parseInt(publicationYear) : undefined,
-        doi: doi.trim() || undefined,
-        keywords: keywordsArray.length > 0 ? keywordsArray : undefined,
-        processing_status: 'pending',
-        metadata: {
-          original_filename: selectedFile?.name,
-          file_size: selectedFile?.size,
-          upload_timestamp: new Date().toISOString()
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        processed++;
+        
+        try {
+          const title = extractTitleFromFilename(file.name);
+          
+          const paperData: AcademicPaper = {
+            title,
+            processing_status: 'pending',
+            metadata: {
+              original_filename: file.name,
+              file_size: file.size,
+              upload_timestamp: new Date().toISOString(),
+              bulk_upload: true
+            }
+          };
+
+          const { data, error } = await insertAcademicPaper(paperData);
+          
+          if (error) {
+            throw new Error(`Failed to save paper: ${error.message}`);
+          }
+
+          inserted++;
+          console.log(`Successfully uploaded: ${title}`);
+          
+        } catch (error) {
+          errors++;
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          errorDetails.push(`${file.name}: ${errorMsg}`);
+          console.error(`Error uploading ${file.name}:`, error);
         }
-      };
 
-      setUploadProgress(75);
-
-      const { data, error } = await insertAcademicPaper(paperData);
-      
-      if (error) {
-        throw new Error(`Failed to save paper: ${error.message}`);
+        // Update progress
+        const progress = Math.round(((i + 1) / selectedFiles.length) * 90) + 10;
+        setUploadProgress(progress);
       }
 
       setUploadProgress(100);
       
       const result: UploadResult = {
-        success: true,
-        message: `Successfully uploaded academic paper: "${title}"`,
-        paperId: data.id
+        success: errors < selectedFiles.length,
+        message: `Bulk upload completed: ${inserted} papers uploaded successfully${errors > 0 ? `, ${errors} failed` : ''}`,
+        processed,
+        inserted,
+        errors: errors > 0 ? errors : undefined,
+        errorDetails: errorDetails.length > 0 ? errorDetails : undefined
       };
       
       setUploadResult(result);
-      toast.success('Academic paper uploaded successfully!');
-      await loadPapersCount();
-      resetForm();
+      
+      if (result.success) {
+        toast.success(`Successfully uploaded ${inserted} academic papers!`);
+        await loadPapersCount();
+        resetForm();
+      } else {
+        toast.error(`Upload completed with ${errors} errors`);
+      }
 
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Bulk upload error:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       setUploadResult({
         success: false,
@@ -173,6 +188,17 @@ const AcademicPaperUpload: React.FC = () => {
       toast.error('Upload failed: ' + errorMsg);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedFiles([]);
+    setUploadResult(null);
+    setFileValidationError(null);
+    // Reset file input
+    const fileInput = document.getElementById('pdf-files') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -193,110 +219,37 @@ const AcademicPaperUpload: React.FC = () => {
         <Alert className="border-blue-200 bg-blue-50">
           <Info className="text-blue-500" size={16} />
           <AlertDescription className="text-sm">
-            Upload academic papers about fashion to improve AI categorization and insights. The system will process the content and extract relevant fashion knowledge.
+            Upload PDF academic papers about fashion to improve AI categorization and insights. 
+            You can select multiple files for bulk upload. Paper titles will be automatically extracted from filenames.
           </AlertDescription>
         </Alert>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Paper title"
-              disabled={isUploading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="authors">Authors</Label>
-            <Input
-              id="authors"
-              value={authors}
-              onChange={(e) => setAuthors(e.target.value)}
-              placeholder="Author 1, Author 2, Author 3"
-              disabled={isUploading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="journal">Journal</Label>
-            <Input
-              id="journal"
-              value={journal}
-              onChange={(e) => setJournal(e.target.value)}
-              placeholder="Journal name"
-              disabled={isUploading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="year">Publication Year</Label>
-            <Input
-              id="year"
-              type="number"
-              value={publicationYear}
-              onChange={(e) => setPublicationYear(e.target.value)}
-              placeholder="2024"
-              disabled={isUploading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="doi">DOI</Label>
-            <Input
-              id="doi"
-              value={doi}
-              onChange={(e) => setDoi(e.target.value)}
-              placeholder="10.1000/182"
-              disabled={isUploading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="keywords">Keywords</Label>
-            <Input
-              id="keywords"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              placeholder="fashion, style, color theory"
-              disabled={isUploading}
-            />
-          </div>
-        </div>
-
         <div className="space-y-2">
-          <Label htmlFor="abstract">Abstract</Label>
-          <Textarea
-            id="abstract"
-            value={abstract}
-            onChange={(e) => setAbstract(e.target.value)}
-            placeholder="Paper abstract (optional)"
-            rows={4}
-            disabled={isUploading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="pdf-file">PDF File</Label>
+          <label htmlFor="pdf-files" className="text-sm font-medium">
+            Select PDF Files
+          </label>
           <Input
-            id="pdf-file"
+            id="pdf-files"
             type="file"
             accept="application/pdf,.pdf"
+            multiple
             onChange={handleFileSelect}
             disabled={isUploading}
             className="cursor-pointer"
           />
           
-          {selectedFile && (
+          {selectedFiles.length > 0 && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-md">
               <p className="text-sm text-green-700 font-medium">
-                ✓ Selected: {selectedFile.name}
+                ✓ Selected: {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''}
               </p>
-              <p className="text-xs text-green-600">
-                Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
+              <div className="text-xs text-green-600 space-y-1 mt-2">
+                {selectedFiles.map((file, index) => (
+                  <div key={index}>
+                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           
@@ -311,18 +264,18 @@ const AcademicPaperUpload: React.FC = () => {
 
         <Button 
           onClick={handleUpload}
-          disabled={!title.trim() || isUploading || !!fileValidationError}
+          disabled={selectedFiles.length === 0 || isUploading || !!fileValidationError}
           className="w-full"
         >
           {isUploading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Uploading Paper...
+              Uploading {selectedFiles.length} Papers...
             </>
           ) : (
             <>
               <Upload size={16} className="mr-2" />
-              Upload Academic Paper
+              Upload {selectedFiles.length > 0 ? `${selectedFiles.length} ` : ''}Academic Paper{selectedFiles.length > 1 ? 's' : ''}
             </>
           )}
         </Button>
@@ -352,9 +305,23 @@ const AcademicPaperUpload: React.FC = () => {
                   </p>
                   <p className="text-sm">{uploadResult.message}</p>
                   {uploadResult.success && (
-                    <p className="text-sm">
-                      Paper ID: {uploadResult.paperId}
-                    </p>
+                    <div className="text-sm space-y-1">
+                      <p>• Processed: {uploadResult.processed} files</p>
+                      <p>• Inserted: {uploadResult.inserted} papers</p>
+                      {uploadResult.errors && uploadResult.errors > 0 && (
+                        <p>• Errors: {uploadResult.errors} files</p>
+                      )}
+                    </div>
+                  )}
+                  {uploadResult.errorDetails && uploadResult.errorDetails.length > 0 && (
+                    <details className="text-sm">
+                      <summary className="cursor-pointer">Error Details ({uploadResult.errorDetails.length})</summary>
+                      <ul className="list-disc list-inside mt-1 space-y-1">
+                        {uploadResult.errorDetails.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </details>
                   )}
                 </div>
               </AlertDescription>
