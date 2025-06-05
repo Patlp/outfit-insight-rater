@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
 
 interface WardrobeItemCardProps {
   item: WardrobeItem;
@@ -43,46 +44,30 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
     return 'text-red-500';
   };
 
-  // Parse suggestions to extract clothing tags
-  const clothingTags = React.useMemo(() => {
-    if (!item.suggestions) return [];
+  // Extract clothing items from feedback using the new advanced extractor
+  const clothingItems = React.useMemo(() => {
+    if (!item.feedback) return [];
     
-    const tags = new Set<string>();
+    const extractedItems = extractClothingItems(item.feedback);
+    console.log('Extracted clothing items for item', item.id, ':', extractedItems);
     
-    item.suggestions.forEach(suggestion => {
-      const lowerSuggestion = suggestion.toLowerCase();
-      
-      // Common clothing items to extract
-      const clothingItems = [
-        'shirt', 'blouse', 'top', 'sweater', 'cardigan', 'jacket', 'blazer',
-        'pants', 'jeans', 'trousers', 'shorts', 'skirt', 'dress',
-        'shoes', 'sneakers', 'heels', 'boots', 'sandals', 'flats',
-        'belt', 'bag', 'purse', 'backpack', 'hat', 'scarf', 'jewelry',
-        'coat', 'hoodie', 't-shirt', 'polo', 'vest', 'suit', 'tie'
-      ];
-      
-      clothingItems.forEach(item => {
-        if (lowerSuggestion.includes(item)) {
-          tags.add(item);
-        }
-      });
-      
-      // Extract colors
-      const colors = [
-        'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink',
-        'black', 'white', 'gray', 'grey', 'brown', 'navy', 'beige',
-        'cream', 'tan', 'olive', 'maroon', 'teal', 'coral'
-      ];
-      
-      colors.forEach(color => {
-        if (lowerSuggestion.includes(color)) {
-          tags.add(color);
-        }
-      });
-    });
-    
-    return Array.from(tags).slice(0, 5); // Limit to 5 tags
-  }, [item.suggestions]);
+    return extractedItems;
+  }, [item.feedback, item.id]);
+
+  // Get category colors for badges
+  const getCategoryColor = (item: string) => {
+    const category = categorizeClothingItem(item);
+    const colorMap = {
+      tops: 'bg-blue-100 text-blue-700 border-blue-200',
+      bottoms: 'bg-green-100 text-green-700 border-green-200',
+      dresses: 'bg-purple-100 text-purple-700 border-purple-200',
+      footwear: 'bg-orange-100 text-orange-700 border-orange-200',
+      accessories: 'bg-pink-100 text-pink-700 border-pink-200',
+      outerwear: 'bg-gray-100 text-gray-700 border-gray-200',
+      other: 'bg-fashion-100 text-fashion-700 border-fashion-200'
+    };
+    return colorMap[category] || colorMap.other;
+  };
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -120,16 +105,16 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
           </p>
         )}
         
-        {clothingTags.length > 0 && (
+        {clothingItems.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             <Tag size={12} className="text-gray-400 mt-1" />
-            {clothingTags.map((tag, index) => (
+            {clothingItems.map((clothingItem, index) => (
               <Badge
                 key={index}
                 variant="secondary"
-                className="text-xs bg-fashion-100 text-fashion-700 hover:bg-fashion-200"
+                className={`text-xs ${getCategoryColor(clothingItem)}`}
               >
-                {tag}
+                {clothingItem}
               </Badge>
             ))}
           </div>

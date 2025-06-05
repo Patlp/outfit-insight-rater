@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { RatingResult, Gender } from '@/context/RatingContext';
+import { extractClothingItems } from '@/utils/clothingExtractor';
 
 export interface WardrobeItem {
   id: string;
@@ -30,6 +30,10 @@ export const saveOutfitToWardrobe = async (
     if (!user) {
       return { data: null, error: { message: 'User not authenticated' } };
     }
+
+    // Extract clothing items from feedback for potential future use
+    const extractedClothingItems = extractClothingItems(ratingResult.feedback || '');
+    console.log('Saving outfit with extracted clothing items:', extractedClothingItems);
 
     const { data, error } = await supabase
       .from('wardrobe_items')
