@@ -57,6 +57,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fashionpedia_categories: {
+        Row: {
+          attributes: Json | null
+          category_id: number | null
+          category_name: string
+          created_at: string
+          description: string | null
+          id: string
+          parent_category: string | null
+          updated_at: string
+        }
+        Insert: {
+          attributes?: Json | null
+          category_id?: number | null
+          category_name: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          parent_category?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attributes?: Json | null
+          category_id?: number | null
+          category_name?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          parent_category?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kaggle_clothing_items: {
         Row: {
           age_group: string | null
