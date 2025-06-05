@@ -87,8 +87,8 @@ export const getExtractedClothingItems = async (wardrobeItemId: string): Promise
       );
     };
 
-    // Filter and validate the items
-    const validItems = extractedItems.filter(isValidAIClothingItem);
+    // Filter and validate the items, then cast to the correct type
+    const validItems = extractedItems.filter(isValidAIClothingItem) as AIClothingItem[];
     
     return validItems.length > 0 ? validItems : null;
   } catch (error) {
