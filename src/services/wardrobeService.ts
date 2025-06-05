@@ -1,6 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { RatingResult, Gender } from '@/context/RatingContext';
 import { extractClothingItems } from '@/utils/clothingExtractor';
+import { extractClothingPhrasesAI } from './clothingExtractionService';
 
 export interface WardrobeItem {
   id: string;
@@ -12,6 +14,7 @@ export interface WardrobeItem {
   occasion_context: string | null;
   gender: string | null;
   feedback_mode: string | null;
+  extracted_clothing_items: any | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,7 +34,7 @@ export const saveOutfitToWardrobe = async (
       return { data: null, error: { message: 'User not authenticated' } };
     }
 
-    // Extract clothing items from feedback for potential future use
+    // Extract clothing items from feedback for backward compatibility
     const extractedClothingItems = extractClothingItems(ratingResult.feedback || '');
     console.log('Saving outfit with extracted clothing items:', extractedClothingItems);
 
@@ -50,7 +53,31 @@ export const saveOutfitToWardrobe = async (
       .select()
       .single();
 
-    return { data, error };
+    if (error) {
+      console.error('Error saving outfit to wardrobe:', error);
+      return { data: null, error };
+    }
+
+    // Background process: Extract AI-powered clothing phrases
+    // This runs asynchronously and won't block the main flow
+    if (data && ratingResult.feedback) {
+      console.log('Triggering background AI clothing extraction...');
+      extractClothingPhrasesAI(
+        ratingResult.feedback,
+        ratingResult.suggestions || [],
+        data.id
+      ).then(result => {
+        if (result.success) {
+          console.log(`Background AI extraction completed for item ${data.id}`);
+        } else {
+          console.warn(`Background AI extraction failed for item ${data.id}:`, result.error);
+        }
+      }).catch(err => {
+        console.warn(`Background AI extraction error for item ${data.id}:`, err);
+      });
+    }
+
+    return { data, error: null };
   } catch (error) {
     console.error('Error saving outfit to wardrobe:', error);
     return { data: null, error };

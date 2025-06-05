@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { WardrobeItem, deleteWardrobeItem } from '@/services/wardrobeService';
-import { Star, Trash2, Calendar, Tag } from 'lucide-react';
+import { Star, Trash2, Calendar, Tag, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
+import { AIClothingItem } from '@/services/clothingExtractionService';
 
 interface WardrobeItemCardProps {
   item: WardrobeItem;
@@ -44,19 +45,33 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
     return 'text-red-500';
   };
 
-  // Extract clothing items from feedback using the new advanced extractor
-  const clothingItems = React.useMemo(() => {
+  // Extract clothing items from feedback using the regex-based extractor for backward compatibility
+  const regexClothingItems = React.useMemo(() => {
     if (!item.feedback) return [];
     
     const extractedItems = extractClothingItems(item.feedback);
-    console.log('Extracted clothing items for item', item.id, ':', extractedItems);
+    console.log('Regex extracted clothing items for item', item.id, ':', extractedItems);
     
     return extractedItems;
   }, [item.feedback, item.id]);
 
+  // Get AI-extracted clothing items if available
+  const aiClothingItems = React.useMemo(() => {
+    const aiItems = item.extracted_clothing_items as AIClothingItem[] | null;
+    if (aiItems && Array.isArray(aiItems) && aiItems.length > 0) {
+      console.log('AI extracted clothing items for item', item.id, ':', aiItems);
+      return aiItems;
+    }
+    return null;
+  }, [item.extracted_clothing_items, item.id]);
+
+  // Use AI items if available, otherwise fall back to regex items
+  const displayItems = aiClothingItems || regexClothingItems;
+  const isAIExtracted = aiClothingItems !== null;
+
   // Get category colors for badges
-  const getCategoryColor = (item: string) => {
-    const category = categorizeClothingItem(item);
+  const getCategoryColor = (itemName: string, category?: string) => {
+    const itemCategory = category || categorizeClothingItem(itemName);
     const colorMap = {
       tops: 'bg-blue-100 text-blue-700 border-blue-200',
       bottoms: 'bg-green-100 text-green-700 border-green-200',
@@ -66,7 +81,7 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
       outerwear: 'bg-gray-100 text-gray-700 border-gray-200',
       other: 'bg-fashion-100 text-fashion-700 border-fashion-200'
     };
-    return colorMap[category] || colorMap.other;
+    return colorMap[itemCategory as keyof typeof colorMap] || colorMap.other;
   };
 
   return (
@@ -105,18 +120,37 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
           </p>
         )}
         
-        {clothingItems.length > 0 && (
+        {displayItems.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
-            <Tag size={12} className="text-gray-400 mt-1" />
-            {clothingItems.map((clothingItem, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className={`text-xs ${getCategoryColor(clothingItem)}`}
-              >
-                {clothingItem}
+            <div className="flex items-center gap-1">
+              {isAIExtracted ? (
+                <Sparkles size={12} className="text-fashion-500" />
+              ) : (
+                <Tag size={12} className="text-gray-400" />
+              )}
+            </div>
+            {displayItems.map((clothingItem, index) => {
+              // Handle both AI items (objects) and regex items (strings)
+              const itemName = typeof clothingItem === 'string' ? clothingItem : clothingItem.name;
+              const category = typeof clothingItem === 'object' ? clothingItem.category : undefined;
+              const descriptors = typeof clothingItem === 'object' ? clothingItem.descriptors : [];
+              
+              return (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className={`text-xs ${getCategoryColor(itemName, category)}`}
+                  title={isAIExtracted && descriptors.length > 0 ? `Descriptors: ${descriptors.join(', ')}` : undefined}
+                >
+                  {itemName}
+                </Badge>
+              );
+            })}
+            {isAIExtracted && (
+              <Badge variant="outline" className="text-xs text-fashion-600 border-fashion-300">
+                AI Enhanced
               </Badge>
-            ))}
+            )}
           </div>
         )}
       </CardContent>

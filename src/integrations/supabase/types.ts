@@ -33,6 +33,7 @@ export type Database = {
       wardrobe_items: {
         Row: {
           created_at: string
+          extracted_clothing_items: Json | null
           feedback: string | null
           feedback_mode: string | null
           gender: string | null
@@ -46,6 +47,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extracted_clothing_items?: Json | null
           feedback?: string | null
           feedback_mode?: string | null
           gender?: string | null
@@ -59,6 +61,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extracted_clothing_items?: Json | null
           feedback?: string | null
           feedback_mode?: string | null
           gender?: string | null
