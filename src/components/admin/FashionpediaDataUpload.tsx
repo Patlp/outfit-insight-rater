@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle, Database, FileText } from 'lucide-react';
+import { CheckCircle, AlertCircle, Database, FileText, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { insertFashionpediaCategory, getFashionpediaCategoriesCount } from '@/services/fashionpediaService';
 
@@ -24,6 +24,7 @@ const FashionpediaDataUpload: React.FC = () => {
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [categoriesCount, setCategoriesCount] = useState<number | null>(null);
+  const [fileValidationError, setFileValidationError] = useState<string | null>(null);
 
   React.useEffect(() => {
     loadCategoriesCount();
@@ -40,20 +41,57 @@ const FashionpediaDataUpload: React.FC = () => {
     }
   };
 
+  const validateFile = (file: File): string | null => {
+    console.log('Validating file:', { name: file.name, type: file.type, size: file.size });
+    
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.json') && !fileName.endsWith('.txt')) {
+      return 'File must have a .json or .txt extension';
+    }
+    
+    // Check file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      return 'File size must be less than 50MB';
+    }
+    
+    // Check if file is empty
+    if (file.size === 0) {
+      return 'File cannot be empty';
+    }
+    
+    return null;
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (!file.name.toLowerCase().endsWith('.json')) {
-        toast.error('Please select a JSON file');
-        return;
-      }
-      setSelectedFile(file);
-      setUploadResult(null);
+    setFileValidationError(null);
+    setUploadResult(null);
+    
+    if (!file) {
+      setSelectedFile(null);
+      return;
     }
+
+    console.log('File selected:', { name: file.name, type: file.type, size: file.size });
+    
+    const validationError = validateFile(file);
+    if (validationError) {
+      setFileValidationError(validationError);
+      toast.error(validationError);
+      setSelectedFile(null);
+      return;
+    }
+    
+    setSelectedFile(file);
+    toast.success('File selected successfully');
   };
 
   const parseJSON = async (file: File): Promise<any[]> => {
     const text = await file.text();
+    console.log('File content preview:', text.substring(0, 200) + '...');
+    
     try {
       const data = JSON.parse(text);
       
@@ -197,20 +235,43 @@ const FashionpediaDataUpload: React.FC = () => {
           <Input
             id="json-file"
             type="file"
-            accept=".json"
+            accept="application/json,.json,text/plain,.txt"
             onChange={handleFileSelect}
             disabled={isUploading}
+            className="cursor-pointer"
           />
+          
+          {/* Safari/iOS help text */}
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="text-blue-500" size={16} />
+            <AlertDescription className="text-sm">
+              <strong>Safari/iPad users:</strong> If you can't select your JSON file, try renaming it with a .txt extension, or use a different browser like Chrome.
+            </AlertDescription>
+          </Alert>
+          
           {selectedFile && (
-            <p className="text-sm text-gray-600">
-              Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-            </p>
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-700 font-medium">
+                ✓ Selected: {selectedFile.name}
+              </p>
+              <p className="text-xs text-green-600">
+                Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB | Type: {selectedFile.type || 'Unknown'}
+              </p>
+            </div>
+          )}
+          
+          {fileValidationError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-700 font-medium">
+                ✗ {fileValidationError}
+              </p>
+            </div>
           )}
         </div>
 
         <Button 
           onClick={handleUpload}
-          disabled={!selectedFile || isUploading}
+          disabled={!selectedFile || isUploading || !!fileValidationError}
           className="w-full"
         >
           {isUploading ? (
