@@ -8,9 +8,10 @@ import FeedbackSection from '@/components/rating/FeedbackSection';
 import SuggestionsSection from '@/components/rating/SuggestionsSection';
 import ProductRecommendationsSection from '@/components/rating/ProductRecommendationsSection';
 import EmailDialog from '@/components/rating/EmailDialog';
+import SaveOutfitButton from '@/components/rating/SaveOutfitButton';
 
 const RatingDisplay: React.FC = () => {
-  const { ratingResult } = useRating();
+  const { ratingResult, uploadedImage } = useRating();
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   
   if (!ratingResult) return null;
@@ -27,7 +28,9 @@ const RatingDisplay: React.FC = () => {
       
       <ProductRecommendationsSection feedback={feedback} suggestions={suggestions} />
       
-      <div className="mt-6 pt-6 border-t border-fashion-200">
+      <div className="mt-6 pt-6 border-t border-fashion-200 space-y-3">
+        <SaveOutfitButton imageUrl={uploadedImage} />
+        
         <p className="text-sm text-gray-500 italic mb-4">
           Remember, fashion is subjective and these suggestions are just guidelines!
         </p>
