@@ -7,6 +7,7 @@ export interface AIClothingItem {
   descriptors: string[];
   category: string;
   confidence: number;
+  [key: string]: any; // Add index signature to make it compatible with Json type
 }
 
 export interface HybridExtractionResult {
