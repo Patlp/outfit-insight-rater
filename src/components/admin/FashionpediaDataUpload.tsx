@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, CheckCircle, AlertCircle, Database, FileText } from 'lucide-react';
+import { CheckCircle, AlertCircle, Database, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { insertFashionpediaCategory, getFashionpediaCategoriesCount } from '@/services/fashionpediaService';
 
@@ -26,14 +26,17 @@ const FashionpediaDataUpload: React.FC = () => {
   const [categoriesCount, setCategoriesCount] = useState<number | null>(null);
 
   React.useEffect(() => {
-    // Load current categories count on component mount
     loadCategoriesCount();
   }, []);
 
   const loadCategoriesCount = async () => {
-    const { count, error } = await getFashionpediaCategoriesCount();
-    if (!error && count !== null) {
-      setCategoriesCount(count);
+    try {
+      const { count, error } = await getFashionpediaCategoriesCount();
+      if (!error && count !== null) {
+        setCategoriesCount(count);
+      }
+    } catch (error) {
+      console.error('Error loading categories count:', error);
     }
   };
 
@@ -54,7 +57,6 @@ const FashionpediaDataUpload: React.FC = () => {
     try {
       const data = JSON.parse(text);
       
-      // Handle different JSON structures
       if (Array.isArray(data)) {
         return data;
       } else if (data.categories && Array.isArray(data.categories)) {
@@ -80,7 +82,7 @@ const FashionpediaDataUpload: React.FC = () => {
     setUploadResult(null);
 
     try {
-      // Parse JSON file
+      console.log('Starting file upload process...');
       const jsonData = await parseJSON(selectedFile);
       console.log(`Parsed ${jsonData.length} categories from JSON`);
       setUploadProgress(25);
@@ -94,14 +96,12 @@ const FashionpediaDataUpload: React.FC = () => {
       let errors = 0;
       const errorDetails: string[] = [];
 
-      // Process categories in batches
       const batchSize = 10;
       for (let i = 0; i < jsonData.length; i += batchSize) {
         const batch = jsonData.slice(i, i + batchSize);
         
         for (const item of batch) {
           try {
-            // Map JSON data to our schema
             const category = {
               category_name: item.name || item.category_name || item.category || 'Unknown',
               category_id: item.id || item.category_id,
@@ -120,22 +120,24 @@ const FashionpediaDataUpload: React.FC = () => {
             if (error) {
               errors++;
               errorDetails.push(`Category "${category.category_name}": ${error.message}`);
+              console.error('Insert error:', error);
             } else {
               inserted++;
+              console.log(`Inserted category: ${category.category_name}`);
             }
           } catch (error) {
             errors++;
-            errorDetails.push(`Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            errorDetails.push(`Processing error: ${errorMsg}`);
+            console.error('Processing error:', error);
           }
           
           processed++;
         }
 
-        // Update progress
         const progress = Math.min(25 + (70 * processed) / jsonData.length, 95);
         setUploadProgress(progress);
         
-        // Small delay to prevent overwhelming the database
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
@@ -149,25 +151,26 @@ const FashionpediaDataUpload: React.FC = () => {
         message: inserted > 0 
           ? `Successfully imported ${inserted} categories${errors > 0 ? ` with ${errors} errors` : ''}!`
           : 'No categories were imported',
-        errorDetails: errorDetails.slice(0, 10) // Limit error details
+        errorDetails: errorDetails.slice(0, 10)
       };
       
       setUploadResult(result);
       
       if (result.success) {
         toast.success(`Successfully imported ${inserted} Fashionpedia categories!`);
-        loadCategoriesCount(); // Refresh count
+        await loadCategoriesCount();
       } else {
         toast.error('Import failed');
       }
 
     } catch (error) {
       console.error('Upload error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       setUploadResult({
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: errorMsg
       });
-      toast.error('Upload failed');
+      toast.error('Upload failed: ' + errorMsg);
     } finally {
       setIsUploading(false);
     }
