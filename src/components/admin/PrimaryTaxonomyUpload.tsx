@@ -71,18 +71,24 @@ const PrimaryTaxonomyUpload: React.FC = () => {
       // Upload to database
       setUploadProgress(50);
       const result = await uploadPrimaryTaxonomy(data, file.name);
-      setUploadProgress(100);
+      setUploadProgress(75);
 
       if (result.success) {
+        // Auto-sync whitelist with new primary taxonomy data
+        console.log('Auto-syncing whitelist with updated primary taxonomy...');
+        const { syncWhitelistWithPrimaryTaxonomy } = await import('@/services/fashionWhitelistService');
+        await syncWhitelistWithPrimaryTaxonomy();
+        
+        setUploadProgress(100);
         setUploadResult({
           success: true,
-          message: `Successfully uploaded ${result.count} taxonomy items`,
+          message: `Successfully uploaded ${result.count} taxonomy items and synced whitelist`,
           count: result.count
         });
         
         toast({
-          title: "Upload successful",
-          description: `Uploaded ${result.count} taxonomy items`,
+          title: "Upload and sync successful",
+          description: `Uploaded ${result.count} taxonomy items and updated whitelist`,
         });
 
         // Refresh stats
@@ -152,7 +158,7 @@ const PrimaryTaxonomyUpload: React.FC = () => {
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              Current taxonomy contains <strong>{taxonomyStats.count}</strong> active items
+              Current taxonomy contains <strong>{taxonomyStats.count}</strong> active items (Primary source for all tagging)
             </AlertDescription>
           </Alert>
         )}
@@ -231,6 +237,7 @@ const PrimaryTaxonomyUpload: React.FC = () => {
           <p>• common_materials: Pipe-separated materials (cotton|polyester|silk)</p>
           <p>• seasonal_tags, gender_association, etc.: Additional attributes (pipe-separated)</p>
           <p><strong>Note:</strong> Use pipe (|) or semicolon (;) to separate multiple values in array fields</p>
+          <p><strong>Auto-Sync:</strong> Whitelist will be automatically updated with uploaded taxonomy data</p>
         </div>
       </CardContent>
     </Card>

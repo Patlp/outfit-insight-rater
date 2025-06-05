@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +9,8 @@ import AcademicPaperUpload from '@/components/admin/AcademicPaperUpload';
 import AcademicPapersList from '@/components/admin/AcademicPapersList';
 import AcademicProcessingPanel from '@/components/admin/AcademicProcessingPanel';
 import EnhancedTaggingPreview from '@/components/admin/EnhancedTaggingPreview';
+import WhitelistSyncButton from '@/components/admin/WhitelistSyncButton';
+import TaggingFlowDiagram from '@/components/admin/TaggingFlowDiagram';
 
 const Admin: React.FC = () => {
   console.log('Admin component rendering...');
@@ -55,7 +56,14 @@ const Admin: React.FC = () => {
           </TabsList>
 
           <TabsContent value="taxonomy">
-            <PrimaryTaxonomyUpload />
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Primary Fashion Taxonomy</h2>
+                <WhitelistSyncButton />
+              </div>
+              <PrimaryTaxonomyUpload />
+              <TaggingFlowDiagram />
+            </div>
           </TabsContent>
 
           <TabsContent value="kaggle">
