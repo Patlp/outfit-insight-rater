@@ -1,8 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { RatingResult, Gender } from '@/context/RatingContext';
 import { extractClothingItems } from '@/utils/clothingExtractor';
-import { extractClothingPhrasesHybrid } from './clothingExtractionService';
+import { processClothingWithTaggingLevel } from './advancedTaggingService';
 
 export interface WardrobeItem {
   id: string;
@@ -58,27 +57,29 @@ export const saveOutfitToWardrobe = async (
       return { data: null, error };
     }
 
-    // Background process: Use hybrid extraction system
+    // Background process: Use ADVANCED tagging system
     // This runs asynchronously and won't block the main flow
     if (data && ratingResult.feedback) {
-      console.log('Triggering background hybrid clothing extraction...');
-      extractClothingPhrasesHybrid(
+      console.log('Triggering ADVANCED tagging system...');
+      processClothingWithTaggingLevel(
         ratingResult.feedback,
         ratingResult.suggestions || [],
-        data.id
+        data.id,
+        'advanced' // Set to advanced level
       ).then(result => {
         if (result.success && result.result) {
-          const { method, aiSuccess, regexFallbackUsed, totalItemCount } = result.result;
-          console.log(`✅ Hybrid extraction completed for item ${data.id}:`);
-          console.log(`   Method used: ${method}`);
-          console.log(`   AI success: ${aiSuccess}`);
-          console.log(`   Regex fallback: ${regexFallbackUsed}`);
-          console.log(`   Total items: ${totalItemCount}`);
+          const { level, itemCount, averageConfidence, extractionMethod, processingTime } = result.result;
+          console.log(`✅ Advanced tagging completed for item ${data.id}:`);
+          console.log(`   Level: ${level}`);
+          console.log(`   Method: ${extractionMethod}`);
+          console.log(`   Items found: ${itemCount}`);
+          console.log(`   Average confidence: ${averageConfidence.toFixed(2)}`);
+          console.log(`   Processing time: ${processingTime}ms`);
         } else {
-          console.warn(`❌ Hybrid extraction failed for item ${data.id}:`, result.error);
+          console.warn(`❌ Advanced tagging failed for item ${data.id}:`, result.error);
         }
       }).catch(err => {
-        console.warn(`❌ Hybrid extraction error for item ${data.id}:`, err);
+        console.warn(`❌ Advanced tagging error for item ${data.id}:`, err);
       });
     }
 

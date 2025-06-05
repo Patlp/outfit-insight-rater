@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
 import { AIClothingItem } from '@/services/clothingExtractionService';
+import TaggingLevelIndicator from './TaggingLevelIndicator';
 
 interface WardrobeItemCardProps {
   item: WardrobeItem;
@@ -65,31 +66,32 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
     return null;
   }, [item.extracted_clothing_items, item.id]);
 
-  // Determine which method was used and what to display
-  const { displayItems, extractionMethod, hasValidatedTags, hasKaggleData } = React.useMemo(() => {
+  // Determine tagging level and display data
+  const { displayItems, taggingLevel, averageConfidence } = React.useMemo(() => {
     if (aiClothingItems && aiClothingItems.length > 0) {
-      // Check extraction method based on properties
-      const hasHighConfidence = aiClothingItems.some(item => item.confidence >= 0.8);
-      const hasDescriptors = aiClothingItems.some(item => item.descriptors && item.descriptors.length > 0);
-      const hasKaggleData = aiClothingItems.some(item => item.source === 'kaggle' || item.source === 'enhanced' || item.source === 'hybrid');
-      const hasEnhancedData = aiClothingItems.some(item => item.source === 'enhanced');
+      // Determine tagging level based on item properties
+      const hasKaggleData = aiClothingItems.some(item => 
+        item.source === 'kaggle' || item.source === 'enhanced' || item.source === 'hybrid'
+      );
+      const hasDescriptors = aiClothingItems.some(item => 
+        item.descriptors && item.descriptors.length > 0
+      );
+      const avgConfidence = aiClothingItems.reduce((sum, item) => sum + item.confidence, 0) / aiClothingItems.length;
       
-      let method = 'ai';
-      if (hasEnhancedData) {
-        method = 'enhanced';
-      } else if (hasKaggleData) {
-        method = 'hybrid';
-      } else if (hasHighConfidence && hasDescriptors) {
-        method = 'ai';
+      let level: 'basic' | 'medium' | 'advanced' = 'medium';
+      
+      if (hasKaggleData && hasDescriptors && avgConfidence >= 0.7) {
+        level = 'advanced';
+      } else if (hasDescriptors && avgConfidence >= 0.6) {
+        level = 'medium';
       } else {
-        method = 'hybrid';
+        level = 'basic';
       }
       
       return {
         displayItems: aiClothingItems,
-        extractionMethod: method,
-        hasValidatedTags: true,
-        hasKaggleData
+        taggingLevel: level,
+        averageConfidence: avgConfidence
       };
     } else if (regexClothingItems.length > 0) {
       // Convert regex items to display format
@@ -102,17 +104,15 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
       
       return {
         displayItems: regexDisplayItems,
-        extractionMethod: 'regex' as const,
-        hasValidatedTags: false,
-        hasKaggleData: false
+        taggingLevel: 'basic' as const,
+        averageConfidence: 0.7
       };
     }
     
     return {
       displayItems: [],
-      extractionMethod: 'none' as const,
-      hasValidatedTags: false,
-      hasKaggleData: false
+      taggingLevel: 'basic' as const,
+      averageConfidence: 0
     };
   }, [aiClothingItems, regexClothingItems]);
 
@@ -130,44 +130,6 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
     };
     return colorMap[itemCategory as keyof typeof colorMap] || colorMap.other;
   };
-
-  // Get the appropriate icon and label for the extraction method
-  const getMethodInfo = () => {
-    switch (extractionMethod) {
-      case 'enhanced':
-        return {
-          icon: <Database size={12} className="text-purple-500" />,
-          label: 'Enhanced AI Tags',
-          color: 'text-purple-600',
-          description: 'Powered by Kaggle dataset'
-        };
-      case 'ai':
-        return {
-          icon: <CheckCircle size={12} className="text-green-500" />,
-          label: 'AI Validated Tags',
-          color: 'text-green-600',
-          description: 'AI-powered extraction'
-        };
-      case 'hybrid':
-        return {
-          icon: <Zap size={12} className="text-blue-500" />,
-          label: 'Hybrid Tags',
-          color: 'text-blue-600',
-          description: 'Combined AI and dataset matching'
-        };
-      case 'regex':
-        return {
-          icon: <Tag size={12} className="text-gray-400" />,
-          label: 'Basic Tags',
-          color: 'text-gray-500',
-          description: 'Rule-based extraction'
-        };
-      default:
-        return null;
-    }
-  };
-
-  const methodInfo = getMethodInfo();
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -206,49 +168,41 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
         )}
         
         {displayItems.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {methodInfo && (
-              <div className="flex items-center gap-1 mb-1 w-full">
-                <div className="flex items-center gap-1" title={methodInfo.description}>
-                  {methodInfo.icon}
-                  <span className={`text-xs font-medium ${methodInfo.color}`}>
-                    {methodInfo.label}
-                  </span>
-                  {hasKaggleData && (
-                    <Badge variant="outline" className="text-xs px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
-                      Kaggle
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            )}
-            {displayItems.map((clothingItem, index) => {
-              // Handle both AI items (objects) and converted regex items (objects)
-              const itemName = clothingItem.name;
-              const category = clothingItem.category;
-              const descriptors = clothingItem.descriptors || [];
-              const confidence = clothingItem.confidence;
-              const source = (clothingItem as any).source;
-              
-              return (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className={`text-xs ${getCategoryColor(itemName, category)} ${
-                    source === 'kaggle' || source === 'enhanced' ? 'ring-1 ring-purple-300' : ''
-                  }`}
-                  title={hasValidatedTags && descriptors.length > 0 ? 
-                    `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}` : 
-                    `Category: ${category}\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}`
-                  }
-                >
-                  {itemName}
-                  {(source === 'kaggle' || source === 'enhanced') && (
-                    <Sparkles size={10} className="ml-1 text-purple-500" />
-                  )}
-                </Badge>
-              );
-            })}
+          <div className="space-y-2 mb-3">
+            <TaggingLevelIndicator 
+              level={taggingLevel}
+              itemCount={displayItems.length}
+              averageConfidence={averageConfidence}
+            />
+            
+            <div className="flex flex-wrap gap-1">
+              {displayItems.map((clothingItem, index) => {
+                const itemName = clothingItem.name;
+                const category = clothingItem.category;
+                const descriptors = clothingItem.descriptors || [];
+                const confidence = clothingItem.confidence;
+                const source = (clothingItem as any).source;
+                
+                return (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className={`text-xs ${getCategoryColor(itemName, category)} ${
+                      source === 'kaggle' || source === 'enhanced' ? 'ring-1 ring-purple-300' : ''
+                    }`}
+                    title={descriptors.length > 0 ? 
+                      `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nLevel: ${taggingLevel}${source ? `\nSource: ${source}` : ''}` : 
+                      `Category: ${category}\nLevel: ${taggingLevel}${source ? `\nSource: ${source}` : ''}`
+                    }
+                  >
+                    {itemName}
+                    {(source === 'kaggle' || source === 'enhanced') && (
+                      <Sparkles size={10} className="ml-1 text-purple-500" />
+                    )}
+                  </Badge>
+                );
+              })}
+            </div>
           </div>
         )}
       </CardContent>
