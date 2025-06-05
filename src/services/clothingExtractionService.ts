@@ -68,7 +68,29 @@ export const getExtractedClothingItems = async (wardrobeItemId: string): Promise
       return null;
     }
 
-    return data?.extracted_clothing_items || null;
+    // Properly handle the JSON type and validate it's an array of AIClothingItem
+    const extractedItems = data?.extracted_clothing_items;
+    
+    if (!extractedItems || !Array.isArray(extractedItems)) {
+      return null;
+    }
+
+    // Type guard to ensure each item has the required properties
+    const isValidAIClothingItem = (item: any): item is AIClothingItem => {
+      return (
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.name === 'string' &&
+        Array.isArray(item.descriptors) &&
+        typeof item.category === 'string' &&
+        typeof item.confidence === 'number'
+      );
+    };
+
+    // Filter and validate the items
+    const validItems = extractedItems.filter(isValidAIClothingItem);
+    
+    return validItems.length > 0 ? validItems : null;
   } catch (error) {
     console.error('Error in getExtractedClothingItems:', error);
     return null;
