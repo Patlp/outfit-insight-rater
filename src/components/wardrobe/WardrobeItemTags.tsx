@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Sparkles, Zap } from 'lucide-react';
+import { Eye, Sparkles, Zap, CheckCircle } from 'lucide-react';
 import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
 import { AIClothingItem } from '@/services/clothingExtractionService';
 import TaggingLevelIndicator from './TaggingLevelIndicator';
@@ -37,22 +37,41 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
     return null;
   }, [extractedClothingItems, itemId]);
 
-  // Determine tagging level and display data
+  // Determine tagging level and display data with grammar validation
   const { displayItems, taggingLevel, averageConfidence, extractionMethod } = React.useMemo(() => {
     if (visionClothingItems && visionClothingItems.length > 0) {
-      // Determine tagging level based on item properties and source
-      const hasGoogleVision = visionClothingItems.some(item => 
-        item.source === 'google-vision'
+      // Check for grammar-validated tags
+      const hasGrammarValidation = visionClothingItems.some(item => 
+        item.source === 'google-vision-grammar' || 
+        item.source === 'google-vision-corrected' ||
+        item.source?.includes('grammar')
       );
+      
+      const hasGoogleVision = visionClothingItems.some(item => 
+        item.source === 'google-vision' || item.source?.includes('google')
+      );
+      
       const hasDescriptors = visionClothingItems.some(item => 
         item.descriptors && item.descriptors.length > 0
       );
+      
       const avgConfidence = visionClothingItems.reduce((sum, item) => sum + item.confidence, 0) / visionClothingItems.length;
+      
+      // Check if all tags follow grammar rules (max 2 words, no forbidden words)
+      const grammarCompliant = visionClothingItems.every(item => {
+        const wordCount = item.name.split(' ').length;
+        const forbiddenWords = ['of', 'with', 'and', 'the', 'a', 'an', 'featuring'];
+        const hasForbiddenWords = forbiddenWords.some(word => item.name.toLowerCase().includes(word));
+        return wordCount <= 2 && !hasForbiddenWords;
+      });
       
       let level: 'basic' | 'medium' | 'advanced' = 'medium';
       let method = 'ai-extraction';
       
-      if (hasGoogleVision && hasDescriptors && avgConfidence >= 0.7) {
+      if (hasGrammarValidation && grammarCompliant && avgConfidence >= 0.8) {
+        level = 'advanced';
+        method = 'google-vision-grammar';
+      } else if (hasGoogleVision && hasDescriptors && avgConfidence >= 0.7) {
         level = 'advanced';
         method = 'google-vision';
       } else if (hasDescriptors && avgConfidence >= 0.6) {
@@ -110,9 +129,11 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
     return colorMap[itemCategory as keyof typeof colorMap] || colorMap.other;
   };
 
-  // Get icon based on extraction method
+  // Get icon based on extraction method with grammar validation indicator
   const getMethodIcon = (source: string) => {
-    if (source === 'google-vision') {
+    if (source === 'google-vision-grammar' || source === 'google-vision-corrected') {
+      return <CheckCircle size={10} className="ml-1 text-green-600" />;
+    } else if (source === 'google-vision') {
       return <Eye size={10} className="ml-1 text-blue-500" />;
     } else if (source === 'kaggle' || source === 'enhanced') {
       return <Sparkles size={10} className="ml-1 text-purple-500" />;
@@ -120,6 +141,14 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
       return <Zap size={10} className="ml-1 text-green-500" />;
     }
     return null;
+  };
+
+  // Check if tag follows grammar rules
+  const isGrammarCompliant = (tagName: string) => {
+    const wordCount = tagName.split(' ').length;
+    const forbiddenWords = ['of', 'with', 'and', 'the', 'a', 'an', 'featuring'];
+    const hasForbiddenWords = forbiddenWords.some(word => tagName.toLowerCase().includes(word));
+    return wordCount <= 2 && !hasForbiddenWords;
   };
 
   if (displayItems.length === 0) {
@@ -141,18 +170,22 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
           const descriptors = clothingItem.descriptors || [];
           const confidence = clothingItem.confidence;
           const source = (clothingItem as any).source;
+          const grammarCompliant = isGrammarCompliant(itemName);
           
           return (
             <Badge
               key={index}
               variant="secondary"
               className={`text-xs ${getCategoryColor(itemName, category)} ${
+                source === 'google-vision-grammar' || source === 'google-vision-corrected' ? 'ring-2 ring-green-400' : 
                 source === 'google-vision' ? 'ring-1 ring-blue-300' : 
                 source === 'kaggle' || source === 'enhanced' ? 'ring-1 ring-purple-300' : ''
+              } ${
+                grammarCompliant ? 'border-green-300' : 'border-orange-300'
               }`}
               title={descriptors.length > 0 ? 
-                `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}` : 
-                `Category: ${category}\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}`
+                `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}\nGrammar: ${grammarCompliant ? 'Compliant' : 'Non-compliant'}` : 
+                `Category: ${category}\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}\nGrammar: ${grammarCompliant ? 'Compliant' : 'Non-compliant'}`
               }
             >
               {itemName}

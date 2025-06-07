@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getFashionWhitelist } from './fashionWhitelistService';
 import { extractClothingPhrasesAI } from './clothing/aiExtraction';
 import { AIClothingItem } from './clothing/types';
+import { validateTagStructure, enforceTagGrammar, formatTagName } from './tagging/grammarValidation';
 
 const GOOGLE_VISION_API_KEY = 'AIzaSyB5ck3I-Vc95beRtY9wgB3XL7237IeOAF8';
 const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`;
@@ -23,7 +24,7 @@ interface GoogleVisionResponse {
   }>;
 }
 
-// Clothing-related keywords for filtering Vision API labels
+// Enhanced clothing-related keywords with better categorization
 const CLOTHING_KEYWORDS = [
   'shirt', 'blouse', 'top', 'sweater', 'cardigan', 'jacket', 'blazer', 'hoodie', 't-shirt', 'polo', 'vest', 'coat',
   'pants', 'jeans', 'trousers', 'shorts', 'skirt', 'leggings', 'dress', 'gown',
@@ -35,18 +36,20 @@ const CLOTHING_KEYWORDS = [
 
 const COLOR_DESCRIPTORS = [
   'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'black', 'white', 'gray', 'grey', 
-  'brown', 'navy', 'beige', 'cream', 'tan', 'olive', 'maroon', 'teal', 'coral', 'burgundy', 'khaki'
+  'brown', 'navy', 'beige', 'cream', 'tan', 'olive', 'maroon', 'teal', 'coral', 'burgundy', 'khaki',
+  'light', 'dark', 'bright', 'pale', 'deep'
 ];
 
 const STYLE_DESCRIPTORS = [
   'casual', 'formal', 'vintage', 'modern', 'classic', 'trendy', 'athletic', 'elegant',
-  'fitted', 'loose', 'oversized', 'slim', 'cropped', 'long-sleeve', 'short-sleeve', 'sleeveless',
-  'striped', 'plaid', 'checkered', 'floral', 'graphic', 'plain', 'solid'
+  'fitted', 'loose', 'oversized', 'slim', 'cropped', 'striped', 'plaid', 'checkered', 
+  'floral', 'graphic', 'plain', 'solid', 'ripped', 'distressed', 'high-waisted'
 ];
 
 export const analyzeImageWithGoogleVision = async (imageUrl: string): Promise<{ success: boolean; labels?: GoogleVisionLabel[]; error?: string }> => {
   try {
-    console.log('Analyzing image with Google Vision API:', imageUrl);
+    console.log('=== GOOGLE VISION ANALYSIS WITH GRAMMAR RULES ===');
+    console.log('Analyzing image with enhanced structure validation:', imageUrl);
     
     const requestBody = {
       requests: [
@@ -85,7 +88,7 @@ export const analyzeImageWithGoogleVision = async (imageUrl: string): Promise<{ 
     }
 
     const labels = data.responses[0]?.labelAnnotations || [];
-    console.log(`Google Vision returned ${labels.length} labels:`, labels.map(l => l.description));
+    console.log(`Google Vision returned ${labels.length} labels for grammar processing`);
 
     return { success: true, labels };
   } catch (error) {
@@ -98,18 +101,19 @@ export const analyzeImageWithGoogleVision = async (imageUrl: string): Promise<{ 
 };
 
 const filterClothingLabels = (labels: GoogleVisionLabel[]): GoogleVisionLabel[] => {
+  console.log('Filtering labels with grammar rules...');
   return labels.filter(label => {
     const description = label.description.toLowerCase();
     return CLOTHING_KEYWORDS.some(keyword => 
       description.includes(keyword) || keyword.includes(description)
     );
-  }).sort((a, b) => b.score - a.score); // Sort by confidence score
+  }).sort((a, b) => b.score - a.score);
 };
 
-const formatClothingTags = async (clothingLabels: GoogleVisionLabel[]): Promise<AIClothingItem[]> => {
-  console.log('Formatting clothing tags from labels:', clothingLabels.map(l => l.description));
+const formatClothingTagsWithGrammar = async (clothingLabels: GoogleVisionLabel[]): Promise<AIClothingItem[]> => {
+  console.log('=== APPLYING STRICT GRAMMAR RULES TO TAGS ===');
+  console.log('Processing labels with 2-word max and grammar validation...');
   
-  // Get fashion whitelist for validation
   const { data: whitelistData } = await getFashionWhitelist();
   const whitelist = whitelistData || [];
   
@@ -117,7 +121,7 @@ const formatClothingTags = async (clothingLabels: GoogleVisionLabel[]): Promise<
   const usedItems = new Set<string>();
 
   for (const label of clothingLabels) {
-    if (formattedTags.length >= 6) break; // Limit to 6 tags
+    if (formattedTags.length >= 6) break;
     
     const description = label.description.toLowerCase();
     
@@ -130,54 +134,89 @@ const formatClothingTags = async (clothingLabels: GoogleVisionLabel[]): Promise<
     if (whitelistMatch) {
       const itemKey = whitelistMatch.item_name.toLowerCase();
       if (!usedItems.has(itemKey)) {
-        // Try to add descriptors from other labels
-        const descriptors: string[] = [];
         
-        // Look for color descriptors
+        // Extract primary descriptor with strict rules
+        let primaryDescriptor: string | null = null;
+        
+        // Look for color descriptors first
         const colorMatch = clothingLabels.find(l => 
           COLOR_DESCRIPTORS.some(color => l.description.toLowerCase().includes(color))
         );
-        if (colorMatch) {
+        if (colorMatch && !primaryDescriptor) {
           const color = COLOR_DESCRIPTORS.find(c => colorMatch.description.toLowerCase().includes(c));
-          if (color) descriptors.push(color);
+          if (color) primaryDescriptor = color;
         }
         
-        // Look for style descriptors
-        const styleMatch = clothingLabels.find(l => 
-          STYLE_DESCRIPTORS.some(style => l.description.toLowerCase().includes(style))
-        );
-        if (styleMatch) {
-          const style = STYLE_DESCRIPTORS.find(s => styleMatch.description.toLowerCase().includes(s));
-          if (style) descriptors.push(style);
+        // Look for style descriptors if no color found
+        if (!primaryDescriptor) {
+          const styleMatch = clothingLabels.find(l => 
+            STYLE_DESCRIPTORS.some(style => l.description.toLowerCase().includes(style))
+          );
+          if (styleMatch) {
+            const style = STYLE_DESCRIPTORS.find(s => styleMatch.description.toLowerCase().includes(s));
+            if (style) primaryDescriptor = style;
+          }
         }
         
-        // Format the final tag name
-        let tagName = whitelistMatch.item_name;
-        if (descriptors.length > 0) {
-          tagName = `${descriptors.join(' ')} ${whitelistMatch.item_name}`;
+        // Apply strict grammar formatting
+        const formattedName = formatTagName(primaryDescriptor, whitelistMatch.item_name);
+        
+        // Validate the final tag structure
+        const validation = validateTagStructure(formattedName);
+        
+        if (validation.isValid) {
+          console.log(`✅ Grammar-valid tag: "${formattedName}"`);
+          
+          formattedTags.push({
+            name: formattedName,
+            descriptors: primaryDescriptor ? [primaryDescriptor] : [],
+            category: whitelistMatch.category,
+            confidence: label.score * 0.95, // Slight boost for grammar compliance
+            source: 'google-vision-grammar'
+          });
+          
+          usedItems.add(itemKey);
+        } else {
+          console.log(`❌ Grammar validation failed for "${formattedName}": ${validation.errors.join(', ')}`);
+          
+          // Try using corrected version if available
+          if (validation.correctedTag) {
+            const correctedValidation = validateTagStructure(validation.correctedTag);
+            if (correctedValidation.isValid) {
+              console.log(`✅ Using corrected tag: "${validation.correctedTag}"`);
+              
+              formattedTags.push({
+                name: validation.correctedTag,
+                descriptors: primaryDescriptor ? [primaryDescriptor] : [],
+                category: whitelistMatch.category,
+                confidence: label.score * 0.85, // Lower confidence for corrected tags
+                source: 'google-vision-corrected'
+              });
+              
+              usedItems.add(itemKey);
+            }
+          }
         }
-        
-        // Ensure max 4 words
-        const words = tagName.split(' ');
-        if (words.length > 4) {
-          tagName = words.slice(0, 4).join(' ');
-        }
-        
-        formattedTags.push({
-          name: tagName,
-          descriptors: descriptors,
-          category: whitelistMatch.category,
-          confidence: label.score,
-          source: 'google-vision'
-        });
-        
-        usedItems.add(itemKey);
       }
     }
   }
   
-  console.log('Formatted tags:', formattedTags.map(t => t.name));
-  return formattedTags;
+  // Final grammar enforcement
+  const grammarValidatedTags = formattedTags.filter(tag => {
+    const validation = validateTagStructure(tag.name);
+    if (!validation.isValid) {
+      console.log(`🚫 Final filter rejected: "${tag.name}" - ${validation.errors.join(', ')}`);
+      return false;
+    }
+    return true;
+  });
+  
+  console.log(`=== GRAMMAR VALIDATION COMPLETE ===`);
+  console.log(`Original labels: ${clothingLabels.length}`);
+  console.log(`Formatted tags: ${formattedTags.length}`);
+  console.log(`Grammar-validated tags: ${grammarValidatedTags.length}`);
+  
+  return grammarValidatedTags;
 };
 
 export const extractClothingTagsWithGoogleVision = async (
@@ -186,7 +225,7 @@ export const extractClothingTagsWithGoogleVision = async (
   feedback?: string,
   suggestions: string[] = []
 ): Promise<{ success: boolean; items?: AIClothingItem[]; error?: string; method: string }> => {
-  console.log('=== GOOGLE VISION CLOTHING TAGGING START ===');
+  console.log('=== GOOGLE VISION TAGGING WITH GRAMMAR ENFORCEMENT ===');
   console.log(`Image URL: ${imageUrl}`);
   console.log(`Wardrobe item: ${wardrobeItemId}`);
   
@@ -197,15 +236,20 @@ export const extractClothingTagsWithGoogleVision = async (
     if (!visionResult.success || !visionResult.labels || visionResult.labels.length === 0) {
       console.log('Google Vision failed or returned no labels, falling back to OpenAI');
       
-      // Fallback to OpenAI if Vision API fails
       if (feedback) {
         const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
         if (aiResult.success && aiResult.extractedItems) {
-          console.log('OpenAI fallback successful');
+          // Apply grammar rules to AI results too
+          const grammarValidatedItems = aiResult.extractedItems.filter(item => {
+            const validation = validateTagStructure(item.name);
+            return validation.isValid;
+          });
+          
+          console.log(`OpenAI fallback with grammar validation: ${grammarValidatedItems.length} valid items`);
           return { 
             success: true, 
-            items: aiResult.extractedItems, 
-            method: 'openai-fallback' 
+            items: grammarValidatedItems, 
+            method: 'openai-fallback-grammar' 
           };
         }
       }
@@ -219,19 +263,23 @@ export const extractClothingTagsWithGoogleVision = async (
     
     // Step 2: Filter for clothing-related labels
     const clothingLabels = filterClothingLabels(visionResult.labels);
-    console.log(`Filtered to ${clothingLabels.length} clothing-related labels:`, clothingLabels.map(l => l.description));
+    console.log(`Filtered to ${clothingLabels.length} clothing-related labels for grammar processing`);
     
     if (clothingLabels.length === 0) {
-      console.log('No clothing labels found, falling back to OpenAI');
+      console.log('No clothing labels found, falling back to OpenAI with grammar rules');
       
-      // Fallback to OpenAI if no clothing detected
       if (feedback) {
         const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
         if (aiResult.success && aiResult.extractedItems) {
+          const grammarValidatedItems = aiResult.extractedItems.filter(item => {
+            const validation = validateTagStructure(item.name);
+            return validation.isValid;
+          });
+          
           return { 
             success: true, 
-            items: aiResult.extractedItems, 
-            method: 'openai-fallback' 
+            items: grammarValidatedItems, 
+            method: 'openai-fallback-grammar' 
           };
         }
       }
@@ -243,71 +291,83 @@ export const extractClothingTagsWithGoogleVision = async (
       };
     }
     
-    // Step 3: Format tags using app structure
-    const formattedTags = await formatClothingTags(clothingLabels);
+    // Step 3: Format tags with strict grammar rules
+    const grammarValidatedTags = await formatClothingTagsWithGrammar(clothingLabels);
     
-    if (formattedTags.length === 0) {
-      console.log('No valid tags generated, falling back to OpenAI');
+    if (grammarValidatedTags.length === 0) {
+      console.log('No grammar-valid tags generated, falling back to OpenAI');
       
-      // Fallback if formatting failed
       if (feedback) {
         const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
         if (aiResult.success && aiResult.extractedItems) {
+          const grammarValidatedItems = aiResult.extractedItems.filter(item => {
+            const validation = validateTagStructure(item.name);
+            return validation.isValid;
+          });
+          
           return { 
             success: true, 
-            items: aiResult.extractedItems, 
-            method: 'openai-fallback' 
+            items: grammarValidatedItems, 
+            method: 'openai-fallback-grammar' 
           };
         }
       }
       
       return { 
         success: false, 
-        error: 'Failed to generate valid clothing tags',
+        error: 'Failed to generate grammar-valid clothing tags',
         method: 'formatting-failed'
       };
     }
     
-    // Step 4: Update wardrobe item with Google Vision results
+    // Step 4: Update wardrobe item with grammar-validated results
     const { error: updateError } = await supabase
       .from('wardrobe_items')
       .update({ 
-        extracted_clothing_items: formattedTags,
+        extracted_clothing_items: grammarValidatedTags,
         updated_at: new Date().toISOString()
       })
       .eq('id', wardrobeItemId);
 
     if (updateError) {
       console.error('Error updating wardrobe item:', updateError);
-      throw new Error('Failed to save Google Vision tags');
+      throw new Error('Failed to save grammar-validated tags');
     }
     
-    console.log('=== GOOGLE VISION TAGGING COMPLETE ===');
-    console.log(`Successfully generated ${formattedTags.length} tags using Google Vision API`);
+    console.log('=== GOOGLE VISION GRAMMAR TAGGING COMPLETE ===');
+    console.log(`Successfully generated ${grammarValidatedTags.length} grammar-validated tags`);
+    grammarValidatedTags.forEach((tag, index) => {
+      const wordCount = tag.name.split(' ').length;
+      console.log(`${index + 1}. "${tag.name}" (${wordCount} words, confidence: ${tag.confidence.toFixed(2)})`);
+    });
     
     return { 
       success: true, 
-      items: formattedTags, 
-      method: 'google-vision' 
+      items: grammarValidatedTags, 
+      method: 'google-vision-grammar' 
     };
     
   } catch (error) {
-    console.error('Error in Google Vision tagging:', error);
+    console.error('Error in Google Vision grammar tagging:', error);
     
-    // Final fallback to OpenAI on any error
     if (feedback) {
-      console.log('Attempting final OpenAI fallback due to error');
+      console.log('Attempting final OpenAI fallback with grammar rules due to error');
       try {
         const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
         if (aiResult.success && aiResult.extractedItems) {
+          const grammarValidatedItems = aiResult.extractedItems.filter(item => {
+            const validation = validateTagStructure(item.name);
+            return validation.isValid;
+          });
+          
           return { 
             success: true, 
-            items: aiResult.extractedItems, 
-            method: 'openai-fallback-error' 
+            items: grammarValidatedItems, 
+            method: 'openai-fallback-error-grammar' 
           };
         }
       } catch (fallbackError) {
-        console.error('OpenAI fallback also failed:', fallbackError);
+        console.error('OpenAI fallback with grammar also failed:', fallbackError);
       }
     }
     
