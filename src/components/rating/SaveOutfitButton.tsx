@@ -39,16 +39,19 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
     setIsSaving(true);
 
     try {
-      const { data, error } = await saveOutfitToWardrobe(
+      const result = await saveOutfitToWardrobe(
+        user.id,
         finalImageUrl,
-        ratingResult,
+        ratingResult.score,
+        ratingResult.feedback,
+        ratingResult.suggestions,
         selectedGender,
         occasionContext?.eventContext,
         feedbackMode
       );
 
-      if (error) {
-        console.error('Error saving outfit:', error);
+      if (result.error) {
+        console.error('Error saving outfit:', result.error);
         toast.error('Failed to save outfit');
       } else {
         setIsSaved(true);

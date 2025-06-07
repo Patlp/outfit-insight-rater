@@ -166,6 +166,3 @@ export const extractClothingTagsWithGoogleVision = async (
     };
   }
 };
-
-// Re-export the main function for backward compatibility
-export { extractClothingTagsWithGoogleVision as extractClothingTagsWithGoogleVision };

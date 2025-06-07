@@ -1,28 +1,35 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getUserWardrobeItems, WardrobeItem } from '@/services/wardrobeService';
+import { getWardrobeItems, WardrobeItem } from '@/services/wardrobeService';
 import WardrobeHeader from './WardrobeHeader';
 import WardrobeFilters from './WardrobeFilters';
 import WardrobeGrid from './WardrobeGrid';
 import WardrobeEmptyState from './WardrobeEmptyState';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const WardrobeContent: React.FC = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
   const { data: wardrobeItems, isLoading, error, refetch } = useQuery({
-    queryKey: ['wardrobe-items'],
+    queryKey: ['wardrobe-items', user?.id],
     queryFn: async () => {
-      const { data, error } = await getUserWardrobeItems();
-      if (error) {
-        console.error('Error fetching wardrobe items:', error);
-        toast.error('Failed to load wardrobe items');
-        throw error;
+      if (!user?.id) {
+        throw new Error('User not authenticated');
       }
-      return data || [];
+      
+      const result = await getWardrobeItems(user.id);
+      if (result.error) {
+        console.error('Error fetching wardrobe items:', result.error);
+        toast.error('Failed to load wardrobe items');
+        throw new Error(result.error);
+      }
+      return result.items || [];
     },
+    enabled: !!user?.id,
   });
 
   const filteredItems = React.useMemo(() => {

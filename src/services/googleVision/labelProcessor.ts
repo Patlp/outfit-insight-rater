@@ -32,3 +32,6 @@ export const filterClothingLabels = (labels: GoogleVisionLabel[]): GoogleVisionL
     );
   }).sort((a, b) => b.score - a.score);
 };
+
+// Re-export GoogleVisionLabel for other modules
+export type { GoogleVisionLabel };
