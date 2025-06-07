@@ -113,11 +113,11 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
   // Get icon based on extraction method
   const getMethodIcon = (source: string) => {
     if (source === 'google-vision') {
-      return <Eye size={10} className="ml-1 text-blue-500" title="Google Vision API" />;
+      return <Eye size={10} className="ml-1 text-blue-500" />;
     } else if (source === 'kaggle' || source === 'enhanced') {
-      return <Sparkles size={10} className="ml-1 text-purple-500" title="Enhanced AI" />;
+      return <Sparkles size={10} className="ml-1 text-purple-500" />;
     } else if (source && source.includes('ai')) {
-      return <Zap size={10} className="ml-1 text-green-500" title="AI Extraction" />;
+      return <Zap size={10} className="ml-1 text-green-500" />;
     }
     return null;
   };
