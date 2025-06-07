@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sync, CheckCircle, AlertCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { syncWhitelistWithPrimaryTaxonomy } from '@/services/fashionWhitelistService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +41,7 @@ const WhitelistSyncButton: React.FC = () => {
       className="flex items-center gap-2"
       variant="outline"
     >
-      <Sync size={16} className={isLoading ? 'animate-spin' : ''} />
+      <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
       {isLoading ? 'Syncing...' : 'Sync Whitelist with Primary Taxonomy'}
     </Button>
   );

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import { Eye, Sparkles, Zap } from 'lucide-react';
 import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
 import { AIClothingItem } from '@/services/clothingExtractionService';
 import TaggingLevelIndicator from './TaggingLevelIndicator';
@@ -27,42 +27,47 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
     return extractedItems;
   }, [feedback, itemId]);
 
-  // Get AI-extracted clothing items if available
-  const aiClothingItems = React.useMemo(() => {
-    const aiItems = extractedClothingItems as AIClothingItem[] | null;
-    if (aiItems && Array.isArray(aiItems) && aiItems.length > 0) {
-      console.log('AI extracted clothing items for item', itemId, ':', aiItems);
-      return aiItems;
+  // Get AI/Vision-extracted clothing items if available
+  const visionClothingItems = React.useMemo(() => {
+    const visionItems = extractedClothingItems as AIClothingItem[] | null;
+    if (visionItems && Array.isArray(visionItems) && visionItems.length > 0) {
+      console.log('Vision/AI extracted clothing items for item', itemId, ':', visionItems);
+      return visionItems;
     }
     return null;
   }, [extractedClothingItems, itemId]);
 
   // Determine tagging level and display data
-  const { displayItems, taggingLevel, averageConfidence } = React.useMemo(() => {
-    if (aiClothingItems && aiClothingItems.length > 0) {
-      // Determine tagging level based on item properties
-      const hasKaggleData = aiClothingItems.some(item => 
-        item.source === 'kaggle' || item.source === 'enhanced' || item.source === 'hybrid'
+  const { displayItems, taggingLevel, averageConfidence, extractionMethod } = React.useMemo(() => {
+    if (visionClothingItems && visionClothingItems.length > 0) {
+      // Determine tagging level based on item properties and source
+      const hasGoogleVision = visionClothingItems.some(item => 
+        item.source === 'google-vision'
       );
-      const hasDescriptors = aiClothingItems.some(item => 
+      const hasDescriptors = visionClothingItems.some(item => 
         item.descriptors && item.descriptors.length > 0
       );
-      const avgConfidence = aiClothingItems.reduce((sum, item) => sum + item.confidence, 0) / aiClothingItems.length;
+      const avgConfidence = visionClothingItems.reduce((sum, item) => sum + item.confidence, 0) / visionClothingItems.length;
       
       let level: 'basic' | 'medium' | 'advanced' = 'medium';
+      let method = 'ai-extraction';
       
-      if (hasKaggleData && hasDescriptors && avgConfidence >= 0.7) {
+      if (hasGoogleVision && hasDescriptors && avgConfidence >= 0.7) {
         level = 'advanced';
+        method = 'google-vision';
       } else if (hasDescriptors && avgConfidence >= 0.6) {
         level = 'medium';
+        method = 'ai-with-validation';
       } else {
         level = 'basic';
+        method = 'basic-ai';
       }
       
       return {
-        displayItems: aiClothingItems,
+        displayItems: visionClothingItems,
         taggingLevel: level,
-        averageConfidence: avgConfidence
+        averageConfidence: avgConfidence,
+        extractionMethod: method
       };
     } else if (regexClothingItems.length > 0) {
       // Convert regex items to display format
@@ -70,22 +75,25 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
         name: item,
         descriptors: [],
         category: categorizeClothingItem(item),
-        confidence: 0.7
+        confidence: 0.7,
+        source: 'regex'
       }));
       
       return {
         displayItems: regexDisplayItems,
         taggingLevel: 'basic' as const,
-        averageConfidence: 0.7
+        averageConfidence: 0.7,
+        extractionMethod: 'regex-extraction'
       };
     }
     
     return {
       displayItems: [],
       taggingLevel: 'basic' as const,
-      averageConfidence: 0
+      averageConfidence: 0,
+      extractionMethod: 'none'
     };
-  }, [aiClothingItems, regexClothingItems]);
+  }, [visionClothingItems, regexClothingItems]);
 
   // Get category colors for badges
   const getCategoryColor = (itemName: string, category?: string) => {
@@ -100,6 +108,18 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
       other: 'bg-fashion-100 text-fashion-700 border-fashion-200'
     };
     return colorMap[itemCategory as keyof typeof colorMap] || colorMap.other;
+  };
+
+  // Get icon based on extraction method
+  const getMethodIcon = (source: string) => {
+    if (source === 'google-vision') {
+      return <Eye size={10} className="ml-1 text-blue-500" title="Google Vision API" />;
+    } else if (source === 'kaggle' || source === 'enhanced') {
+      return <Sparkles size={10} className="ml-1 text-purple-500" title="Enhanced AI" />;
+    } else if (source && source.includes('ai')) {
+      return <Zap size={10} className="ml-1 text-green-500" title="AI Extraction" />;
+    }
+    return null;
   };
 
   if (displayItems.length === 0) {
@@ -127,17 +147,16 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
               key={index}
               variant="secondary"
               className={`text-xs ${getCategoryColor(itemName, category)} ${
+                source === 'google-vision' ? 'ring-1 ring-blue-300' : 
                 source === 'kaggle' || source === 'enhanced' ? 'ring-1 ring-purple-300' : ''
               }`}
               title={descriptors.length > 0 ? 
-                `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nLevel: ${taggingLevel}${source ? `\nSource: ${source}` : ''}` : 
-                `Category: ${category}\nLevel: ${taggingLevel}${source ? `\nSource: ${source}` : ''}`
+                `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}` : 
+                `Category: ${category}\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}`
               }
             >
               {itemName}
-              {(source === 'kaggle' || source === 'enhanced') && (
-                <Sparkles size={10} className="ml-1 text-purple-500" />
-              )}
+              {getMethodIcon(source || '')}
             </Badge>
           );
         })}

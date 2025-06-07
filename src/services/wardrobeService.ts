@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { RatingResult, Gender } from '@/context/RatingContext';
 import { extractClothingItems } from '@/utils/clothingExtractor';
-import { processClothingWithTaggingLevel } from './advancedTaggingService';
+import { extractClothingTagsWithGoogleVision } from './googleVisionTaggingService';
 
 export interface WardrobeItem {
   id: string;
@@ -57,29 +57,27 @@ export const saveOutfitToWardrobe = async (
       return { data: null, error };
     }
 
-    // Background process: Use ADVANCED tagging system
+    // Background process: Use Google Vision API for tagging
     // This runs asynchronously and won't block the main flow
-    if (data && ratingResult.feedback) {
-      console.log('Triggering ADVANCED tagging system...');
-      processClothingWithTaggingLevel(
-        ratingResult.feedback,
-        ratingResult.suggestions || [],
+    if (data && imageUrl) {
+      console.log('Triggering Google Vision API tagging system...');
+      extractClothingTagsWithGoogleVision(
+        imageUrl,
         data.id,
-        'advanced' // Set to advanced level
+        ratingResult.feedback || '',
+        ratingResult.suggestions || []
       ).then(result => {
-        if (result.success && result.result) {
-          const { level, itemCount, averageConfidence, extractionMethod, processingTime } = result.result;
-          console.log(`✅ Advanced tagging completed for item ${data.id}:`);
-          console.log(`   Level: ${level}`);
-          console.log(`   Method: ${extractionMethod}`);
-          console.log(`   Items found: ${itemCount}`);
-          console.log(`   Average confidence: ${averageConfidence.toFixed(2)}`);
-          console.log(`   Processing time: ${processingTime}ms`);
+        if (result.success && result.items) {
+          console.log(`✅ Google Vision tagging completed for item ${data.id}:`);
+          console.log(`   Method: ${result.method}`);
+          console.log(`   Items found: ${result.items.length}`);
+          console.log(`   Tags: ${result.items.map(item => item.name).join(', ')}`);
         } else {
-          console.warn(`❌ Advanced tagging failed for item ${data.id}:`, result.error);
+          console.warn(`❌ Google Vision tagging failed for item ${data.id}:`, result.error);
+          console.warn(`   Method: ${result.method}`);
         }
       }).catch(err => {
-        console.warn(`❌ Advanced tagging error for item ${data.id}:`, err);
+        console.warn(`❌ Google Vision tagging error for item ${data.id}:`, err);
       });
     }
 
