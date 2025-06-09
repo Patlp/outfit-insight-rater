@@ -14,13 +14,13 @@ interface WardrobeItemCardProps {
 
 const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 bg-white">
       <WardrobeItemImage 
         imageUrl={item.image_url}
         score={item.rating_score || 0}
       />
       
-      <CardContent className="p-4">
+      <CardContent className="p-6 space-y-4">
         <WardrobeItemDetails
           createdAt={item.created_at}
           occasionContext={item.occasion_context}
@@ -34,7 +34,7 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
         />
       </CardContent>
       
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-6 pt-0 border-t border-gray-100">
         <WardrobeItemActions
           itemId={item.id}
           onDeleted={onDeleted}

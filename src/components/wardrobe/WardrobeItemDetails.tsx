@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface WardrobeItemDetailsProps {
@@ -15,24 +15,31 @@ const WardrobeItemDetails: React.FC<WardrobeItemDetailsProps> = ({
   feedback
 }) => {
   return (
-    <>
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-        <Calendar size={14} />
-        {format(new Date(createdAt), 'MMM dd, yyyy')}
+    <div className="space-y-4">
+      <div className="flex items-center gap-4 text-sm text-gray-600">
+        <div className="flex items-center gap-2">
+          <Calendar size={16} />
+          <span>{format(new Date(createdAt), 'MMM dd, yyyy')}</span>
+        </div>
         {occasionContext && (
-          <>
-            <span>•</span>
-            <span className="capitalize">{occasionContext}</span>
-          </>
+          <div className="flex items-center gap-2">
+            <MapPin size={16} />
+            <span className="capitalize bg-gray-100 px-2 py-1 rounded-full text-xs font-medium">
+              {occasionContext}
+            </span>
+          </div>
         )}
       </div>
       
       {feedback && (
-        <p className="text-sm text-gray-700 mb-3 line-clamp-3">
-          {feedback}
-        </p>
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <h4 className="font-semibold text-gray-900 mb-2">Fashion Feedback</h4>
+          <p className="text-gray-700 leading-relaxed text-sm">
+            {feedback}
+          </p>
+        </div>
       )}
-    </>
+    </div>
   );
 };
 

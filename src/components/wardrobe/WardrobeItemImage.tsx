@@ -19,12 +19,12 @@ const WardrobeItemImage: React.FC<WardrobeItemImageProps> = ({ imageUrl, score }
       <img
         src={imageUrl}
         alt="Outfit"
-        className="w-full h-48 object-cover"
+        className="w-full h-80 object-cover rounded-t-lg"
       />
-      <div className="absolute top-2 right-2">
-        <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-          <Star size={14} className={`${getScoreColor(score)}`} />
-          <span className={`text-sm font-medium ${getScoreColor(score)}`}>
+      <div className="absolute top-4 right-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 flex items-center gap-2 shadow-md">
+          <Star size={16} className={`${getScoreColor(score)} fill-current`} />
+          <span className={`text-sm font-semibold ${getScoreColor(score)}`}>
             {score}/10
           </span>
         </div>
