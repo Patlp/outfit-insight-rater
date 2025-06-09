@@ -2,6 +2,7 @@
 import React from 'react';
 import { Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
+import FeedbackSection from '@/components/rating/FeedbackSection';
 
 interface WardrobeItemDetailsProps {
   createdAt: string;
@@ -32,12 +33,7 @@ const WardrobeItemDetails: React.FC<WardrobeItemDetailsProps> = ({
       </div>
       
       {feedback && (
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <h4 className="font-semibold text-gray-900 mb-2">Fashion Feedback</h4>
-          <p className="text-gray-700 leading-relaxed text-sm">
-            {feedback}
-          </p>
-        </div>
+        <FeedbackSection feedback={feedback} />
       )}
     </div>
   );
