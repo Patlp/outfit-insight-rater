@@ -1,9 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Sparkles, Zap, CheckCircle } from 'lucide-react';
-import { extractClothingItems, categorizeClothingItem } from '@/utils/clothingExtractor';
-import { AIClothingItem } from '@/services/clothingExtractionService';
+import { Eye, Sparkles } from 'lucide-react';
 import TaggingLevelIndicator from './TaggingLevelIndicator';
 
 interface WardrobeItemTagsProps {
@@ -13,70 +11,36 @@ interface WardrobeItemTagsProps {
 }
 
 const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
-  feedback,
   extractedClothingItems,
   itemId
 }) => {
-  // Extract clothing items from feedback using the regex-based extractor for backward compatibility
-  const regexClothingItems = React.useMemo(() => {
-    if (!feedback) return [];
-    
-    const extractedItems = extractClothingItems(feedback);
-    console.log('Regex extracted clothing items for item', itemId, ':', extractedItems);
-    
-    return extractedItems;
-  }, [feedback, itemId]);
-
-  // Get AI/Vision-extracted clothing items if available
+  // Get vision-extracted clothing items
   const visionClothingItems = React.useMemo(() => {
-    const visionItems = extractedClothingItems as AIClothingItem[] | null;
-    if (visionItems && Array.isArray(visionItems) && visionItems.length > 0) {
-      console.log('Vision/AI extracted clothing items for item', itemId, ':', visionItems);
-      return visionItems;
+    if (extractedClothingItems && Array.isArray(extractedClothingItems) && extractedClothingItems.length > 0) {
+      console.log('Vision extracted clothing items for item', itemId, ':', extractedClothingItems);
+      return extractedClothingItems;
     }
-    return null;
+    return [];
   }, [extractedClothingItems, itemId]);
 
-  // Determine tagging level and display data with grammar validation
+  // Determine tagging level and display data
   const { displayItems, taggingLevel, averageConfidence, extractionMethod } = React.useMemo(() => {
-    if (visionClothingItems && visionClothingItems.length > 0) {
-      // Check for grammar-validated tags
-      const hasGrammarValidation = visionClothingItems.some(item => 
-        item.source === 'google-vision-grammar' || 
-        item.source === 'google-vision-corrected' ||
-        item.source?.includes('grammar')
+    if (visionClothingItems.length > 0) {
+      const hasVisionTags = visionClothingItems.some(item => 
+        item.source === 'openai-vision'
       );
       
-      const hasGoogleVision = visionClothingItems.some(item => 
-        item.source === 'google-vision' || item.source?.includes('google')
-      );
+      const avgConfidence = visionClothingItems.reduce((sum, item) => sum + (item.confidence || 0.8), 0) / visionClothingItems.length;
       
-      const hasDescriptors = visionClothingItems.some(item => 
-        item.descriptors && item.descriptors.length > 0
-      );
+      let level: 'basic' | 'medium' | 'advanced' = 'advanced';
+      let method = 'openai-vision';
       
-      const avgConfidence = visionClothingItems.reduce((sum, item) => sum + item.confidence, 0) / visionClothingItems.length;
-      
-      // Check if all tags follow grammar rules (max 2 words, no forbidden words)
-      const grammarCompliant = visionClothingItems.every(item => {
-        const wordCount = item.name.split(' ').length;
-        const forbiddenWords = ['of', 'with', 'and', 'the', 'a', 'an', 'featuring'];
-        const hasForbiddenWords = forbiddenWords.some(word => item.name.toLowerCase().includes(word));
-        return wordCount <= 2 && !hasForbiddenWords;
-      });
-      
-      let level: 'basic' | 'medium' | 'advanced' = 'medium';
-      let method = 'ai-extraction';
-      
-      if (hasGrammarValidation && grammarCompliant && avgConfidence >= 0.8) {
+      if (hasVisionTags && avgConfidence >= 0.85) {
         level = 'advanced';
-        method = 'google-vision-grammar';
-      } else if (hasGoogleVision && hasDescriptors && avgConfidence >= 0.7) {
-        level = 'advanced';
-        method = 'google-vision';
-      } else if (hasDescriptors && avgConfidence >= 0.6) {
+        method = 'openai-vision';
+      } else if (avgConfidence >= 0.7) {
         level = 'medium';
-        method = 'ai-with-validation';
+        method = 'ai-enhanced';
       } else {
         level = 'basic';
         method = 'basic-ai';
@@ -88,22 +52,6 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
         averageConfidence: avgConfidence,
         extractionMethod: method
       };
-    } else if (regexClothingItems.length > 0) {
-      // Convert regex items to display format
-      const regexDisplayItems = regexClothingItems.map(item => ({
-        name: item,
-        descriptors: [],
-        category: categorizeClothingItem(item),
-        confidence: 0.7,
-        source: 'regex'
-      }));
-      
-      return {
-        displayItems: regexDisplayItems,
-        taggingLevel: 'basic' as const,
-        averageConfidence: 0.7,
-        extractionMethod: 'regex-extraction'
-      };
     }
     
     return {
@@ -112,11 +60,10 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
       averageConfidence: 0,
       extractionMethod: 'none'
     };
-  }, [visionClothingItems, regexClothingItems]);
+  }, [visionClothingItems]);
 
   // Get category colors for badges
   const getCategoryColor = (itemName: string, category?: string) => {
-    const itemCategory = category || categorizeClothingItem(itemName);
     const colorMap = {
       tops: 'bg-blue-100 text-blue-700 border-blue-200',
       bottoms: 'bg-green-100 text-green-700 border-green-200',
@@ -126,29 +73,17 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
       outerwear: 'bg-gray-100 text-gray-700 border-gray-200',
       other: 'bg-fashion-100 text-fashion-700 border-fashion-200'
     };
-    return colorMap[itemCategory as keyof typeof colorMap] || colorMap.other;
+    return colorMap[category as keyof typeof colorMap] || colorMap.other;
   };
 
-  // Get icon based on extraction method with grammar validation indicator
+  // Get icon based on extraction method
   const getMethodIcon = (source: string) => {
-    if (source === 'google-vision-grammar' || source === 'google-vision-corrected') {
-      return <CheckCircle size={10} className="ml-1 text-green-600" />;
-    } else if (source === 'google-vision') {
+    if (source === 'openai-vision') {
       return <Eye size={10} className="ml-1 text-blue-500" />;
-    } else if (source === 'kaggle' || source === 'enhanced') {
+    } else if (source === 'enhanced' || source === 'ai-enhanced') {
       return <Sparkles size={10} className="ml-1 text-purple-500" />;
-    } else if (source && source.includes('ai')) {
-      return <Zap size={10} className="ml-1 text-green-500" />;
     }
     return null;
-  };
-
-  // Check if tag follows grammar rules
-  const isGrammarCompliant = (tagName: string) => {
-    const wordCount = tagName.split(' ').length;
-    const forbiddenWords = ['of', 'with', 'and', 'the', 'a', 'an', 'featuring'];
-    const hasForbiddenWords = forbiddenWords.some(word => tagName.toLowerCase().includes(word));
-    return wordCount <= 2 && !hasForbiddenWords;
   };
 
   if (displayItems.length === 0) {
@@ -167,29 +102,24 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
         {displayItems.map((clothingItem, index) => {
           const itemName = clothingItem.name;
           const category = clothingItem.category;
-          const descriptors = clothingItem.descriptors || [];
-          const confidence = clothingItem.confidence;
-          const source = (clothingItem as any).source;
-          const grammarCompliant = isGrammarCompliant(itemName);
+          const confidence = clothingItem.confidence || 0.8;
+          const source = clothingItem.source || 'ai';
           
           return (
             <Badge
               key={index}
               variant="secondary"
               className={`text-xs ${getCategoryColor(itemName, category)} ${
-                source === 'google-vision-grammar' || source === 'google-vision-corrected' ? 'ring-2 ring-green-400' : 
-                source === 'google-vision' ? 'ring-1 ring-blue-300' : 
-                source === 'kaggle' || source === 'enhanced' ? 'ring-1 ring-purple-300' : ''
-              } ${
-                grammarCompliant ? 'border-green-300' : 'border-orange-300'
+                source === 'openai-vision' ? 'ring-2 ring-blue-400' : 
+                source === 'enhanced' ? 'ring-1 ring-purple-300' : ''
               }`}
-              title={descriptors.length > 0 ? 
-                `Category: ${category}\nDescriptors: ${descriptors.join(', ')}\nConfidence: ${confidence ? Math.round(confidence * 100) : 'N/A'}%\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}\nGrammar: ${grammarCompliant ? 'Compliant' : 'Non-compliant'}` : 
-                `Category: ${category}\nMethod: ${extractionMethod}${source ? `\nSource: ${source}` : ''}\nGrammar: ${grammarCompliant ? 'Compliant' : 'Non-compliant'}`
-              }
+              title={`Category: ${category}
+Confidence: ${Math.round(confidence * 100)}%
+Method: ${extractionMethod}
+Source: ${source}`}
             >
               {itemName}
-              {getMethodIcon(source || '')}
+              {getMethodIcon(source)}
             </Badge>
           );
         })}

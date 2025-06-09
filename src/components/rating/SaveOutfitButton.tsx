@@ -16,7 +16,7 @@ interface SaveOutfitButtonProps {
 const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { ratingResult, selectedGender, occasionContext, feedbackMode, uploadedImage } = useRating();
+  const { ratingResult, selectedGender, occasionContext, feedbackMode, uploadedImage, imageFile } = useRating();
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -47,7 +47,8 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
         ratingResult.suggestions,
         selectedGender,
         occasionContext?.eventContext,
-        feedbackMode
+        feedbackMode,
+        imageFile // Pass the image file for vision tagging
       );
 
       if (result.error) {
@@ -55,7 +56,7 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
         toast.error('Failed to save outfit');
       } else {
         setIsSaved(true);
-        toast.success('Outfit saved to your wardrobe!');
+        toast.success('Outfit saved with AI fashion tags!');
         // Redirect to wardrobe after a short delay
         setTimeout(() => {
           navigate('/wardrobe');
@@ -72,10 +73,9 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
     // After successful authentication, attempt to save again
-    // The data should still be available from localStorage via context
     setTimeout(() => {
       handleSaveOutfit();
-    }, 500); // Small delay to ensure auth state is updated
+    }, 500);
   };
 
   const handleViewWardrobe = () => {
@@ -106,7 +106,7 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
             ) : (
               <Bookmark size={16} />
             )}
-            {isSaving ? 'Saving...' : 'Save to Wardrobe'}
+            {isSaving ? 'Saving & Tagging...' : 'Save to Wardrobe'}
           </>
         )}
       </Button>

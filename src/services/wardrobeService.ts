@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { processAutoWardrobeTagging } from './clothing/autoWardrobeService';
+import { extractFashionTagsWithVision, fileToBase64 } from './clothing/visionTaggingService';
 
 export interface WardrobeItem {
   id: string;
@@ -35,7 +35,8 @@ export const saveOutfitToWardrobe = async (
   suggestions: string[],
   gender: string,
   occasionContext?: string,
-  feedbackMode: string = 'normal'
+  feedbackMode: string = 'normal',
+  imageFile?: File
 ): Promise<SaveOutfitResult> => {
   try {
     console.log('Saving outfit to wardrobe for user:', userId);
@@ -63,23 +64,47 @@ export const saveOutfitToWardrobe = async (
 
     console.log('Wardrobe item saved:', wardrobeItem.id);
 
-    // Process auto wardrobe tagging with the new clean extraction
-    try {
-      const taggingResult = await processAutoWardrobeTagging(
-        wardrobeItem.id,
-        feedback,
-        suggestions
-      );
+    // Process vision-based tagging if image file is available
+    if (imageFile) {
+      try {
+        console.log('🔍 Starting OpenAI vision tagging...');
+        
+        const imageBase64 = await fileToBase64(imageFile);
+        const visionResult = await extractFashionTagsWithVision(imageBase64, wardrobeItem.id);
 
-      if (!taggingResult.success) {
-        console.warn('Auto wardrobe tagging failed:', taggingResult.error);
-        // Don't fail the entire save operation, just log the warning
-      } else {
-        console.log(`Auto wardrobe tagging successful: ${taggingResult.tags.length} tags extracted`);
+        if (visionResult.success && visionResult.tags.length > 0) {
+          // Format tags for storage
+          const formattedTags = visionResult.tags.map(tag => ({
+            name: tag,
+            descriptors: [],
+            category: categorizeTag(tag),
+            confidence: 0.9,
+            source: 'openai-vision'
+          }));
+
+          // Update wardrobe item with vision tags
+          const { error: updateError } = await supabase
+            .from('wardrobe_items')
+            .update({
+              extracted_clothing_items: formattedTags,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', wardrobeItem.id);
+
+          if (updateError) {
+            console.warn('Failed to save vision tags:', updateError);
+          } else {
+            console.log(`✅ Saved ${formattedTags.length} vision tags to wardrobe item`);
+          }
+        } else {
+          console.warn('Vision tagging failed or returned no tags:', visionResult.error);
+        }
+      } catch (visionError) {
+        console.warn('Vision tagging error (continuing with save):', visionError);
+        // Don't fail the entire save operation if vision tagging fails
       }
-    } catch (taggingError) {
-      console.warn('Auto wardrobe tagging error:', taggingError);
-      // Continue without failing the save operation
+    } else {
+      console.log('No image file provided, skipping vision tagging');
     }
 
     return { wardrobeItem };
@@ -88,6 +113,46 @@ export const saveOutfitToWardrobe = async (
     console.error('Error saving outfit to wardrobe:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
+};
+
+// Helper function to categorize tags based on clothing type
+const categorizeTag = (tag: string): string => {
+  const lowerTag = tag.toLowerCase();
+  
+  if (lowerTag.includes('shirt') || lowerTag.includes('blouse') || lowerTag.includes('top') || 
+      lowerTag.includes('tee') || lowerTag.includes('sweater') || lowerTag.includes('cardigan') || 
+      lowerTag.includes('hoodie') || lowerTag.includes('tank') || lowerTag.includes('polo')) {
+    return 'tops';
+  }
+  
+  if (lowerTag.includes('pants') || lowerTag.includes('jeans') || lowerTag.includes('trousers') || 
+      lowerTag.includes('shorts') || lowerTag.includes('skirt') || lowerTag.includes('leggings')) {
+    return 'bottoms';
+  }
+  
+  if (lowerTag.includes('dress') || lowerTag.includes('gown')) {
+    return 'dresses';
+  }
+  
+  if (lowerTag.includes('jacket') || lowerTag.includes('blazer') || lowerTag.includes('coat') || 
+      lowerTag.includes('vest') || lowerTag.includes('cardigan')) {
+    return 'outerwear';
+  }
+  
+  if (lowerTag.includes('shoes') || lowerTag.includes('sneakers') || lowerTag.includes('heels') || 
+      lowerTag.includes('boots') || lowerTag.includes('sandals') || lowerTag.includes('flats') ||
+      lowerTag.includes('loafers')) {
+    return 'footwear';
+  }
+  
+  if (lowerTag.includes('belt') || lowerTag.includes('bag') || lowerTag.includes('hat') || 
+      lowerTag.includes('scarf') || lowerTag.includes('necklace') || lowerTag.includes('bracelet') || 
+      lowerTag.includes('watch') || lowerTag.includes('earrings') || lowerTag.includes('sunglasses') ||
+      lowerTag.includes('beanie') || lowerTag.includes('cap') || lowerTag.includes('clips')) {
+    return 'accessories';
+  }
+  
+  return 'other';
 };
 
 export const getWardrobeItems = async (userId: string): Promise<GetWardrobeItemsResult> => {
