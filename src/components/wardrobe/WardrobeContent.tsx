@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getWardrobeItems, WardrobeItem } from '@/services/wardrobeService';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WardrobeHeader from './WardrobeHeader';
 import WardrobeFilters from './WardrobeFilters';
 import WardrobeGrid from './WardrobeGrid';
 import WardrobeEmptyState from './WardrobeEmptyState';
+import DigitalWardrobeTab from './DigitalWardrobeTab';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
@@ -89,41 +91,57 @@ const WardrobeContent: React.FC = () => {
         isLoading={isLoading}
       />
       
-      <WardrobeFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        selectedFilter={selectedFilter}
-        onFilterChange={setSelectedFilter}
-      />
+      <Tabs defaultValue="outfits" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="outfits">Outfit History</TabsTrigger>
+          <TabsTrigger value="wardrobe">My Wardrobe</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="outfits" className="space-y-6">
+          <WardrobeFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+          />
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-          {[...Array(6)].map((_, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
-              <div className="bg-gray-300 h-48 rounded-md mb-4"></div>
-              <div className="bg-gray-300 h-4 rounded mb-2"></div>
-              <div className="bg-gray-300 h-4 rounded w-3/4"></div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
+                  <div className="bg-gray-300 h-48 rounded-md mb-4"></div>
+                  <div className="bg-gray-300 h-4 rounded mb-2"></div>
+                  <div className="bg-gray-300 h-4 rounded w-3/4"></div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : filteredItems.length > 0 ? (
-        <WardrobeGrid items={filteredItems} onItemDeleted={refetch} />
-      ) : wardrobeItems && wardrobeItems.length > 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No items match your current filters.</p>
-          <button
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedFilter('all');
-            }}
-            className="mt-2 text-fashion-500 hover:text-fashion-600"
-          >
-            Clear filters
-          </button>
-        </div>
-      ) : (
-        <WardrobeEmptyState />
-      )}
+          ) : filteredItems.length > 0 ? (
+            <WardrobeGrid items={filteredItems} onItemDeleted={refetch} />
+          ) : wardrobeItems && wardrobeItems.length > 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No items match your current filters.</p>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedFilter('all');
+                }}
+                className="mt-2 text-fashion-500 hover:text-fashion-600"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <WardrobeEmptyState />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="wardrobe">
+          <DigitalWardrobeTab 
+            wardrobeItems={wardrobeItems || []}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
