@@ -21,16 +21,18 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
       />
       
       <CardContent className="p-6 space-y-4">
-        <WardrobeItemDetails
-          createdAt={item.created_at}
-          occasionContext={item.occasion_context}
-          feedback={item.feedback}
-        />
-        
+        {/* Clothing Items section moved to the top */}
         <WardrobeItemTags
           feedback={item.feedback}
           extractedClothingItems={item.extracted_clothing_items}
           itemId={item.id}
+        />
+        
+        {/* Detailed Feedback and other details come after */}
+        <WardrobeItemDetails
+          createdAt={item.created_at}
+          occasionContext={item.occasion_context}
+          feedback={item.feedback}
         />
       </CardContent>
       
