@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,8 +20,8 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Use uploadedImage from context if imageUrl prop is not provided
-  const finalImageUrl = imageUrl || uploadedImage;
+  // Always use the original uploaded image, never processed versions
+  const originalImageUrl = imageUrl || uploadedImage;
 
   const handleSaveOutfit = async () => {
     if (!user) {
@@ -30,10 +29,10 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
       return;
     }
 
-    if (!ratingResult || !finalImageUrl) {
+    if (!ratingResult || !originalImageUrl) {
       console.log('❌ Missing data for save:', { 
         hasRatingResult: !!ratingResult, 
-        hasFinalImageUrl: !!finalImageUrl,
+        hasOriginalImageUrl: !!originalImageUrl,
         hasImageFile: !!imageFile 
       });
       toast.error('No outfit data to save');
@@ -41,19 +40,19 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
     }
 
     setIsSaving(true);
-    console.log('🔄 Starting outfit save process...');
+    console.log('🔄 Starting outfit save process with original image URL:', originalImageUrl);
 
     try {
       const result = await saveOutfitToWardrobe(
         user.id,
-        finalImageUrl,
+        originalImageUrl, // Always use the original image URL
         ratingResult.score,
         ratingResult.feedback,
         ratingResult.suggestions,
         selectedGender,
         occasionContext?.eventContext,
         feedbackMode,
-        imageFile // This is crucial for vision tagging
+        imageFile // This is used for background AI processing only
       );
 
       if (result.error) {
@@ -61,8 +60,8 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
         toast.error('Failed to save outfit');
       } else {
         setIsSaved(true);
-        console.log('✅ Outfit saved successfully with AI fashion tags!');
-        toast.success('Outfit saved with AI fashion tags!');
+        console.log('✅ Outfit saved successfully with original image URL!');
+        toast.success('Outfit saved to wardrobe!');
         // Redirect to wardrobe after a short delay
         setTimeout(() => {
           navigate('/wardrobe');

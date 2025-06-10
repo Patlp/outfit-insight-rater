@@ -14,12 +14,21 @@ const WardrobeItemImage: React.FC<WardrobeItemImageProps> = ({ imageUrl, score }
     return 'text-red-500';
   };
 
+  console.log('🖼️ Rendering outfit image:', imageUrl);
+
   return (
     <div className="relative">
       <img
         src={imageUrl}
         alt="Outfit"
         className="w-full h-80 object-cover rounded-t-lg"
+        onLoad={() => {
+          console.log('✅ Outfit image loaded successfully:', imageUrl);
+        }}
+        onError={(e) => {
+          console.error('❌ Failed to load outfit image:', imageUrl);
+          console.error('Image error event:', e);
+        }}
       />
       <div className="absolute top-4 right-4">
         <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 flex items-center gap-2 shadow-md">

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { extractFashionTagsWithVision, fileToBase64 } from './clothing/visionTaggingService';
 import { processImageCropping } from './clothing/croppingService';
@@ -30,7 +31,7 @@ export interface GetWardrobeItemsResult {
 
 export const saveOutfitToWardrobe = async (
   userId: string,
-  imageUrl: string,
+  originalImageUrl: string, // Renamed to be explicit about using original image
   ratingScore: number,
   feedback: string,
   suggestions: string[],
@@ -41,13 +42,14 @@ export const saveOutfitToWardrobe = async (
 ): Promise<SaveOutfitResult> => {
   try {
     console.log('🔄 Saving outfit to wardrobe for user:', userId);
+    console.log('📸 Using original image URL:', originalImageUrl);
 
-    // Insert the wardrobe item first
+    // Insert the wardrobe item with the original image URL
     const { data: wardrobeItem, error: insertError } = await supabase
       .from('wardrobe_items')
       .insert({
         user_id: userId,
-        image_url: imageUrl,
+        image_url: originalImageUrl, // Store the original image URL
         rating_score: ratingScore,
         feedback,
         suggestions,
@@ -64,11 +66,13 @@ export const saveOutfitToWardrobe = async (
     }
 
     console.log('✅ Wardrobe item saved with ID:', wardrobeItem.id);
+    console.log('📸 Original image URL stored:', wardrobeItem.image_url);
 
     // Process both vision tagging and cropping in parallel if image file is available
+    // This is for AI analysis only - the display will always use the original image
     if (imageFile) {
       try {
-        console.log('🔍 Starting parallel processing: vision tagging + cropping...');
+        console.log('🔍 Starting background AI processing (for tagging only)...');
         
         const imageBase64 = await fileToBase64(imageFile);
 
@@ -116,6 +120,7 @@ export const saveOutfitToWardrobe = async (
           updateData.cropped_images = croppedImagesData;
         }
 
+        // Note: We deliberately do NOT update the image_url here to preserve the original
         if (Object.keys(updateData).length > 1) { // More than just updated_at
           const { error: updateError } = await supabase
             .from('wardrobe_items')
@@ -123,9 +128,9 @@ export const saveOutfitToWardrobe = async (
             .eq('id', wardrobeItem.id);
 
           if (updateError) {
-            console.error('⚠️ Failed to save processing results:', updateError);
+            console.error('⚠️ Failed to save AI processing results:', updateError);
           } else {
-            console.log(`✅ Successfully saved processing results to wardrobe item`);
+            console.log(`✅ Successfully saved AI processing results (original image preserved)`);
             // Update the returned item with the new data
             wardrobeItem.extracted_clothing_items = updateData.extracted_clothing_items || wardrobeItem.extracted_clothing_items;
             wardrobeItem.cropped_images = updateData.cropped_images || wardrobeItem.cropped_images;
@@ -133,11 +138,11 @@ export const saveOutfitToWardrobe = async (
         }
 
       } catch (processingError) {
-        console.error('❌ Background processing error (continuing with save):', processingError);
+        console.error('❌ Background AI processing error (continuing with save):', processingError);
         // Don't fail the entire save operation if background processing fails
       }
     } else {
-      console.log('📷 No image file provided, skipping background processing');
+      console.log('📷 No image file provided for AI processing');
     }
 
     return { wardrobeItem };
