@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { WardrobeItem } from '@/services/wardrobeService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Shirt, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import EditableClothingItem from './EditableClothingItem';
+import BulkUploadDialog from './BulkUploadDialog';
 import { toast } from 'sonner';
 
 interface ClothingItem {
@@ -22,9 +22,14 @@ interface ClothingItem {
 interface DigitalWardrobeTabProps {
   wardrobeItems: WardrobeItem[];
   isLoading: boolean;
+  onItemsUpdated?: () => void;
 }
 
-const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, isLoading }) => {
+const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ 
+  wardrobeItems, 
+  isLoading, 
+  onItemsUpdated 
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -147,6 +152,13 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
     toast.success('New item added to wardrobe');
   };
 
+  const handleBulkUploadComplete = () => {
+    toast.success('Bulk upload completed! Refreshing wardrobe...');
+    if (onItemsUpdated) {
+      onItemsUpdated();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -179,10 +191,13 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
         <p className="text-gray-500 max-w-md mx-auto mb-6">
           Your individual clothing items will appear here once you save outfits with AI-extracted tags.
         </p>
-        <Button onClick={handleAddItem} className="flex items-center gap-2">
-          <Plus size={16} />
-          Add Custom Item
-        </Button>
+        <div className="flex gap-3 justify-center">
+          <Button onClick={handleAddItem} className="flex items-center gap-2">
+            <Plus size={16} />
+            Add Custom Item
+          </Button>
+          <BulkUploadDialog onUploadComplete={handleBulkUploadComplete} />
+        </div>
       </div>
     );
   }
@@ -190,7 +205,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <Input
@@ -231,6 +246,8 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
           <Plus size={16} />
           Add Item
         </Button>
+
+        <BulkUploadDialog onUploadComplete={handleBulkUploadComplete} />
       </div>
 
       {/* Results count */}

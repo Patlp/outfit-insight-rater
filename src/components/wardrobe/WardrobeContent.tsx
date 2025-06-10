@@ -139,6 +139,7 @@ const WardrobeContent: React.FC = () => {
           <DigitalWardrobeTab 
             wardrobeItems={wardrobeItems || []}
             isLoading={isLoading}
+            onItemsUpdated={refetch}
           />
         </TabsContent>
       </Tabs>
