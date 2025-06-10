@@ -22,18 +22,18 @@ export const extractFashionTagsWithVision = async (
     });
 
     if (error) {
-      console.error('Vision tagging function error:', error);
+      console.error('❌ Vision tagging function error:', error);
       return {
         success: false,
         error: error.message || 'Failed to extract fashion tags'
       };
     }
 
-    if (!data.success) {
-      console.error('Vision tagging failed:', data.error);
+    if (!data || !data.success) {
+      console.error('❌ Vision tagging failed:', data?.error);
       return {
         success: false,
-        error: data.error || 'Unknown vision tagging error'
+        error: data?.error || 'Unknown vision tagging error'
       };
     }
 
@@ -45,7 +45,7 @@ export const extractFashionTagsWithVision = async (
     };
 
   } catch (error) {
-    console.error('Vision tagging service error:', error);
+    console.error('❌ Vision tagging service error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown service error'

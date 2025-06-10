@@ -46,20 +46,25 @@ serve(async (req) => {
     // Format the image for OpenAI Vision API
     const imageUrl = `data:image/jpeg;base64,${imageBase64}`;
 
-    const visionPrompt = `You are a fashion tagging assistant. The user has uploaded an image of a person wearing an outfit. Analyze the photo and return a list of short, clear clothing and accessory descriptions, each written in this format:
+    const visionPrompt = `You are a fashion tagging assistant. Analyze this outfit photo and return a list of specific clothing items and accessories that are clearly visible.
 
-[Color] [Material if visible] [Type] [Pattern or Graphic if relevant]
+For each item, use this format: [Color] [Item Type]
 
-Only list visible clothing and accessories. Omit brand names unless part of a graphic. Use clear, common fashion terms (e.g., "graphic tee", "plaid shirt", "denim skirt", "striped socks"). Each item should be a short, self-contained phrase.
+Rules:
+- Only list items you can clearly see in the photo
+- Use specific clothing terms (blazer, hoodie, jeans, boots, etc.)
+- Include the main color of each item
+- Maximum 6 items
+- One item per line
+- No bullet points or extra formatting
 
-Examples of valid outputs:
-- Black graphic flame tee  
-- Light blue denim skirt  
-- Pink cat print beanie  
-- Red plaid shirt  
-- White hair clips
+Examples:
+Black blazer
+White shirt
+Blue jeans
+Brown boots
 
-Now analyze the image and return the list of items as short labels, one per line.`;
+Now analyze the image:`;
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -86,8 +91,8 @@ Now analyze the image and return the list of items as short labels, one per line
             ]
           }
         ],
-        max_tokens: 500,
-        temperature: 0.3
+        max_tokens: 300,
+        temperature: 0.2
       })
     });
 
@@ -107,8 +112,8 @@ Now analyze the image and return the list of items as short labels, one per line
     const tags = rawContent
       .split('\n')
       .map((line: string) => line.replace(/^[-•*]\s*/, '').trim()) // Remove bullet points
-      .filter((tag: string) => tag.length > 0 && !tag.toLowerCase().includes('analyze') && !tag.toLowerCase().includes('image'))
-      .slice(0, 8); // Limit to 8 tags max
+      .filter((tag: string) => tag.length > 0 && !tag.toLowerCase().includes('analyze'))
+      .slice(0, 6); // Limit to 6 tags max
 
     console.log(`Extracted ${tags.length} fashion tags:`, tags);
 

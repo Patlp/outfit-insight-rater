@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { extractFashionTagsWithVision, fileToBase64 } from './clothing/visionTaggingService';
 
@@ -39,9 +38,9 @@ export const saveOutfitToWardrobe = async (
   imageFile?: File
 ): Promise<SaveOutfitResult> => {
   try {
-    console.log('Saving outfit to wardrobe for user:', userId);
+    console.log('🔄 Saving outfit to wardrobe for user:', userId);
 
-    // Insert the wardrobe item
+    // Insert the wardrobe item first
     const { data: wardrobeItem, error: insertError } = await supabase
       .from('wardrobe_items')
       .insert({
@@ -58,22 +57,24 @@ export const saveOutfitToWardrobe = async (
       .single();
 
     if (insertError) {
-      console.error('Error inserting wardrobe item:', insertError);
+      console.error('❌ Error inserting wardrobe item:', insertError);
       return { error: insertError.message };
     }
 
-    console.log('Wardrobe item saved:', wardrobeItem.id);
+    console.log('✅ Wardrobe item saved with ID:', wardrobeItem.id);
 
     // Process vision-based tagging if image file is available
     if (imageFile) {
       try {
-        console.log('🔍 Starting OpenAI vision tagging...');
+        console.log('🔍 Starting OpenAI vision tagging for wardrobe item:', wardrobeItem.id);
         
         const imageBase64 = await fileToBase64(imageFile);
         const visionResult = await extractFashionTagsWithVision(imageBase64, wardrobeItem.id);
 
-        if (visionResult.success && visionResult.tags.length > 0) {
-          // Format tags for storage
+        if (visionResult.success && visionResult.tags && visionResult.tags.length > 0) {
+          console.log(`🏷️ Vision tagging successful: ${visionResult.tags.length} tags found`);
+          
+          // Format tags for storage with proper categorization
           const formattedTags = visionResult.tags.map(tag => ({
             name: tag,
             descriptors: [],
@@ -81,6 +82,8 @@ export const saveOutfitToWardrobe = async (
             confidence: 0.9,
             source: 'openai-vision'
           }));
+
+          console.log('📝 Formatted tags:', formattedTags);
 
           // Update wardrobe item with vision tags
           const { error: updateError } = await supabase
@@ -92,25 +95,27 @@ export const saveOutfitToWardrobe = async (
             .eq('id', wardrobeItem.id);
 
           if (updateError) {
-            console.warn('Failed to save vision tags:', updateError);
+            console.error('⚠️ Failed to save vision tags:', updateError);
           } else {
-            console.log(`✅ Saved ${formattedTags.length} vision tags to wardrobe item`);
+            console.log(`✅ Successfully saved ${formattedTags.length} vision tags to wardrobe item`);
+            // Update the returned item with the tags
+            wardrobeItem.extracted_clothing_items = formattedTags;
           }
         } else {
-          console.warn('Vision tagging failed or returned no tags:', visionResult.error);
+          console.warn('⚠️ Vision tagging failed or returned no tags:', visionResult.error);
         }
       } catch (visionError) {
-        console.warn('Vision tagging error (continuing with save):', visionError);
+        console.error('❌ Vision tagging error (continuing with save):', visionError);
         // Don't fail the entire save operation if vision tagging fails
       }
     } else {
-      console.log('No image file provided, skipping vision tagging');
+      console.log('📷 No image file provided, skipping vision tagging');
     }
 
     return { wardrobeItem };
 
   } catch (error) {
-    console.error('Error saving outfit to wardrobe:', error);
+    console.error('❌ Error saving outfit to wardrobe:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };

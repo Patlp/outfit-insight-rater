@@ -31,12 +31,17 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
     }
 
     if (!ratingResult || !finalImageUrl) {
-      console.log('Missing data for save:', { ratingResult, finalImageUrl });
+      console.log('❌ Missing data for save:', { 
+        hasRatingResult: !!ratingResult, 
+        hasFinalImageUrl: !!finalImageUrl,
+        hasImageFile: !!imageFile 
+      });
       toast.error('No outfit data to save');
       return;
     }
 
     setIsSaving(true);
+    console.log('🔄 Starting outfit save process...');
 
     try {
       const result = await saveOutfitToWardrobe(
@@ -48,14 +53,15 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
         selectedGender,
         occasionContext?.eventContext,
         feedbackMode,
-        imageFile // Pass the image file for vision tagging
+        imageFile // This is crucial for vision tagging
       );
 
       if (result.error) {
-        console.error('Error saving outfit:', result.error);
+        console.error('❌ Error saving outfit:', result.error);
         toast.error('Failed to save outfit');
       } else {
         setIsSaved(true);
+        console.log('✅ Outfit saved successfully with AI fashion tags!');
         toast.success('Outfit saved with AI fashion tags!');
         // Redirect to wardrobe after a short delay
         setTimeout(() => {
@@ -63,7 +69,7 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
         }, 1500);
       }
     } catch (error) {
-      console.error('Error saving outfit:', error);
+      console.error('❌ Error saving outfit:', error);
       toast.error('Failed to save outfit');
     } finally {
       setIsSaving(false);
