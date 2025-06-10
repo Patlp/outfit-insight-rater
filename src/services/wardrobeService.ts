@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { extractFashionTagsWithVision, fileToBase64 } from './clothing/visionTaggingService';
+import { processImageCropping } from './clothing/croppingService';
 
 export interface WardrobeItem {
   id: string;
@@ -12,6 +13,7 @@ export interface WardrobeItem {
   occasion_context: string | null;
   feedback_mode: string | null;
   extracted_clothing_items: any | null;
+  cropped_images: any | null;
   created_at: string;
   updated_at: string;
 }
@@ -63,53 +65,79 @@ export const saveOutfitToWardrobe = async (
 
     console.log('✅ Wardrobe item saved with ID:', wardrobeItem.id);
 
-    // Process vision-based tagging if image file is available
+    // Process both vision tagging and cropping in parallel if image file is available
     if (imageFile) {
       try {
-        console.log('🔍 Starting OpenAI vision tagging for wardrobe item:', wardrobeItem.id);
+        console.log('🔍 Starting parallel processing: vision tagging + cropping...');
         
         const imageBase64 = await fileToBase64(imageFile);
-        const visionResult = await extractFashionTagsWithVision(imageBase64, wardrobeItem.id);
 
-        if (visionResult.success && visionResult.tags && visionResult.tags.length > 0) {
-          console.log(`🏷️ Vision tagging successful: ${visionResult.tags.length} tags found`);
+        // Start both processes in parallel
+        const [visionResult, croppedImages] = await Promise.allSettled([
+          extractFashionTagsWithVision(imageBase64, wardrobeItem.id),
+          processImageCropping(imageFile, wardrobeItem.id)
+        ]);
+
+        // Process vision tagging results
+        let formattedTags: any[] = [];
+        if (visionResult.status === 'fulfilled' && visionResult.value.success && visionResult.value.tags) {
+          console.log(`🏷️ Vision tagging successful: ${visionResult.value.tags.length} tags found`);
           
-          // Format tags for storage with proper categorization
-          const formattedTags = visionResult.tags.map(tag => ({
+          formattedTags = visionResult.value.tags.map(tag => ({
             name: tag,
             descriptors: [],
             category: categorizeTag(tag),
             confidence: 0.9,
             source: 'openai-vision'
           }));
+        } else {
+          console.warn('⚠️ Vision tagging failed:', visionResult.status === 'rejected' ? visionResult.reason : visionResult.value.error);
+        }
 
-          console.log('📝 Formatted tags:', formattedTags);
+        // Process cropping results
+        let croppedImagesData: any[] = [];
+        if (croppedImages.status === 'fulfilled') {
+          croppedImagesData = croppedImages.value;
+          console.log(`🎯 Image cropping successful: ${croppedImagesData.length} cropped items`);
+        } else {
+          console.warn('⚠️ Image cropping failed:', croppedImages.reason);
+        }
 
-          // Update wardrobe item with vision tags
+        // Update wardrobe item with both results
+        const updateData: any = {
+          updated_at: new Date().toISOString()
+        };
+
+        if (formattedTags.length > 0) {
+          updateData.extracted_clothing_items = formattedTags;
+        }
+
+        if (croppedImagesData.length > 0) {
+          updateData.cropped_images = croppedImagesData;
+        }
+
+        if (Object.keys(updateData).length > 1) { // More than just updated_at
           const { error: updateError } = await supabase
             .from('wardrobe_items')
-            .update({
-              extracted_clothing_items: formattedTags,
-              updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', wardrobeItem.id);
 
           if (updateError) {
-            console.error('⚠️ Failed to save vision tags:', updateError);
+            console.error('⚠️ Failed to save processing results:', updateError);
           } else {
-            console.log(`✅ Successfully saved ${formattedTags.length} vision tags to wardrobe item`);
-            // Update the returned item with the tags
-            wardrobeItem.extracted_clothing_items = formattedTags;
+            console.log(`✅ Successfully saved processing results to wardrobe item`);
+            // Update the returned item with the new data
+            wardrobeItem.extracted_clothing_items = updateData.extracted_clothing_items || wardrobeItem.extracted_clothing_items;
+            wardrobeItem.cropped_images = updateData.cropped_images || wardrobeItem.cropped_images;
           }
-        } else {
-          console.warn('⚠️ Vision tagging failed or returned no tags:', visionResult.error);
         }
-      } catch (visionError) {
-        console.error('❌ Vision tagging error (continuing with save):', visionError);
-        // Don't fail the entire save operation if vision tagging fails
+
+      } catch (processingError) {
+        console.error('❌ Background processing error (continuing with save):', processingError);
+        // Don't fail the entire save operation if background processing fails
       }
     } else {
-      console.log('📷 No image file provided, skipping vision tagging');
+      console.log('📷 No image file provided, skipping background processing');
     }
 
     return { wardrobeItem };
