@@ -83,16 +83,16 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete })
         // Create a temporary URL for the compressed file
         const imageUrl = URL.createObjectURL(compressedFile);
         
-        // Save to wardrobe with vision tagging - using 'normal' instead of 'bulk-upload'
+        // Save to wardrobe with vision tagging
         const result = await saveOutfitToWardrobe(
           user.id,
           imageUrl,
           0, // No rating for bulk uploads
           '', // No feedback for bulk uploads
           [], // No suggestions for bulk uploads
-          'unisex', // Default gender
+          'unisex', // Using 'unisex' which is now allowed
           'casual', // Default occasion
-          'normal', // Use 'normal' instead of 'bulk-upload'
+          'normal', // Using 'normal' feedback mode
           compressedFile
         );
 
@@ -138,6 +138,13 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete })
     
     if (errorCount > 0) {
       toast.error(`Failed to process ${errorCount} photo${errorCount !== 1 ? 's' : ''}`);
+    }
+
+    // Auto-close dialog after successful completion
+    if (errorCount === 0 && completedCount > 0) {
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
     }
   };
 
@@ -200,6 +207,9 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete })
               <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-gray-600">
                 Click to select multiple photos (JPG, PNG)
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Each photo will be analyzed and added to your wardrobe
               </p>
             </label>
           </div>
