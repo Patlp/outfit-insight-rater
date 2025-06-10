@@ -83,7 +83,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete })
         // Create a temporary URL for the compressed file
         const imageUrl = URL.createObjectURL(compressedFile);
         
-        // Save to wardrobe with vision tagging
+        // Save to wardrobe with vision tagging - using 'normal' instead of 'bulk-upload'
         const result = await saveOutfitToWardrobe(
           user.id,
           imageUrl,
@@ -92,7 +92,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete })
           [], // No suggestions for bulk uploads
           'unisex', // Default gender
           'casual', // Default occasion
-          'bulk-upload',
+          'normal', // Use 'normal' instead of 'bulk-upload'
           compressedFile
         );
 
