@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { WardrobeItem } from '@/services/wardrobeService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,6 +18,7 @@ interface ClothingItem {
   outfitId: string;
   outfitDate: string;
   outfitScore: number;
+  croppedImageUrl?: string;
 }
 
 interface DigitalWardrobeTabProps {
@@ -34,13 +36,23 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  // Extract all individual clothing items from all outfits
+  // Extract all individual clothing items from all outfits with cropped images
   const [allClothingItems, setAllClothingItems] = useState<ClothingItem[]>(() => {
     const items: ClothingItem[] = [];
     
     wardrobeItems.forEach(outfit => {
       if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
         outfit.extracted_clothing_items.forEach((item: any, index: number) => {
+          // Find corresponding cropped image
+          let croppedImageUrl: string | undefined;
+          
+          if (outfit.cropped_images && Array.isArray(outfit.cropped_images)) {
+            const croppedItem = outfit.cropped_images.find((cropped: any) => 
+              cropped.item_name?.toLowerCase() === item.name?.toLowerCase()
+            );
+            croppedImageUrl = croppedItem?.cropped_image_url;
+          }
+
           items.push({
             id: `${outfit.id}-${index}`,
             name: item.name || 'Unknown Item',
@@ -49,7 +61,8 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             source: item.source || 'ai',
             outfitId: outfit.id,
             outfitDate: outfit.created_at,
-            outfitScore: outfit.rating_score || 0
+            outfitScore: outfit.rating_score || 0,
+            croppedImageUrl
           });
         });
       }
@@ -65,6 +78,16 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
     wardrobeItems.forEach(outfit => {
       if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
         outfit.extracted_clothing_items.forEach((item: any, index: number) => {
+          // Find corresponding cropped image
+          let croppedImageUrl: string | undefined;
+          
+          if (outfit.cropped_images && Array.isArray(outfit.cropped_images)) {
+            const croppedItem = outfit.cropped_images.find((cropped: any) => 
+              cropped.item_name?.toLowerCase() === item.name?.toLowerCase()
+            );
+            croppedImageUrl = croppedItem?.cropped_image_url;
+          }
+
           items.push({
             id: `${outfit.id}-${index}`,
             name: item.name || 'Unknown Item',
@@ -73,7 +96,8 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             source: item.source || 'ai',
             outfitId: outfit.id,
             outfitDate: outfit.created_at,
-            outfitScore: outfit.rating_score || 0
+            outfitScore: outfit.rating_score || 0,
+            croppedImageUrl
           });
         });
       }
@@ -158,6 +182,15 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       onItemsUpdated();
     }
   };
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('DigitalWardrobeTab: wardrobeItems count:', wardrobeItems.length);
+    console.log('DigitalWardrobeTab: allClothingItems count:', allClothingItems.length);
+    console.log('DigitalWardrobeTab: sample item with cropped image:', 
+      allClothingItems.find(item => item.croppedImageUrl)
+    );
+  }, [wardrobeItems, allClothingItems]);
 
   if (isLoading) {
     return (
@@ -253,13 +286,14 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       {/* Results count */}
       <div className="flex justify-between items-center text-sm text-gray-600">
         <span>Showing {filteredAndSortedItems.length} of {allClothingItems.length} clothing items</span>
+        <span>{allClothingItems.filter(item => item.croppedImageUrl).length} items have images</span>
       </div>
 
       {/* Items grid */}
       {filteredAndSortedItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredAndSortedItems.map((item) => (
-            <EditableClothingItem
+            <ClothingItemCard
               key={item.id}
               item={item}
               onUpdate={handleItemUpdate}
@@ -281,6 +315,168 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
           </button>
         </div>
       )}
+    </div>
+  );
+};
+
+// Separate ClothingItemCard component for better organization
+const ClothingItemCard: React.FC<{
+  item: ClothingItem;
+  onUpdate: (itemId: string, updates: Partial<ClothingItem>) => void;
+  onDelete: (itemId: string) => void;
+}> = ({ item, onUpdate, onDelete }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(item.name);
+  const [editedCategory, setEditedCategory] = useState(item.category);
+
+  const handleSave = () => {
+    if (editedName.trim().length < 2) {
+      toast.error('Item name must be at least 2 characters');
+      return;
+    }
+
+    onUpdate(item.id, {
+      name: editedName.trim(),
+      category: editedCategory
+    });
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedName(item.name);
+    setEditedCategory(item.category);
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      onDelete(item.id);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-lg border overflow-hidden hover:shadow-md transition-shadow">
+      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+        {item.croppedImageUrl ? (
+          <img
+            src={item.croppedImageUrl}
+            alt={item.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Failed to load cropped image:', item.croppedImageUrl);
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const fallback = target.nextElementSibling as HTMLElement;
+              if (fallback) {
+                fallback.classList.remove('hidden');
+              }
+            }}
+          />
+        ) : null}
+        
+        {/* Fallback placeholder */}
+        <div className={`absolute inset-0 flex items-center justify-center bg-gray-200 ${item.croppedImageUrl ? 'hidden' : ''}`}>
+          <Shirt size={32} className="text-gray-400" />
+        </div>
+
+        {/* Source badge */}
+        <div className="absolute top-2 left-2">
+          <span className={`px-2 py-1 text-xs rounded ${
+            item.source === 'ai' 
+              ? 'bg-blue-100 text-blue-800' 
+              : 'bg-gray-100 text-gray-800'
+          }`}>
+            {item.source === 'ai' ? 'AI Vision' : 'Manual'}
+          </span>
+        </div>
+
+        {/* Confidence score for AI items */}
+        {item.source === 'ai' && (
+          <div className="absolute top-2 right-2">
+            <span className="px-2 py-1 text-xs bg-white/90 text-gray-700 rounded border">
+              {Math.round(item.confidence * 100)}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 space-y-3">
+        {isEditing ? (
+          <div className="space-y-3">
+            <Input
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              placeholder="Item name"
+              className="font-medium"
+            />
+            
+            <Select value={editedCategory} onValueChange={setEditedCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tops">Tops</SelectItem>
+                <SelectItem value="bottoms">Bottoms</SelectItem>
+                <SelectItem value="dresses">Dresses</SelectItem>
+                <SelectItem value="outerwear">Outerwear</SelectItem>
+                <SelectItem value="footwear">Footwear</SelectItem>
+                <SelectItem value="accessories">Accessories</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSave} size="sm" className="flex-1">
+                Save
+              </Button>
+              <Button onClick={handleCancel} variant="outline" size="sm" className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-medium text-gray-900 line-clamp-2">{item.name}</h3>
+              <p className="text-sm text-gray-500 capitalize">{item.category}</p>
+            </div>
+
+            <div className="text-xs text-gray-400 space-y-1">
+              <p>From outfit: {formatDate(item.outfitDate)}</p>
+              {item.outfitScore > 0 && (
+                <p>Outfit score: {item.outfitScore}/10</p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+              >
+                Edit
+              </Button>
+              <Button 
+                onClick={handleDelete} 
+                variant="outline" 
+                size="sm" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

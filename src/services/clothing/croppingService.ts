@@ -135,6 +135,19 @@ export const uploadCroppedImage = async (
       .getPublicUrl(filePath);
 
     console.log(`✅ Upload successful: ${publicUrl}`);
+    
+    // Verify the URL is accessible
+    try {
+      const response = await fetch(publicUrl, { method: 'HEAD' });
+      if (response.ok) {
+        console.log(`✅ Image URL verified accessible: ${publicUrl}`);
+      } else {
+        console.warn(`⚠️ Image URL may not be accessible: ${response.status} ${response.statusText}`);
+      }
+    } catch (fetchError) {
+      console.warn(`⚠️ Could not verify image URL accessibility:`, fetchError);
+    }
+    
     return publicUrl;
 
   } catch (error) {
@@ -161,6 +174,9 @@ export const processImageCropping = async (
       return [];
     }
 
+    console.log(`🔍 Found ${detectionResult.detections.length} items to crop:`, 
+      detectionResult.detections.map(d => d.class));
+
     // Create canvas from image file
     const canvas = await createCanvasFromFile(imageFile);
     
@@ -176,8 +192,12 @@ export const processImageCropping = async (
           height: detection.bbox[3]
         };
 
+        console.log(`🎯 Cropping ${detection.class} with bbox:`, boundingBox);
+
         // Crop the image
         const croppedBlob = await cropImageFromCanvas(canvas, boundingBox);
+        
+        console.log(`📷 Created blob for ${detection.class}, size: ${croppedBlob.size} bytes`);
         
         // Upload the cropped image
         const croppedImageUrl = await uploadCroppedImage(
@@ -186,14 +206,16 @@ export const processImageCropping = async (
           detection.class
         );
 
-        croppedImages.push({
+        const croppedImageData: CroppedImageData = {
           item_name: detection.class,
           cropped_image_url: croppedImageUrl,
           bounding_box: boundingBox,
           confidence: detection.confidence
-        });
+        };
 
-        console.log(`✅ Cropped and uploaded: ${detection.class}`);
+        croppedImages.push(croppedImageData);
+
+        console.log(`✅ Successfully processed ${detection.class}:`, croppedImageData);
 
       } catch (error) {
         console.error(`❌ Failed to process ${detection.class}:`, error);
@@ -201,7 +223,11 @@ export const processImageCropping = async (
       }
     }
 
-    console.log(`🎯 Cropping complete: ${croppedImages.length} items processed`);
+    console.log(`🎯 Cropping complete: ${croppedImages.length}/${detectionResult.detections.length} items processed successfully`);
+    
+    // Log the final result for debugging
+    console.log('📋 Final cropped images data:', croppedImages);
+    
     return croppedImages;
 
   } catch (error) {
@@ -239,6 +265,7 @@ const createCanvasFromFile = (file: File): Promise<HTMLCanvasElement> => {
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
       
+      console.log(`📐 Canvas created: ${canvas.width}x${canvas.height}`);
       resolve(canvas);
     };
     img.onerror = () => reject(new Error('Failed to load image'));

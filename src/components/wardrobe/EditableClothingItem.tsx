@@ -1,9 +1,12 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Save, X, Trash2, Upload } from 'lucide-react';
+import { Edit2, Trash2, Save, X, Shirt } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ClothingItem {
   id: string;
@@ -31,25 +34,25 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   const [editedName, setEditedName] = useState(item.name);
   const [editedCategory, setEditedCategory] = useState(item.category);
 
-  const getCategoryColor = (category: string) => {
-    const colorMap = {
-      tops: 'bg-blue-100 text-blue-700 border-blue-200',
-      bottoms: 'bg-green-100 text-green-700 border-green-200',
-      dresses: 'bg-purple-100 text-purple-700 border-purple-200',
-      footwear: 'bg-orange-100 text-orange-700 border-orange-200',
-      accessories: 'bg-pink-100 text-pink-700 border-pink-200',
-      outerwear: 'bg-gray-100 text-gray-700 border-gray-200',
-      other: 'bg-fashion-100 text-fashion-700 border-fashion-200'
-    };
-    return colorMap[category as keyof typeof colorMap] || colorMap.other;
+  // Find cropped image for this item
+  const getCroppedImageUrl = (): string | null => {
+    // We need to get this from the wardrobe items via the parent component
+    // For now, we'll return null and update the parent to pass this data
+    return null;
   };
 
   const handleSave = () => {
+    if (editedName.trim().length < 2) {
+      toast.error('Item name must be at least 2 characters');
+      return;
+    }
+
     onUpdate(item.id, {
-      name: editedName,
+      name: editedName.trim(),
       category: editedCategory
     });
     setIsEditing(false);
+    toast.success('Item updated successfully');
   };
 
   const handleCancel = () => {
@@ -59,105 +62,132 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this item from your wardrobe?')) {
+    if (window.confirm('Are you sure you want to delete this item?')) {
       onDelete(item.id);
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const croppedImageUrl = getCroppedImageUrl();
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-2">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+        {croppedImageUrl ? (
+          <img
+            src={croppedImageUrl}
+            alt={item.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Failed to load cropped image:', croppedImageUrl);
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+        ) : null}
+        
+        {/* Fallback placeholder */}
+        <div className={`absolute inset-0 flex items-center justify-center bg-gray-200 ${croppedImageUrl ? 'hidden' : ''}`}>
+          <Shirt size={32} className="text-gray-400" />
+        </div>
+
+        {/* Source badge */}
+        <div className="absolute top-2 left-2">
+          <Badge variant={item.source === 'ai' ? 'default' : 'secondary'} className="text-xs">
+            {item.source === 'ai' ? 'AI' : 'Manual'}
+          </Badge>
+        </div>
+
+        {/* Confidence score for AI items */}
+        {item.source === 'ai' && (
+          <div className="absolute top-2 right-2">
+            <Badge variant="outline" className="text-xs bg-white/90">
+              {Math.round(item.confidence * 100)}%
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      <CardContent className="p-4 space-y-3">
         {isEditing ? (
-          <div className="flex-1 space-y-2 mr-2">
+          <div className="space-y-3">
             <Input
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
               placeholder="Item name"
-              className="text-sm"
+              className="font-medium"
             />
-            <Input
-              value={editedCategory}
-              onChange={(e) => setEditedCategory(e.target.value)}
-              placeholder="Category"
-              className="text-sm"
-            />
+            
+            <Select value={editedCategory} onValueChange={setEditedCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tops">Tops</SelectItem>
+                <SelectItem value="bottoms">Bottoms</SelectItem>
+                <SelectItem value="dresses">Dresses</SelectItem>
+                <SelectItem value="outerwear">Outerwear</SelectItem>
+                <SelectItem value="footwear">Footwear</SelectItem>
+                <SelectItem value="accessories">Accessories</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSave} size="sm" className="flex-1">
+                <Save size={14} className="mr-1" />
+                Save
+              </Button>
+              <Button onClick={handleCancel} variant="outline" size="sm" className="flex-1">
+                <X size={14} className="mr-1" />
+                Cancel
+              </Button>
+            </div>
           </div>
         ) : (
-          <>
-            <h3 className="font-medium text-gray-900 text-sm leading-tight">
-              {item.name}
-            </h3>
-            <Badge
-              variant="secondary"
-              className={`text-xs ${getCategoryColor(item.category)} ml-2 flex-shrink-0`}
-            >
-              {item.category}
-            </Badge>
-          </>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-medium text-gray-900 line-clamp-2">{item.name}</h3>
+              <p className="text-sm text-gray-500 capitalize">{item.category}</p>
+            </div>
+
+            <div className="text-xs text-gray-400 space-y-1">
+              <p>From outfit: {formatDate(item.outfitDate)}</p>
+              {item.outfitScore > 0 && (
+                <p>Outfit score: {item.outfitScore}/10</p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+              >
+                <Edit2 size={14} className="mr-1" />
+                Edit
+              </Button>
+              <Button 
+                onClick={handleDelete} 
+                variant="outline" 
+                size="sm" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 size={14} />
+              </Button>
+            </div>
+          </div>
         )}
-      </div>
-
-      {isEditing ? (
-        <div className="flex gap-2 mt-2">
-          <Button
-            size="sm"
-            onClick={handleSave}
-            className="flex-1"
-          >
-            <Save size={14} className="mr-1" />
-            Save
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleCancel}
-            className="flex-1"
-          >
-            <X size={14} className="mr-1" />
-            Cancel
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-2 text-xs text-gray-500 mb-3">
-            <div className="flex justify-between">
-              <span>From outfit:</span>
-              <span className="font-medium">{item.outfitScore}/10</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Added:</span>
-              <span>{new Date(item.outfitDate).toLocaleDateString()}</span>
-            </div>
-            {item.source === 'openai-vision' && (
-              <div className="flex items-center gap-1 text-blue-600">
-                <span>AI Vision</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsEditing(true)}
-              className="flex-1 text-xs"
-            >
-              <Edit2 size={12} className="mr-1" />
-              Edit
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDelete}
-              className="flex-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 size={12} className="mr-1" />
-              Delete
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
