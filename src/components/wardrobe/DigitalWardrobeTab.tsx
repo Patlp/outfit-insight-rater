@@ -1,10 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { WardrobeItem } from '@/services/wardrobeService';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, Shirt } from 'lucide-react';
+import { Search, Shirt, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import EditableClothingItem from './EditableClothingItem';
+import { toast } from 'sonner';
 
 interface ClothingItem {
   id: string;
@@ -28,7 +30,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   // Extract all individual clothing items from all outfits
-  const allClothingItems = useMemo(() => {
+  const [allClothingItems, setAllClothingItems] = useState<ClothingItem[]>(() => {
     const items: ClothingItem[] = [];
     
     wardrobeItems.forEach(outfit => {
@@ -49,6 +51,30 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
     });
     
     return items;
+  });
+
+  // Update items when wardrobeItems change
+  React.useEffect(() => {
+    const items: ClothingItem[] = [];
+    
+    wardrobeItems.forEach(outfit => {
+      if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
+        outfit.extracted_clothing_items.forEach((item: any, index: number) => {
+          items.push({
+            id: `${outfit.id}-${index}`,
+            name: item.name || 'Unknown Item',
+            category: item.category || 'other',
+            confidence: item.confidence || 0.8,
+            source: item.source || 'ai',
+            outfitId: outfit.id,
+            outfitDate: outfit.created_at,
+            outfitScore: outfit.rating_score || 0
+          });
+        });
+      }
+    });
+    
+    setAllClothingItems(items);
   }, [wardrobeItems]);
 
   // Get unique categories for filtering
@@ -80,8 +106,6 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
           return a.name.localeCompare(b.name);
         case 'category':
           return a.category.localeCompare(b.category);
-        case 'confidence':
-          return b.confidence - a.confidence;
         case 'date':
           return new Date(b.outfitDate).getTime() - new Date(a.outfitDate).getTime();
         case 'score':
@@ -94,17 +118,33 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
     return filtered;
   }, [allClothingItems, searchTerm, filterCategory, sortBy]);
 
-  const getCategoryColor = (category: string) => {
-    const colorMap = {
-      tops: 'bg-blue-100 text-blue-700 border-blue-200',
-      bottoms: 'bg-green-100 text-green-700 border-green-200',
-      dresses: 'bg-purple-100 text-purple-700 border-purple-200',
-      footwear: 'bg-orange-100 text-orange-700 border-orange-200',
-      accessories: 'bg-pink-100 text-pink-700 border-pink-200',
-      outerwear: 'bg-gray-100 text-gray-700 border-gray-200',
-      other: 'bg-fashion-100 text-fashion-700 border-fashion-200'
+  const handleItemUpdate = (itemId: string, updates: Partial<ClothingItem>) => {
+    setAllClothingItems(prev => prev.map(item => 
+      item.id === itemId 
+        ? { ...item, ...updates }
+        : item
+    ));
+    toast.success('Item updated successfully');
+  };
+
+  const handleItemDelete = (itemId: string) => {
+    setAllClothingItems(prev => prev.filter(item => item.id !== itemId));
+    toast.success('Item deleted from wardrobe');
+  };
+
+  const handleAddItem = () => {
+    const newItem: ClothingItem = {
+      id: `custom-${Date.now()}`,
+      name: 'New Item',
+      category: 'other',
+      confidence: 1.0,
+      source: 'manual',
+      outfitId: '',
+      outfitDate: new Date().toISOString(),
+      outfitScore: 0
     };
-    return colorMap[category as keyof typeof colorMap] || colorMap.other;
+    setAllClothingItems(prev => [newItem, ...prev]);
+    toast.success('New item added to wardrobe');
   };
 
   if (isLoading) {
@@ -136,9 +176,13 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
         <h3 className="text-xl font-semibold text-gray-700 mb-2">
           No clothing items found
         </h3>
-        <p className="text-gray-500 max-w-md mx-auto">
+        <p className="text-gray-500 max-w-md mx-auto mb-6">
           Your individual clothing items will appear here once you save outfits with AI-extracted tags.
         </p>
+        <Button onClick={handleAddItem} className="flex items-center gap-2">
+          <Plus size={16} />
+          Add Custom Item
+        </Button>
       </div>
     );
   }
@@ -146,7 +190,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <Input
@@ -178,58 +222,32 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ wardrobeItems, 
           <SelectContent>
             <SelectItem value="name">Name</SelectItem>
             <SelectItem value="category">Category</SelectItem>
-            <SelectItem value="confidence">Confidence</SelectItem>
             <SelectItem value="date">Recently Added</SelectItem>
             <SelectItem value="score">Outfit Score</SelectItem>
           </SelectContent>
         </Select>
+
+        <Button onClick={handleAddItem} className="flex items-center gap-2">
+          <Plus size={16} />
+          Add Item
+        </Button>
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-gray-600">
-        Showing {filteredAndSortedItems.length} of {allClothingItems.length} clothing items
+      <div className="flex justify-between items-center text-sm text-gray-600">
+        <span>Showing {filteredAndSortedItems.length} of {allClothingItems.length} clothing items</span>
       </div>
 
       {/* Items grid */}
       {filteredAndSortedItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredAndSortedItems.map((item) => (
-            <div
+            <EditableClothingItem
               key={item.id}
-              className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-medium text-gray-900 text-sm leading-tight">
-                  {item.name}
-                </h3>
-                <Badge
-                  variant="secondary"
-                  className={`text-xs ${getCategoryColor(item.category)} ml-2 flex-shrink-0`}
-                >
-                  {item.category}
-                </Badge>
-              </div>
-              
-              <div className="space-y-2 text-xs text-gray-500">
-                <div className="flex justify-between">
-                  <span>Confidence:</span>
-                  <span>{Math.round(item.confidence * 100)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>From outfit:</span>
-                  <span className="font-medium">{item.outfitScore}/10</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Added:</span>
-                  <span>{new Date(item.outfitDate).toLocaleDateString()}</span>
-                </div>
-                {item.source === 'openai-vision' && (
-                  <div className="flex items-center gap-1 text-blue-600">
-                    <span>AI Vision</span>
-                  </div>
-                )}
-              </div>
-            </div>
+              item={item}
+              onUpdate={handleItemUpdate}
+              onDelete={handleItemDelete}
+            />
           ))}
         </div>
       ) : (
