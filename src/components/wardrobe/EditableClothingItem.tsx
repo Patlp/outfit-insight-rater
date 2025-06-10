@@ -23,23 +23,18 @@ interface EditableClothingItemProps {
   item: ClothingItem;
   onUpdate: (itemId: string, updates: Partial<ClothingItem>) => void;
   onDelete: (itemId: string) => void;
+  croppedImageUrl?: string;
 }
 
 const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   item,
   onUpdate,
-  onDelete
+  onDelete,
+  croppedImageUrl
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(item.name);
   const [editedCategory, setEditedCategory] = useState(item.category);
-
-  // Find cropped image for this item
-  const getCroppedImageUrl = (): string | null => {
-    // We need to get this from the wardrobe items via the parent component
-    // For now, we'll return null and update the parent to pass this data
-    return null;
-  };
 
   const handleSave = () => {
     if (editedName.trim().length < 2) {
@@ -75,7 +70,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
     });
   };
 
-  const croppedImageUrl = getCroppedImageUrl();
+  console.log(`Rendering item "${item.name}" with cropped image:`, croppedImageUrl);
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -85,10 +80,17 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
             src={croppedImageUrl}
             alt={item.name}
             className="w-full h-full object-cover"
+            onLoad={() => {
+              console.log(`✅ Successfully loaded image for "${item.name}"`);
+            }}
             onError={(e) => {
-              console.error('Failed to load cropped image:', croppedImageUrl);
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              console.error(`❌ Failed to load cropped image for "${item.name}":`, croppedImageUrl);
+              const target = e.currentTarget;
+              target.style.display = 'none';
+              const fallback = target.nextElementSibling as HTMLElement;
+              if (fallback) {
+                fallback.classList.remove('hidden');
+              }
             }}
           />
         ) : null}
