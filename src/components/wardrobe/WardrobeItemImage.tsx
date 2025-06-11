@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Star } from 'lucide-react';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface WardrobeItemImageProps {
   imageUrl: string;
@@ -18,18 +19,20 @@ const WardrobeItemImage: React.FC<WardrobeItemImageProps> = ({ imageUrl, score }
 
   return (
     <div className="relative">
-      <img
-        src={imageUrl}
-        alt="Outfit"
-        className="w-full h-80 object-cover rounded-t-lg"
-        onLoad={() => {
-          console.log('✅ Outfit image loaded successfully:', imageUrl);
-        }}
-        onError={(e) => {
-          console.error('❌ Failed to load outfit image:', imageUrl);
-          console.error('Image error event:', e);
-        }}
-      />
+      <AspectRatio ratio={4/5} className="bg-gray-100 rounded-t-lg overflow-hidden">
+        <img
+          src={imageUrl}
+          alt="Outfit"
+          className="w-full h-full object-contain bg-white"
+          onLoad={() => {
+            console.log('✅ Outfit image loaded successfully:', imageUrl);
+          }}
+          onError={(e) => {
+            console.error('❌ Failed to load outfit image:', imageUrl);
+            console.error('Image error event:', e);
+          }}
+        />
+      </AspectRatio>
       <div className="absolute top-4 right-4">
         <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 flex items-center gap-2 shadow-md">
           <Star size={16} className={`${getScoreColor(score)} fill-current`} />

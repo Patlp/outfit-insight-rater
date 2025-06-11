@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Edit2, Trash2, Save, X, Shirt } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -17,20 +18,21 @@ interface ClothingItem {
   outfitId: string;
   outfitDate: string;
   outfitScore: number;
+  originalImageUrl?: string; // Use original image instead of cropped
 }
 
 interface EditableClothingItemProps {
   item: ClothingItem;
   onUpdate: (itemId: string, updates: Partial<ClothingItem>) => void;
   onDelete: (itemId: string) => void;
-  croppedImageUrl?: string;
+  originalImageUrl?: string; // Original outfit image
 }
 
 const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   item,
   onUpdate,
   onDelete,
-  croppedImageUrl
+  originalImageUrl
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(item.name);
@@ -70,51 +72,54 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
     });
   };
 
-  console.log(`Rendering item "${item.name}" with cropped image:`, croppedImageUrl);
+  const imageToDisplay = originalImageUrl || item.originalImageUrl;
+  console.log(`Rendering item "${item.name}" with original image:`, imageToDisplay);
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-square bg-gray-100 relative overflow-hidden">
-        {croppedImageUrl ? (
-          <img
-            src={croppedImageUrl}
-            alt={item.name}
-            className="w-full h-full object-cover"
-            onLoad={() => {
-              console.log(`✅ Successfully loaded image for "${item.name}"`);
-            }}
-            onError={(e) => {
-              console.error(`❌ Failed to load cropped image for "${item.name}":`, croppedImageUrl);
-              const target = e.currentTarget;
-              target.style.display = 'none';
-              const fallback = target.nextElementSibling as HTMLElement;
-              if (fallback) {
-                fallback.classList.remove('hidden');
-              }
-            }}
-          />
-        ) : null}
-        
-        {/* Fallback placeholder */}
-        <div className={`absolute inset-0 flex items-center justify-center bg-gray-200 ${croppedImageUrl ? 'hidden' : ''}`}>
-          <Shirt size={32} className="text-gray-400" />
-        </div>
+      <div className="relative">
+        <AspectRatio ratio={4/5} className="bg-gray-100 overflow-hidden">
+          {imageToDisplay ? (
+            <img
+              src={imageToDisplay}
+              alt={item.name}
+              className="w-full h-full object-contain bg-white"
+              onLoad={() => {
+                console.log(`✅ Successfully loaded image for "${item.name}"`);
+              }}
+              onError={(e) => {
+                console.error(`❌ Failed to load image for "${item.name}":`, imageToDisplay);
+                const target = e.currentTarget;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) {
+                  fallback.classList.remove('hidden');
+                }
+              }}
+            />
+          ) : null}
+          
+          {/* Fallback placeholder */}
+          <div className={`absolute inset-0 flex items-center justify-center bg-gray-200 ${imageToDisplay ? 'hidden' : ''}`}>
+            <Shirt size={32} className="text-gray-400" />
+          </div>
 
-        {/* Source badge */}
-        <div className="absolute top-2 left-2">
-          <Badge variant={item.source === 'ai' ? 'default' : 'secondary'} className="text-xs">
-            {item.source === 'ai' ? 'AI' : 'Manual'}
-          </Badge>
-        </div>
-
-        {/* Confidence score for AI items */}
-        {item.source === 'ai' && (
-          <div className="absolute top-2 right-2">
-            <Badge variant="outline" className="text-xs bg-white/90">
-              {Math.round(item.confidence * 100)}%
+          {/* Source badge */}
+          <div className="absolute top-2 left-2">
+            <Badge variant={item.source === 'ai' ? 'default' : 'secondary'} className="text-xs">
+              {item.source === 'ai' ? 'AI' : 'Manual'}
             </Badge>
           </div>
-        )}
+
+          {/* Confidence score for AI items */}
+          {item.source === 'ai' && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="outline" className="text-xs bg-white/90">
+                {Math.round(item.confidence * 100)}%
+              </Badge>
+            </div>
+          )}
+        </AspectRatio>
       </div>
 
       <CardContent className="p-4 space-y-3">

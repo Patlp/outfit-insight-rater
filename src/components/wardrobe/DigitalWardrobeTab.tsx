@@ -18,7 +18,7 @@ interface ClothingItem {
   outfitId: string;
   outfitDate: string;
   outfitScore: number;
-  croppedImageUrl?: string;
+  originalImageUrl?: string; // Use original image instead of cropped
 }
 
 interface DigitalWardrobeTabProps {
@@ -36,7 +36,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  // Extract all individual clothing items from all outfits with cropped images
+  // Extract all individual clothing items from all outfits with original images
   const allClothingItems = useMemo(() => {
     const items: ClothingItem[] = [];
     
@@ -46,49 +46,12 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       console.log(`Processing outfit ${outfitIndex + 1}:`, {
         id: outfit.id,
         hasExtractedItems: !!outfit.extracted_clothing_items,
-        hasCroppedImages: !!outfit.cropped_images,
-        extractedItemsType: typeof outfit.extracted_clothing_items,
-        croppedImagesType: typeof outfit.cropped_images
+        originalImageUrl: outfit.image_url, // Use original image
+        extractedItemsType: typeof outfit.extracted_clothing_items
       });
 
       if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
         outfit.extracted_clothing_items.forEach((item: any, index: number) => {
-          // Find corresponding cropped image by matching item names
-          let croppedImageUrl: string | undefined;
-          
-          if (outfit.cropped_images && Array.isArray(outfit.cropped_images)) {
-            console.log(`Looking for cropped image for item: "${item.name}"`, {
-              availableCroppedImages: outfit.cropped_images.map((img: any) => ({
-                item_name: img.item_name,
-                url: img.cropped_image_url
-              }))
-            });
-
-            const croppedItem = outfit.cropped_images.find((cropped: any) => {
-              const itemNameLower = (item.name || '').toLowerCase().trim();
-              const croppedNameLower = (cropped.item_name || '').toLowerCase().trim();
-              
-              // Try exact match first
-              if (itemNameLower === croppedNameLower) {
-                return true;
-              }
-              
-              // Try partial matches - check if one contains the other
-              if (itemNameLower.includes(croppedNameLower) || croppedNameLower.includes(itemNameLower)) {
-                return true;
-              }
-              
-              return false;
-            });
-            
-            if (croppedItem && croppedItem.cropped_image_url) {
-              croppedImageUrl = croppedItem.cropped_image_url;
-              console.log(`✅ Found cropped image for "${item.name}": ${croppedImageUrl}`);
-            } else {
-              console.log(`❌ No cropped image found for "${item.name}"`);
-            }
-          }
-
           const clothingItem: ClothingItem = {
             id: `${outfit.id}-${index}`,
             name: item.name || 'Unknown Item',
@@ -98,16 +61,17 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             outfitId: outfit.id,
             outfitDate: outfit.created_at,
             outfitScore: outfit.rating_score || 0,
-            croppedImageUrl
+            originalImageUrl: outfit.image_url // Use the original outfit image
           };
 
           items.push(clothingItem);
+          console.log(`✅ Added clothing item "${item.name}" with original image: ${outfit.image_url}`);
         });
       }
     });
     
     console.log(`Total clothing items extracted: ${items.length}`);
-    console.log(`Items with cropped images: ${items.filter(item => item.croppedImageUrl).length}`);
+    console.log(`Items with original images: ${items.filter(item => item.originalImageUrl).length}`);
     
     return items;
   }, [wardrobeItems]);
@@ -271,7 +235,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       {/* Results count */}
       <div className="flex justify-between items-center text-sm text-gray-600">
         <span>Showing {filteredAndSortedItems.length} of {allClothingItems.length} clothing items</span>
-        <span>{allClothingItems.filter(item => item.croppedImageUrl).length} items have images</span>
+        <span>{allClothingItems.filter(item => item.originalImageUrl).length} items have images</span>
       </div>
 
       {/* Items grid */}
@@ -283,7 +247,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
               item={item}
               onUpdate={handleItemUpdate}
               onDelete={handleItemDelete}
-              croppedImageUrl={item.croppedImageUrl}
+              originalImageUrl={item.originalImageUrl}
             />
           ))}
         </div>
