@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { WardrobeItem } from '@/services/wardrobe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import EditableClothingItem from './EditableClothingItem';
 import BulkUploadDialog from './BulkUploadDialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClothingItem {
   id: string;
@@ -19,6 +19,7 @@ interface ClothingItem {
   outfitDate: string;
   outfitScore: number;
   originalImageUrl?: string; // Use original image instead of cropped
+  arrayIndex: number; // Add this to track the position in the array
 }
 
 interface DigitalWardrobeTabProps {
@@ -61,7 +62,8 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             outfitId: outfit.id,
             outfitDate: outfit.created_at,
             outfitScore: outfit.rating_score || 0,
-            originalImageUrl: outfit.image_url // Use the original outfit image
+            originalImageUrl: outfit.image_url, // Use the original outfit image
+            arrayIndex: index // Store the array index for deletion
           };
 
           items.push(clothingItem);
@@ -123,10 +125,52 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
     toast.success('Item updated successfully');
   };
 
-  const handleItemDelete = (itemId: string) => {
-    // Since these are read-only items from the wardrobe, we'll just show a success message
-    // but not actually delete from the database
-    toast.success('Item removed from view');
+  const handleItemDelete = async (itemId: string) => {
+    try {
+      // Parse the itemId to get outfitId and arrayIndex
+      const [outfitId, indexStr] = itemId.split('-');
+      const arrayIndex = parseInt(indexStr);
+
+      console.log(`Deleting clothing item at index ${arrayIndex} from outfit ${outfitId}`);
+
+      // Find the wardrobe item
+      const wardrobeItem = wardrobeItems.find(item => item.id === outfitId);
+      if (!wardrobeItem || !wardrobeItem.extracted_clothing_items) {
+        toast.error('Item not found');
+        return;
+      }
+
+      // Create a new array without the item at the specified index
+      const updatedClothingItems = [...wardrobeItem.extracted_clothing_items];
+      updatedClothingItems.splice(arrayIndex, 1);
+
+      // Update the database
+      const { error } = await supabase
+        .from('wardrobe_items')
+        .update({
+          extracted_clothing_items: updatedClothingItems,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', outfitId);
+
+      if (error) {
+        console.error('Error deleting clothing item:', error);
+        toast.error('Failed to delete item');
+        return;
+      }
+
+      console.log('✅ Clothing item deleted successfully');
+      toast.success('Item deleted successfully');
+      
+      // Refresh the wardrobe items
+      if (onItemsUpdated) {
+        onItemsUpdated();
+      }
+
+    } catch (error) {
+      console.error('Error in handleItemDelete:', error);
+      toast.error('Failed to delete item');
+    }
   };
 
   const handleAddItem = () => {
