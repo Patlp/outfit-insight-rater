@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, X, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { saveOutfitToWardrobe } from '@/services/wardrobeService';
+import { saveOutfitToWardrobe } from '@/services/wardrobe';
 import { validateFile, compressImage } from '@/utils/imageProcessing';
 
 interface BulkUploadDialogProps {

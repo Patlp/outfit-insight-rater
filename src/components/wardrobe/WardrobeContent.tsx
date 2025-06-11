@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getWardrobeItems, WardrobeItem } from '@/services/wardrobeService';
+import { getWardrobeItems, WardrobeItem } from '@/services/wardrobe';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WardrobeHeader from './WardrobeHeader';
 import WardrobeFilters from './WardrobeFilters';

@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Bookmark, BookmarkCheck, Eye } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRating } from '@/context/RatingContext';
-import { saveOutfitToWardrobe } from '@/services/wardrobeService';
+import { saveOutfitToWardrobe } from '@/services/wardrobe';
 import { toast } from 'sonner';
 import AuthModal from '@/components/auth/AuthModal';
 

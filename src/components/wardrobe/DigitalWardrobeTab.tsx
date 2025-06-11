@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { WardrobeItem } from '@/services/wardrobeService';
+import { WardrobeItem } from '@/services/wardrobe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Search, Shirt, Plus } from 'lucide-react';
