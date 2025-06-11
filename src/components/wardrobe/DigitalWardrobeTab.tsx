@@ -18,8 +18,8 @@ interface ClothingItem {
   outfitId: string;
   outfitDate: string;
   outfitScore: number;
-  originalImageUrl?: string; // Use original image instead of cropped
-  arrayIndex: number; // Add this to track the position in the array
+  originalImageUrl?: string;
+  arrayIndex: number;
 }
 
 interface DigitalWardrobeTabProps {
@@ -47,7 +47,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       console.log(`Processing outfit ${outfitIndex + 1}:`, {
         id: outfit.id,
         hasExtractedItems: !!outfit.extracted_clothing_items,
-        originalImageUrl: outfit.image_url, // Use original image
+        originalImageUrl: outfit.image_url,
         extractedItemsType: typeof outfit.extracted_clothing_items
       });
 
@@ -62,8 +62,8 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             outfitId: outfit.id,
             outfitDate: outfit.created_at,
             outfitScore: outfit.rating_score || 0,
-            originalImageUrl: outfit.image_url, // Use the original outfit image
-            arrayIndex: index // Store the array index for deletion
+            originalImageUrl: outfit.image_url,
+            arrayIndex: index
           };
 
           items.push(clothingItem);
@@ -127,22 +127,45 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
 
   const handleItemDelete = async (itemId: string) => {
     try {
+      console.log('🗑️ Attempting to delete item with ID:', itemId);
+      
       // Parse the itemId to get outfitId and arrayIndex
       const [outfitId, indexStr] = itemId.split('-');
       const arrayIndex = parseInt(indexStr);
 
-      console.log(`Deleting clothing item at index ${arrayIndex} from outfit ${outfitId}`);
+      console.log(`🔍 Parsed - Outfit ID: ${outfitId}, Array Index: ${arrayIndex}`);
+      console.log('🔍 Available wardrobe items:', wardrobeItems.map(item => ({ id: item.id, hasItems: !!item.extracted_clothing_items })));
 
       // Find the wardrobe item
       const wardrobeItem = wardrobeItems.find(item => item.id === outfitId);
-      if (!wardrobeItem || !wardrobeItem.extracted_clothing_items) {
-        toast.error('Item not found');
+      
+      if (!wardrobeItem) {
+        console.error('❌ Wardrobe item not found with ID:', outfitId);
+        toast.error('Outfit not found');
         return;
       }
 
+      if (!wardrobeItem.extracted_clothing_items || !Array.isArray(wardrobeItem.extracted_clothing_items)) {
+        console.error('❌ No extracted clothing items found for outfit:', outfitId);
+        toast.error('No clothing items found in this outfit');
+        return;
+      }
+
+      if (arrayIndex >= wardrobeItem.extracted_clothing_items.length || arrayIndex < 0) {
+        console.error('❌ Invalid array index:', arrayIndex, 'for array length:', wardrobeItem.extracted_clothing_items.length);
+        toast.error('Invalid item index');
+        return;
+      }
+
+      console.log(`✅ Found outfit with ${wardrobeItem.extracted_clothing_items.length} items`);
+      console.log(`🎯 Deleting item at index ${arrayIndex}:`, wardrobeItem.extracted_clothing_items[arrayIndex]);
+
       // Create a new array without the item at the specified index
       const updatedClothingItems = [...wardrobeItem.extracted_clothing_items];
-      updatedClothingItems.splice(arrayIndex, 1);
+      const deletedItem = updatedClothingItems.splice(arrayIndex, 1)[0];
+      
+      console.log(`🗑️ Removed item:`, deletedItem);
+      console.log(`📝 Updated array length:`, updatedClothingItems.length);
 
       // Update the database
       const { error } = await supabase
@@ -154,21 +177,22 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
         .eq('id', outfitId);
 
       if (error) {
-        console.error('Error deleting clothing item:', error);
-        toast.error('Failed to delete item');
+        console.error('❌ Database error deleting clothing item:', error);
+        toast.error('Failed to delete item from database');
         return;
       }
 
-      console.log('✅ Clothing item deleted successfully');
-      toast.success('Item deleted successfully');
+      console.log('✅ Clothing item deleted successfully from database');
+      toast.success(`Deleted "${deletedItem?.name || 'item'}" successfully`);
       
       // Refresh the wardrobe items
       if (onItemsUpdated) {
+        console.log('🔄 Refreshing wardrobe items...');
         onItemsUpdated();
       }
 
     } catch (error) {
-      console.error('Error in handleItemDelete:', error);
+      console.error('❌ Error in handleItemDelete:', error);
       toast.error('Failed to delete item');
     }
   };
