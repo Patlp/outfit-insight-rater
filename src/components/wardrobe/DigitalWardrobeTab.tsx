@@ -54,7 +54,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
         outfit.extracted_clothing_items.forEach((item: any, index: number) => {
           const clothingItem: ClothingItem = {
-            id: `${outfit.id}-${index}`,
+            id: `${outfit.id}::${index}`, // Changed separator from - to ::
             name: item.name || 'Unknown Item',
             category: item.category || 'other',
             confidence: item.confidence || 0.8,
@@ -129,8 +129,8 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
     try {
       console.log('🗑️ Attempting to delete item with ID:', itemId);
       
-      // Parse the itemId to get outfitId and arrayIndex
-      const [outfitId, indexStr] = itemId.split('-');
+      // Parse the itemId to get outfitId and arrayIndex using :: separator
+      const [outfitId, indexStr] = itemId.split('::');
       const arrayIndex = parseInt(indexStr);
 
       console.log(`🔍 Parsed - Outfit ID: ${outfitId}, Array Index: ${arrayIndex}`);
