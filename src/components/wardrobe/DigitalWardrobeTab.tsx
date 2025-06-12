@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { WardrobeItem } from '@/services/wardrobe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import EditableClothingItem from './EditableClothingItem';
 import BulkUploadDialog from './BulkUploadDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { subscribeToWardrobeItemUpdates } from '@/services/wardrobe/aiImageIntegration';
 
 interface ClothingItem {
   id: string;
@@ -37,14 +38,64 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [localWardrobeItems, setLocalWardrobeItems] = useState<WardrobeItem[]>(wardrobeItems);
+
+  // Update local state when wardrobeItems prop changes
+  useEffect(() => {
+    setLocalWardrobeItems(wardrobeItems);
+  }, [wardrobeItems]);
+
+  // Set up real-time subscriptions for wardrobe items to detect AI image updates
+  useEffect(() => {
+    const subscriptions: any[] = [];
+
+    wardrobeItems.forEach(item => {
+      if (item.extracted_clothing_items && Array.isArray(item.extracted_clothing_items)) {
+        const hasItemsNeedingImages = item.extracted_clothing_items.some(
+          (clothingItem: any) => clothingItem?.name && !clothingItem?.renderImageUrl
+        );
+
+        if (hasItemsNeedingImages) {
+          console.log(`🔔 Setting up subscription for wardrobe item with pending AI images: ${item.id}`);
+          const subscription = subscribeToWardrobeItemUpdates(item.id, (updatedItem) => {
+            console.log('🔄 Received real-time update for wardrobe item:', updatedItem.id);
+            
+            // Update the local wardrobe items state
+            setLocalWardrobeItems(prev => 
+              prev.map(prevItem => 
+                prevItem.id === updatedItem.id ? { ...prevItem, ...updatedItem } : prevItem
+              )
+            );
+            
+            // Also trigger the parent callback to refresh data
+            if (onItemsUpdated) {
+              onItemsUpdated();
+            }
+          });
+          
+          subscriptions.push(subscription);
+        }
+      }
+    });
+
+    // Cleanup subscriptions on unmount or when dependencies change
+    return () => {
+      subscriptions.forEach(subscription => {
+        if (subscription?.unsubscribe) {
+          console.log('🔌 Cleaning up wardrobe item subscription');
+          subscription.unsubscribe();
+        }
+      });
+    };
+  }, [wardrobeItems, onItemsUpdated]);
 
   // Extract all individual clothing items from all outfits with original images
   const allClothingItems = useMemo(() => {
     const items: ClothingItem[] = [];
     
-    console.log('Processing wardrobe items:', wardrobeItems.length);
+    console.log('Processing wardrobe items:', localWardrobeItems.length);
     
-    wardrobeItems.forEach((outfit, outfitIndex) => {
+    localWardrobeItems.forEach((outfit, outfitIndex) => {
       console.log(`Processing outfit ${outfitIndex + 1}:`, {
         id: outfit.id,
         hasExtractedItems: !!outfit.extracted_clothing_items,
@@ -55,7 +106,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
         outfit.extracted_clothing_items.forEach((item: any, index: number) => {
           const clothingItem: ClothingItem = {
-            id: `${outfit.id}::${index}`, // Changed separator from - to ::
+            id: `${outfit.id}::${index}`,
             name: item.name || 'Unknown Item',
             category: item.category || 'other',
             confidence: item.confidence || 0.8,
@@ -64,21 +115,21 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             outfitDate: outfit.created_at,
             outfitScore: outfit.rating_score || 0,
             originalImageUrl: outfit.image_url,
-            renderImageUrl: item.render_image_url || null, // Add this line
+            renderImageUrl: item.renderImageUrl || null, // Add this line
             arrayIndex: index
           };
 
           items.push(clothingItem);
-          console.log(`✅ Added clothing item "${item.name}" with original image: ${outfit.image_url}`);
+          console.log(`✅ Added clothing item "${item.name}" with render image: ${item.renderImageUrl || 'none'}`);
         });
       }
     });
     
     console.log(`Total clothing items extracted: ${items.length}`);
-    console.log(`Items with original images: ${items.filter(item => item.originalImageUrl).length}`);
+    console.log(`Items with AI render images: ${items.filter(item => item.renderImageUrl).length}`);
     
     return items;
-  }, [wardrobeItems]);
+  }, [localWardrobeItems]);
 
   // Get unique categories for filtering
   const categories = useMemo(() => {
@@ -136,10 +187,9 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       const arrayIndex = parseInt(indexStr);
 
       console.log(`🔍 Parsed - Outfit ID: ${outfitId}, Array Index: ${arrayIndex}`);
-      console.log('🔍 Available wardrobe items:', wardrobeItems.map(item => ({ id: item.id, hasItems: !!item.extracted_clothing_items })));
 
       // Find the wardrobe item
-      const wardrobeItem = wardrobeItems.find(item => item.id === outfitId);
+      const wardrobeItem = localWardrobeItems.find(item => item.id === outfitId);
       
       if (!wardrobeItem) {
         console.error('❌ Wardrobe item not found with ID:', outfitId);
@@ -305,7 +355,10 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
       {/* Results count */}
       <div className="flex justify-between items-center text-sm text-gray-600">
         <span>Showing {filteredAndSortedItems.length} of {allClothingItems.length} clothing items</span>
-        <span>{allClothingItems.filter(item => item.originalImageUrl).length} items have images</span>
+        <span>
+          {allClothingItems.filter(item => item.renderImageUrl).length} items have AI images | {' '}
+          {allClothingItems.filter(item => item.originalImageUrl).length} items have original images
+        </span>
       </div>
 
       {/* Items grid */}

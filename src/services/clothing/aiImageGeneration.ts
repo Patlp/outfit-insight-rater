@@ -115,14 +115,24 @@ export const generateImagesForClothingItems = async (
     const item = clothingItems[i];
     if (!item?.name) continue;
 
+    // Skip if this item already has a render image
+    if (item.renderImageUrl) {
+      console.log(`⏭️ Skipping "${item.name}" - already has render image`);
+      continue;
+    }
+
     try {
       console.log(`🎨 Generating image ${i + 1}/${clothingItems.length}: "${item.name}"`);
 
       const result = await generateClothingImage(item.name, wardrobeItemId, i);
       
       if (result.success && result.imageUrl) {
-        await updateWardrobeItemWithRenderImage(wardrobeItemId, i, result.imageUrl);
-        console.log(`✅ Successfully generated and saved render image for "${item.name}"`);
+        const updateResult = await updateWardrobeItemWithRenderImage(wardrobeItemId, i, result.imageUrl);
+        if (updateResult.success) {
+          console.log(`✅ Successfully generated and saved render image for "${item.name}"`);
+        } else {
+          console.error(`❌ Failed to save render image for "${item.name}":`, updateResult.error);
+        }
       } else {
         console.warn(`⚠️ Failed to generate image for "${item.name}":`, result.error);
       }

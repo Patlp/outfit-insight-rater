@@ -63,3 +63,30 @@ export const getRenderImageUrl = (item: any, originalImageUrl?: string): string 
   // Fallback to original image or placeholder
   return originalImageUrl;
 };
+
+// Helper function to subscribe to wardrobe item changes for real-time updates
+export const subscribeToWardrobeItemUpdates = (
+  wardrobeItemId: string, 
+  onUpdate: (updatedItem: any) => void
+) => {
+  console.log(`🔔 Setting up real-time subscription for wardrobe item: ${wardrobeItemId}`);
+  
+  const subscription = supabase
+    .channel(`wardrobe-item-${wardrobeItemId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'wardrobe_items',
+        filter: `id=eq.${wardrobeItemId}`
+      },
+      (payload) => {
+        console.log('🔄 Wardrobe item updated via real-time:', payload);
+        onUpdate(payload.new);
+      }
+    )
+    .subscribe();
+
+  return subscription;
+};
