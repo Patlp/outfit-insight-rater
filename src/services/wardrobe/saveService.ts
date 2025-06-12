@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
@@ -73,11 +74,15 @@ const processOutfitInBackground = async (wardrobeItemId: string, imageFile: File
       console.log('✅ Clothing extraction completed, updating database...');
       
       // Update the wardrobe item with extracted clothing
-      await updateWardrobeItemWithClothing(wardrobeItemId, extractionResult.clothingItems);
+      const updateResult = await updateWardrobeItemWithClothing(wardrobeItemId, extractionResult.clothingItems);
       
-      // Step 2: Trigger AI image generation for each clothing item
-      console.log('🎨 Triggering AI image generation...');
-      await triggerAIImageGeneration(wardrobeItemId);
+      if (updateResult.success) {
+        // Step 2: Immediately trigger AI image generation for each clothing item
+        console.log('🎨 Triggering AI image generation...');
+        await triggerAIImageGeneration(wardrobeItemId);
+      } else {
+        console.error('❌ Failed to update wardrobe item with clothing:', updateResult.error);
+      }
       
     } else {
       console.warn('⚠️ Clothing extraction failed:', extractionResult.error);

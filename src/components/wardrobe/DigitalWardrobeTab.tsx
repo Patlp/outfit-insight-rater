@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { WardrobeItem } from '@/services/wardrobe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import EditableClothingItem from './EditableClothingItem';
 import BulkUploadDialog from './BulkUploadDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { pollWardrobeItemUpdates } from '@/services/wardrobe/aiImageIntegration';
 
 interface ClothingItem {
   id: string;
@@ -39,6 +38,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [localWardrobeItems, setLocalWardrobeItems] = useState<WardrobeItem[]>(wardrobeItems);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update local state when wardrobeItems prop changes
   useEffect(() => {
@@ -47,6 +47,13 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
 
   // Set up polling for items that have pending AI image generation
   useEffect(() => {
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Find items that need polling (have clothing items but some are missing render images)
     const itemsNeedingPolling = wardrobeItems.filter(item => {
       if (item.extracted_clothing_items && Array.isArray(item.extracted_clothing_items)) {
         return item.extracted_clothing_items.some(
@@ -57,50 +64,84 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
     });
 
     if (itemsNeedingPolling.length === 0) {
+      console.log('✅ No items need AI image polling');
       return;
     }
 
     console.log(`🔄 Setting up polling for ${itemsNeedingPolling.length} wardrobe items with pending AI images`);
 
-    const pollInterval = setInterval(async () => {
+    // Poll every 3 seconds for faster updates
+    intervalRef.current = setInterval(async () => {
       let hasUpdates = false;
 
-      for (const item of itemsNeedingPolling) {
-        const updatedItem = await pollWardrobeItemUpdates(item.id);
-        if (updatedItem && updatedItem.extracted_clothing_items) {
-          // Check if any clothing items now have render images
-          const hasNewRenderImages = updatedItem.extracted_clothing_items.some(
-            (clothingItem: any, index: number) => {
-              const originalItem = item.extracted_clothing_items?.[index];
-              return clothingItem?.renderImageUrl && !originalItem?.renderImageUrl;
-            }
-          );
+      try {
+        // Check all items that need polling
+        for (const item of itemsNeedingPolling) {
+          const { data: updatedItem, error } = await supabase
+            .from('wardrobe_items')
+            .select('extracted_clothing_items')
+            .eq('id', item.id)
+            .single();
 
-          if (hasNewRenderImages) {
-            console.log('🎨 Detected new AI-generated images for item:', item.id);
-            hasUpdates = true;
-            
-            // Update local state
-            setLocalWardrobeItems(prev => 
-              prev.map(prevItem => 
-                prevItem.id === item.id ? { ...prevItem, ...updatedItem } : prevItem
-              )
+          if (error) {
+            console.error('❌ Error polling wardrobe item:', item.id, error);
+            continue;
+          }
+
+          if (updatedItem && updatedItem.extracted_clothing_items) {
+            // Check if any clothing items now have render images that didn't before
+            const hasNewRenderImages = updatedItem.extracted_clothing_items.some(
+              (clothingItem: any, index: number) => {
+                const originalItem = item.extracted_clothing_items?.[index];
+                return clothingItem?.renderImageUrl && !originalItem?.renderImageUrl;
+              }
             );
+
+            if (hasNewRenderImages) {
+              console.log('🎨 Detected new AI-generated images for item:', item.id);
+              hasUpdates = true;
+              
+              // Update local state immediately
+              setLocalWardrobeItems(prev => 
+                prev.map(prevItem => 
+                  prevItem.id === item.id 
+                    ? { ...prevItem, extracted_clothing_items: updatedItem.extracted_clothing_items }
+                    : prevItem
+                )
+              );
+            }
           }
         }
-      }
 
-      if (hasUpdates && onItemsUpdated) {
-        onItemsUpdated();
-      }
-    }, 5000); // Poll every 5 seconds
+        // If we found updates, also refresh the parent component
+        if (hasUpdates && onItemsUpdated) {
+          console.log('🔄 Triggering parent component refresh');
+          onItemsUpdated();
+        }
 
-    // Cleanup interval on unmount
+      } catch (error) {
+        console.error('❌ Error in polling interval:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    // Cleanup interval on unmount or when dependencies change
     return () => {
-      console.log('🧹 Cleaning up polling interval');
-      clearInterval(pollInterval);
+      if (intervalRef.current) {
+        console.log('🧹 Cleaning up polling interval');
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [wardrobeItems, onItemsUpdated]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   // Extract all individual clothing items from all outfits with original images
   const allClothingItems = useMemo(() => {

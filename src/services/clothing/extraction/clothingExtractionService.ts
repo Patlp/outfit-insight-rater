@@ -12,27 +12,42 @@ export const extractClothingFromImage = async (
   try {
     console.log('🔍 Starting clothing extraction for wardrobe item:', wardrobeItemId);
 
-    // For now, we'll return a simple mock extraction
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // For now, we'll return a variety of mock clothing items
     // In a real implementation, this would use AI vision services
-    const mockClothingItems = [
-      {
-        name: 'Casual Shirt',
-        category: 'tops',
-        confidence: 0.85,
-        source: 'ai_extraction'
-      },
-      {
-        name: 'Denim Jeans',
-        category: 'bottoms', 
-        confidence: 0.92,
-        source: 'ai_extraction'
-      }
+    const mockClothingOptions = [
+      [
+        { name: 'White Button-Up Shirt', category: 'tops', confidence: 0.92, source: 'ai_extraction' },
+        { name: 'Dark Denim Jeans', category: 'bottoms', confidence: 0.88, source: 'ai_extraction' },
+        { name: 'Brown Leather Belt', category: 'accessories', confidence: 0.85, source: 'ai_extraction' }
+      ],
+      [
+        { name: 'Black T-Shirt', category: 'tops', confidence: 0.90, source: 'ai_extraction' },
+        { name: 'Gray Sweatpants', category: 'bottoms', confidence: 0.87, source: 'ai_extraction' },
+        { name: 'White Sneakers', category: 'footwear', confidence: 0.93, source: 'ai_extraction' }
+      ],
+      [
+        { name: 'Floral Summer Dress', category: 'dresses', confidence: 0.89, source: 'ai_extraction' },
+        { name: 'Denim Jacket', category: 'outerwear', confidence: 0.91, source: 'ai_extraction' },
+        { name: 'Canvas Sneakers', category: 'footwear', confidence: 0.86, source: 'ai_extraction' }
+      ],
+      [
+        { name: 'Navy Blazer', category: 'outerwear', confidence: 0.94, source: 'ai_extraction' },
+        { name: 'White Dress Shirt', category: 'tops', confidence: 0.91, source: 'ai_extraction' },
+        { name: 'Khaki Chinos', category: 'bottoms', confidence: 0.88, source: 'ai_extraction' },
+        { name: 'Black Dress Shoes', category: 'footwear', confidence: 0.92, source: 'ai_extraction' }
+      ]
     ];
 
-    console.log('✅ Clothing extraction completed');
+    // Select a random set of clothing items
+    const selectedMockItems = mockClothingOptions[Math.floor(Math.random() * mockClothingOptions.length)];
+
+    console.log('✅ Clothing extraction completed with items:', selectedMockItems);
     return {
       success: true,
-      clothingItems: mockClothingItems
+      clothingItems: selectedMockItems
     };
 
   } catch (error) {
