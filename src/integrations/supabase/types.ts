@@ -683,6 +683,7 @@ export type Database = {
           image_url: string
           occasion_context: string | null
           rating_score: number | null
+          render_image_url: string | null
           suggestions: string[] | null
           updated_at: string
           user_id: string
@@ -698,6 +699,7 @@ export type Database = {
           image_url: string
           occasion_context?: string | null
           rating_score?: number | null
+          render_image_url?: string | null
           suggestions?: string[] | null
           updated_at?: string
           user_id: string
@@ -713,6 +715,7 @@ export type Database = {
           image_url?: string
           occasion_context?: string | null
           rating_score?: number | null
+          render_image_url?: string | null
           suggestions?: string[] | null
           updated_at?: string
           user_id?: string

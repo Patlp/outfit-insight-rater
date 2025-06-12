@@ -19,6 +19,7 @@ interface ClothingItem {
   outfitDate: string;
   outfitScore: number;
   originalImageUrl?: string;
+  renderImageUrl?: string; // Add this property
   arrayIndex: number;
 }
 
@@ -63,6 +64,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             outfitDate: outfit.created_at,
             outfitScore: outfit.rating_score || 0,
             originalImageUrl: outfit.image_url,
+            renderImageUrl: item.render_image_url || null, // Add this line
             arrayIndex: index
           };
 

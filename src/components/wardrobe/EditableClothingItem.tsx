@@ -1,31 +1,18 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { ClothingItem } from '@/services/wardrobe';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Edit2, Trash2, Save, X, Shirt } from 'lucide-react';
+import { Delete, Edit, Check, Shirt } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface ClothingItem {
-  id: string;
-  name: string;
-  category: string;
-  confidence: number;
-  source: string;
-  outfitId: string;
-  outfitDate: string;
-  outfitScore: number;
-  originalImageUrl?: string; // Use original image instead of cropped
-}
+import { generateClothingImage } from '@/services/clothing/aiImageGeneration';
+import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
 
 interface EditableClothingItemProps {
   item: ClothingItem;
-  onUpdate: (itemId: string, updates: Partial<ClothingItem>) => void;
-  onDelete: (itemId: string) => void;
-  originalImageUrl?: string; // Original outfit image
+  onUpdate: (id: string, updates: Partial<ClothingItem>) => void;
+  onDelete: (id: string) => void;
+  originalImageUrl?: string;
 }
 
 const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
@@ -35,166 +22,141 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   originalImageUrl
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(item.name);
-  const [editedCategory, setEditedCategory] = useState(item.category);
+  const [name, setName] = useState(item.name);
+  const [category, setCategory] = useState(item.category);
 
-  const handleSave = () => {
-    if (editedName.trim().length < 2) {
-      toast.error('Item name must be at least 2 characters');
+  const handleUpdate = () => {
+    if (name.trim() === '' || category.trim() === '') {
+      toast.error('Name and category cannot be empty');
       return;
     }
 
-    onUpdate(item.id, {
-      name: editedName.trim(),
-      category: editedCategory
-    });
+    onUpdate(item.id, { name, category });
     setIsEditing(false);
-    toast.success('Item updated successfully');
-  };
-
-  const handleCancel = () => {
-    setEditedName(item.name);
-    setEditedCategory(item.category);
-    setIsEditing(false);
+    toast.success('Item updated');
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      onDelete(item.id);
-    }
+    onDelete(item.id);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const imageToDisplay = originalImageUrl || item.originalImageUrl;
-  console.log(`Rendering item "${item.name}" with original image:`, imageToDisplay);
+  // Get the best image to display (AI-generated or original)
+  const displayImageUrl = getRenderImageUrl(item, originalImageUrl);
+  const needsRenderImage = itemNeedsRenderImage(item);
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="relative">
-        <AspectRatio ratio={4/5} className="bg-gray-100 overflow-hidden">
-          {imageToDisplay ? (
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+      {/* Image Section */}
+      <div className="relative h-48 bg-gray-100">
+        {displayImageUrl ? (
+          <div className="relative h-full">
             <img
-              src={imageToDisplay}
+              src={displayImageUrl}
               alt={item.name}
-              className="w-full h-full object-contain bg-white"
+              className="w-full h-full object-cover"
               onLoad={() => {
-                console.log(`✅ Successfully loaded image for "${item.name}"`);
+                console.log('✅ Item image loaded:', displayImageUrl);
               }}
               onError={(e) => {
-                console.error(`❌ Failed to load image for "${item.name}":`, imageToDisplay);
-                const target = e.currentTarget;
-                target.style.display = 'none';
-                const fallback = target.nextElementSibling as HTMLElement;
-                if (fallback) {
-                  fallback.classList.remove('hidden');
-                }
+                console.error('❌ Failed to load item image:', displayImageUrl);
+                // Fallback to placeholder
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
               }}
             />
-          ) : null}
-          
-          {/* Fallback placeholder */}
-          <div className={`absolute inset-0 flex items-center justify-center bg-gray-200 ${imageToDisplay ? 'hidden' : ''}`}>
-            <Shirt size={32} className="text-gray-400" />
+            
+            {/* AI Generation Status Indicator */}
+            {needsRenderImage && (
+              <div className="absolute top-2 left-2">
+                <div className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  Generating AI image...
+                </div>
+              </div>
+            )}
+            
+            {/* AI Generated Badge */}
+            {item.renderImageUrl && (
+              <div className="absolute top-2 right-2">
+                <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <span className="text-xs">✨</span>
+                  AI Generated
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Source badge */}
-          <div className="absolute top-2 left-2">
-            <Badge variant={item.source === 'ai' ? 'default' : 'secondary'} className="text-xs">
-              {item.source === 'ai' ? 'AI' : 'Manual'}
-            </Badge>
-          </div>
-
-          {/* Confidence score for AI items */}
-          {item.source === 'ai' && (
-            <div className="absolute top-2 right-2">
-              <Badge variant="outline" className="text-xs bg-white/90">
-                {Math.round(item.confidence * 100)}%
-              </Badge>
+        ) : (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <Shirt size={32} className="text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No image available</p>
+              {needsRenderImage && (
+                <p className="text-xs text-blue-600 mt-1">AI image generating...</p>
+              )}
             </div>
-          )}
-        </AspectRatio>
+          </div>
+        )}
       </div>
 
-      <CardContent className="p-4 space-y-3">
+      {/* Content Section */}
+      <div className="p-4">
         {isEditing ? (
           <div className="space-y-3">
-            <Input
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              placeholder="Item name"
-              className="font-medium"
-            />
-            
-            <Select value={editedCategory} onValueChange={setEditedCategory}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tops">Tops</SelectItem>
-                <SelectItem value="bottoms">Bottoms</SelectItem>
-                <SelectItem value="dresses">Dresses</SelectItem>
-                <SelectItem value="outerwear">Outerwear</SelectItem>
-                <SelectItem value="footwear">Footwear</SelectItem>
-                <SelectItem value="accessories">Accessories</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSave} size="sm" className="flex-1">
-                <Save size={14} className="mr-1" />
-                Save
-              </Button>
-              <Button onClick={handleCancel} variant="outline" size="sm" className="flex-1">
-                <X size={14} className="mr-1" />
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                type="text"
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIsEditing(false)}>
                 Cancel
+              </Button>
+              <Button onClick={handleUpdate}>
+                <Check size={16} className="mr-2" />
+                Update
               </Button>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div>
-              <h3 className="font-medium text-gray-900 line-clamp-2">{item.name}</h3>
-              <p className="text-sm text-gray-500 capitalize">{item.category}</p>
-            </div>
-
-            <div className="text-xs text-gray-400 space-y-1">
-              <p>From outfit: {formatDate(item.outfitDate)}</p>
-              {item.outfitScore > 0 && (
-                <p>Outfit score: {item.outfitScore}/10</p>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => setIsEditing(true)} 
-                variant="outline" 
-                size="sm" 
-                className="flex-1"
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">{item.name}</h3>
+            <p className="text-sm text-gray-500">Category: {item.category}</p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setIsEditing(true);
+                  setName(item.name);
+                  setCategory(item.category);
+                }}
               >
-                <Edit2 size={14} className="mr-1" />
-                Edit
+                <Edit size={16} />
               </Button>
-              <Button 
-                onClick={handleDelete} 
-                variant="outline" 
-                size="sm" 
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={handleDelete}
               >
-                <Trash2 size={14} />
+                <Delete size={16} />
               </Button>
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
