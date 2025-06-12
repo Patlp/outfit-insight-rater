@@ -69,9 +69,9 @@ export const updateWardrobeItemWithRenderImage = async (
 
     // Update the specific clothing item with the render image URL
     const updatedItems = Array.from(wardrobeItem.extracted_clothing_items);
-    if (updatedItems[arrayIndex]) {
+    if (updatedItems[arrayIndex] && typeof updatedItems[arrayIndex] === 'object') {
       updatedItems[arrayIndex] = {
-        ...updatedItems[arrayIndex],
+        ...(updatedItems[arrayIndex] as Record<string, any>),
         renderImageUrl
       };
 
@@ -92,7 +92,7 @@ export const updateWardrobeItemWithRenderImage = async (
       console.log(`✅ Updated wardrobe item ${wardrobeItemId} with render image`);
       return { success: true };
     } else {
-      return { success: false, error: 'Invalid array index' };
+      return { success: false, error: 'Invalid array index or item is not an object' };
     }
 
   } catch (error) {
