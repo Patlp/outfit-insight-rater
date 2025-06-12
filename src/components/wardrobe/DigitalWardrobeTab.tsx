@@ -8,7 +8,7 @@ import EditableClothingItem from './EditableClothingItem';
 import BulkUploadDialog from './BulkUploadDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { subscribeToWardrobeItemUpdates } from '@/services/wardrobe/aiImageIntegration';
+import { pollWardrobeItemUpdates } from '@/services/wardrobe/aiImageIntegration';
 
 interface ClothingItem {
   id: string;
@@ -20,7 +20,7 @@ interface ClothingItem {
   outfitDate: string;
   outfitScore: number;
   originalImageUrl?: string;
-  renderImageUrl?: string; // Add this property
+  renderImageUrl?: string;
   arrayIndex: number;
 }
 
@@ -45,47 +45,60 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
     setLocalWardrobeItems(wardrobeItems);
   }, [wardrobeItems]);
 
-  // Set up real-time subscriptions for wardrobe items to detect AI image updates
+  // Set up polling for items that have pending AI image generation
   useEffect(() => {
-    const subscriptions: any[] = [];
-
-    wardrobeItems.forEach(item => {
+    const itemsNeedingPolling = wardrobeItems.filter(item => {
       if (item.extracted_clothing_items && Array.isArray(item.extracted_clothing_items)) {
-        const hasItemsNeedingImages = item.extracted_clothing_items.some(
+        return item.extracted_clothing_items.some(
           (clothingItem: any) => clothingItem?.name && !clothingItem?.renderImageUrl
         );
-
-        if (hasItemsNeedingImages) {
-          console.log(`🔔 Setting up subscription for wardrobe item with pending AI images: ${item.id}`);
-          const subscription = subscribeToWardrobeItemUpdates(item.id, (updatedItem) => {
-            console.log('🔄 Received real-time update for wardrobe item:', updatedItem.id);
-            
-            // Update the local wardrobe items state
-            setLocalWardrobeItems(prev => 
-              prev.map(prevItem => 
-                prevItem.id === updatedItem.id ? { ...prevItem, ...updatedItem } : prevItem
-              )
-            );
-            
-            // Also trigger the parent callback to refresh data
-            if (onItemsUpdated) {
-              onItemsUpdated();
-            }
-          });
-          
-          subscriptions.push(subscription);
-        }
       }
+      return false;
     });
 
-    // Cleanup subscriptions on unmount or when dependencies change
-    return () => {
-      subscriptions.forEach(subscription => {
-        if (subscription?.unsubscribe) {
-          console.log('🔌 Cleaning up wardrobe item subscription');
-          subscription.unsubscribe();
+    if (itemsNeedingPolling.length === 0) {
+      return;
+    }
+
+    console.log(`🔄 Setting up polling for ${itemsNeedingPolling.length} wardrobe items with pending AI images`);
+
+    const pollInterval = setInterval(async () => {
+      let hasUpdates = false;
+
+      for (const item of itemsNeedingPolling) {
+        const updatedItem = await pollWardrobeItemUpdates(item.id);
+        if (updatedItem && updatedItem.extracted_clothing_items) {
+          // Check if any clothing items now have render images
+          const hasNewRenderImages = updatedItem.extracted_clothing_items.some(
+            (clothingItem: any, index: number) => {
+              const originalItem = item.extracted_clothing_items?.[index];
+              return clothingItem?.renderImageUrl && !originalItem?.renderImageUrl;
+            }
+          );
+
+          if (hasNewRenderImages) {
+            console.log('🎨 Detected new AI-generated images for item:', item.id);
+            hasUpdates = true;
+            
+            // Update local state
+            setLocalWardrobeItems(prev => 
+              prev.map(prevItem => 
+                prevItem.id === item.id ? { ...prevItem, ...updatedItem } : prevItem
+              )
+            );
+          }
         }
-      });
+      }
+
+      if (hasUpdates && onItemsUpdated) {
+        onItemsUpdated();
+      }
+    }, 5000); // Poll every 5 seconds
+
+    // Cleanup interval on unmount
+    return () => {
+      console.log('🧹 Cleaning up polling interval');
+      clearInterval(pollInterval);
     };
   }, [wardrobeItems, onItemsUpdated]);
 
@@ -115,7 +128,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             outfitDate: outfit.created_at,
             outfitScore: outfit.rating_score || 0,
             originalImageUrl: outfit.image_url,
-            renderImageUrl: item.renderImageUrl || null, // Add this line
+            renderImageUrl: item.renderImageUrl || null,
             arrayIndex: index
           };
 

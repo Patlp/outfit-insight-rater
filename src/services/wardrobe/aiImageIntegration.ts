@@ -64,29 +64,23 @@ export const getRenderImageUrl = (item: any, originalImageUrl?: string): string 
   return originalImageUrl;
 };
 
-// Helper function to subscribe to wardrobe item changes for real-time updates
-export const subscribeToWardrobeItemUpdates = (
-  wardrobeItemId: string, 
-  onUpdate: (updatedItem: any) => void
-) => {
-  console.log(`🔔 Setting up real-time subscription for wardrobe item: ${wardrobeItemId}`);
-  
-  const subscription = supabase
-    .channel(`wardrobe-item-${wardrobeItemId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'wardrobe_items',
-        filter: `id=eq.${wardrobeItemId}`
-      },
-      (payload) => {
-        console.log('🔄 Wardrobe item updated via real-time:', payload);
-        onUpdate(payload.new);
-      }
-    )
-    .subscribe();
+// Polling function to check for updates instead of real-time subscriptions
+export const pollWardrobeItemUpdates = async (wardrobeItemId: string): Promise<any | null> => {
+  try {
+    const { data: wardrobeItem, error } = await supabase
+      .from('wardrobe_items')
+      .select('extracted_clothing_items')
+      .eq('id', wardrobeItemId)
+      .single();
 
-  return subscription;
+    if (error) {
+      console.error('❌ Error polling wardrobe item:', error);
+      return null;
+    }
+
+    return wardrobeItem;
+  } catch (error) {
+    console.error('❌ Error polling wardrobe item:', error);
+    return null;
+  }
 };
