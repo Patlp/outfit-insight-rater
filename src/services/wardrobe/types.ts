@@ -15,6 +15,20 @@ export interface WardrobeItem {
   updated_at: string;
 }
 
+export interface ClothingItem {
+  id: string;
+  name: string;
+  category: string;
+  confidence: number;
+  source: string;
+  outfitId: string;
+  outfitDate: string;
+  outfitScore: number;
+  originalImageUrl?: string;
+  renderImageUrl?: string;
+  arrayIndex: number;
+}
+
 export interface SaveOutfitResult {
   wardrobeItem?: WardrobeItem;
   error?: string;

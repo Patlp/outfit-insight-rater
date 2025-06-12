@@ -5,3 +5,4 @@ export { saveOutfitToWardrobe } from './saveService';
 export { getWardrobeItems } from './retrievalService';
 export { deleteWardrobeItem } from './deleteService';
 export { categorizeTag } from './categoryService';
+export { updateWardrobeItemWithClothing } from './wardrobeService';

@@ -68,7 +68,7 @@ export const updateWardrobeItemWithRenderImage = async (
     }
 
     // Update the specific clothing item with the render image URL
-    const updatedItems = [...wardrobeItem.extracted_clothing_items];
+    const updatedItems = Array.from(wardrobeItem.extracted_clothing_items);
     if (updatedItems[arrayIndex]) {
       updatedItems[arrayIndex] = {
         ...updatedItems[arrayIndex],
