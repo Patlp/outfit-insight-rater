@@ -44,6 +44,7 @@ export const useWardrobePolling = ({
     // Poll every 3 seconds for faster updates
     intervalRef.current = setInterval(async () => {
       let hasUpdates = false;
+      let updatedItems = [...wardrobeItems];
 
       try {
         // Check all items that need polling
@@ -73,22 +74,26 @@ export const useWardrobePolling = ({
               console.log('🎨 Detected new AI-generated images for item:', item.id);
               hasUpdates = true;
               
-              // Update local state immediately
-              onLocalUpdate(prev => 
-                prev.map(prevItem => 
-                  prevItem.id === item.id 
-                    ? { ...prevItem, extracted_clothing_items: updatedItem.extracted_clothing_items }
-                    : prevItem
-                )
+              // Update the items array directly
+              updatedItems = updatedItems.map(prevItem => 
+                prevItem.id === item.id 
+                  ? { ...prevItem, extracted_clothing_items: updatedItem.extracted_clothing_items }
+                  : prevItem
               );
             }
           }
         }
 
-        // If we found updates, also refresh the parent component
-        if (hasUpdates && onItemsUpdated) {
-          console.log('🔄 Triggering parent component refresh');
-          onItemsUpdated();
+        // If we found updates, update local state with the new array
+        if (hasUpdates) {
+          console.log('🔄 Updating local state with new items');
+          onLocalUpdate(updatedItems);
+          
+          // Also refresh the parent component
+          if (onItemsUpdated) {
+            console.log('🔄 Triggering parent component refresh');
+            onItemsUpdated();
+          }
         }
 
       } catch (error) {
