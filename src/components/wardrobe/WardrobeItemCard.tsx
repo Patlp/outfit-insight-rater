@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { WardrobeItem } from '@/services/wardrobeService';
+import { WardrobeItem } from '@/services/wardrobe';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import WardrobeItemImage from './WardrobeItemImage';
 import WardrobeItemDetails from './WardrobeItemDetails';
@@ -13,6 +13,14 @@ interface WardrobeItemCardProps {
 }
 
 const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) => {
+  console.log('📝 Rendering WardrobeItemCard for item:', {
+    id: item.id,
+    imageUrl: item.image_url,
+    rating: item.rating_score,
+    feedback: item.feedback?.slice(0, 50) + '...',
+    hasClothingItems: !!item.extracted_clothing_items
+  });
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 bg-white">
       <WardrobeItemImage 

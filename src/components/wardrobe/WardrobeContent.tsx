@@ -23,12 +23,16 @@ const WardrobeContent: React.FC = () => {
         throw new Error('User not authenticated');
       }
       
+      console.log('🔄 Fetching wardrobe items for user:', user.id);
       const result = await getWardrobeItems(user.id);
       if (result.error) {
-        console.error('Error fetching wardrobe items:', result.error);
+        console.error('❌ Error fetching wardrobe items:', result.error);
         toast.error('Failed to load wardrobe items');
         throw new Error(result.error);
       }
+      
+      console.log('✅ Successfully fetched wardrobe items:', result.items?.length || 0);
+      console.log('📋 Wardrobe items data:', result.items);
       return result.items || [];
     },
     enabled: !!user?.id,
@@ -37,6 +41,7 @@ const WardrobeContent: React.FC = () => {
   const filteredItems = React.useMemo(() => {
     if (!wardrobeItems) return [];
 
+    console.log('🔍 Filtering wardrobe items:', wardrobeItems.length);
     let filtered = wardrobeItems;
 
     // Filter by search term (searches in suggestions and feedback)
@@ -65,10 +70,12 @@ const WardrobeContent: React.FC = () => {
       }
     }
 
+    console.log('📊 Filtered items count:', filtered.length);
     return filtered;
   }, [wardrobeItems, searchTerm, selectedFilter]);
 
   if (error) {
+    console.error('❌ Error in WardrobeContent:', error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
