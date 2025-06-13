@@ -1,7 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { extractFashionTagsWithVision, fileToBase64 } from './clothing/visionTaggingService';
-import { processImageCropping } from './clothing/croppingService';
 
 export interface WardrobeItem {
   id: string;
@@ -15,6 +13,7 @@ export interface WardrobeItem {
   feedback_mode: string | null;
   extracted_clothing_items: any | null;
   cropped_images: any | null;
+  processing_errors?: any | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,7 +30,7 @@ export interface GetWardrobeItemsResult {
 
 export const saveOutfitToWardrobe = async (
   userId: string,
-  originalImageUrl: string, // Renamed to be explicit about using original image
+  originalImageUrl: string,
   ratingScore: number,
   feedback: string,
   suggestions: string[],
@@ -41,7 +40,7 @@ export const saveOutfitToWardrobe = async (
   imageFile?: File
 ): Promise<SaveOutfitResult> => {
   try {
-    console.log('🔄 Saving outfit to wardrobe for user:', userId);
+    console.log('🔄 Saving outfit to wardrobe with AI-powered processing for user:', userId);
     console.log('📸 Using original image URL:', originalImageUrl);
 
     // Insert the wardrobe item with the original image URL
@@ -49,7 +48,7 @@ export const saveOutfitToWardrobe = async (
       .from('wardrobe_items')
       .insert({
         user_id: userId,
-        image_url: originalImageUrl, // Store the original image URL
+        image_url: originalImageUrl,
         rating_score: ratingScore,
         feedback,
         suggestions,
@@ -68,78 +67,33 @@ export const saveOutfitToWardrobe = async (
     console.log('✅ Wardrobe item saved with ID:', wardrobeItem.id);
     console.log('📸 Original image URL stored:', wardrobeItem.image_url);
 
-    // Process both vision tagging and cropping in parallel if image file is available
-    // This is for AI analysis only - the display will always use the original image
+    // Start AI-powered processing in background if image file is available
     if (imageFile) {
       try {
-        console.log('🔍 Starting background AI processing (for tagging only)...');
+        console.log('🚀 Starting comprehensive AI processing pipeline...');
         
-        const imageBase64 = await fileToBase64(imageFile);
-
-        // Start both processes in parallel
-        const [visionResult, croppedImages] = await Promise.allSettled([
-          extractFashionTagsWithVision(imageBase64, wardrobeItem.id),
-          processImageCropping(imageFile, wardrobeItem.id)
-        ]);
-
-        // Process vision tagging results
-        let formattedTags: any[] = [];
-        if (visionResult.status === 'fulfilled' && visionResult.value.success && visionResult.value.tags) {
-          console.log(`🏷️ Vision tagging successful: ${visionResult.value.tags.length} tags found`);
-          
-          formattedTags = visionResult.value.tags.map(tag => ({
-            name: tag,
-            descriptors: [],
-            category: categorizeTag(tag),
-            confidence: 0.9,
-            source: 'openai-vision'
-          }));
-        } else {
-          console.warn('⚠️ Vision tagging failed:', visionResult.status === 'rejected' ? visionResult.reason : visionResult.value.error);
-        }
-
-        // Process cropping results
-        let croppedImagesData: any[] = [];
-        if (croppedImages.status === 'fulfilled') {
-          croppedImagesData = croppedImages.value;
-          console.log(`🎯 Image cropping successful: ${croppedImagesData.length} cropped items`);
-        } else {
-          console.warn('⚠️ Image cropping failed:', croppedImages.reason);
-        }
-
-        // Update wardrobe item with both results
-        const updateData: any = {
-          updated_at: new Date().toISOString()
-        };
-
-        if (formattedTags.length > 0) {
-          updateData.extracted_clothing_items = formattedTags;
-        }
-
-        if (croppedImagesData.length > 0) {
-          updateData.cropped_images = croppedImagesData;
-        }
-
-        // Note: We deliberately do NOT update the image_url here to preserve the original
-        if (Object.keys(updateData).length > 1) { // More than just updated_at
-          const { error: updateError } = await supabase
-            .from('wardrobe_items')
-            .update(updateData)
-            .eq('id', wardrobeItem.id);
-
-          if (updateError) {
-            console.error('⚠️ Failed to save AI processing results:', updateError);
-          } else {
-            console.log(`✅ Successfully saved AI processing results (original image preserved)`);
-            // Update the returned item with the new data
-            wardrobeItem.extracted_clothing_items = updateData.extracted_clothing_items || wardrobeItem.extracted_clothing_items;
-            wardrobeItem.cropped_images = updateData.cropped_images || wardrobeItem.cropped_images;
-          }
-        }
+        // Import and use the new comprehensive extraction service
+        const { extractClothingFromImage } = await import('./clothing/extraction/clothingExtractionService');
+        
+        // Process in background
+        extractClothingFromImage(imageFile, wardrobeItem.id, feedback, suggestions)
+          .then(async (result) => {
+            if (result.success) {
+              console.log(`✅ AI processing completed using method: ${result.method}`);
+              
+              // Trigger AI image generation for extracted items
+              const { triggerAIImageGeneration } = await import('./wardrobe/aiImageIntegration');
+              await triggerAIImageGeneration(wardrobeItem.id);
+            } else {
+              console.warn('⚠️ AI processing failed:', result.error);
+            }
+          })
+          .catch(error => {
+            console.error('❌ Background AI processing error:', error);
+          });
 
       } catch (processingError) {
-        console.error('❌ Background AI processing error (continuing with save):', processingError);
-        // Don't fail the entire save operation if background processing fails
+        console.error('❌ Failed to start AI processing:', processingError);
       }
     } else {
       console.log('📷 No image file provided for AI processing');
@@ -151,46 +105,6 @@ export const saveOutfitToWardrobe = async (
     console.error('❌ Error saving outfit to wardrobe:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
-};
-
-// Helper function to categorize tags based on clothing type
-const categorizeTag = (tag: string): string => {
-  const lowerTag = tag.toLowerCase();
-  
-  if (lowerTag.includes('shirt') || lowerTag.includes('blouse') || lowerTag.includes('top') || 
-      lowerTag.includes('tee') || lowerTag.includes('sweater') || lowerTag.includes('cardigan') || 
-      lowerTag.includes('hoodie') || lowerTag.includes('tank') || lowerTag.includes('polo')) {
-    return 'tops';
-  }
-  
-  if (lowerTag.includes('pants') || lowerTag.includes('jeans') || lowerTag.includes('trousers') || 
-      lowerTag.includes('shorts') || lowerTag.includes('skirt') || lowerTag.includes('leggings')) {
-    return 'bottoms';
-  }
-  
-  if (lowerTag.includes('dress') || lowerTag.includes('gown')) {
-    return 'dresses';
-  }
-  
-  if (lowerTag.includes('jacket') || lowerTag.includes('blazer') || lowerTag.includes('coat') || 
-      lowerTag.includes('vest') || lowerTag.includes('cardigan')) {
-    return 'outerwear';
-  }
-  
-  if (lowerTag.includes('shoes') || lowerTag.includes('sneakers') || lowerTag.includes('heels') || 
-      lowerTag.includes('boots') || lowerTag.includes('sandals') || lowerTag.includes('flats') ||
-      lowerTag.includes('loafers')) {
-    return 'footwear';
-  }
-  
-  if (lowerTag.includes('belt') || lowerTag.includes('bag') || lowerTag.includes('hat') || 
-      lowerTag.includes('scarf') || lowerTag.includes('necklace') || lowerTag.includes('bracelet') || 
-      lowerTag.includes('watch') || lowerTag.includes('earrings') || lowerTag.includes('sunglasses') ||
-      lowerTag.includes('beanie') || lowerTag.includes('cap') || lowerTag.includes('clips')) {
-    return 'accessories';
-  }
-  
-  return 'other';
 };
 
 export const getWardrobeItems = async (userId: string): Promise<GetWardrobeItemsResult> => {

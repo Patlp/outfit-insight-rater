@@ -2,7 +2,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
-import { updateWardrobeItemWithClothing } from './wardrobeService';
 import { SaveOutfitResult } from './types';
 import { triggerAIImageGeneration } from './aiImageIntegration';
 
@@ -18,7 +17,7 @@ export const saveOutfitToWardrobe = async (
   imageFile?: File
 ): Promise<SaveOutfitResult> => {
   try {
-    console.log('💾 Starting outfit save process...');
+    console.log('💾 Starting outfit save process with AI-powered extraction...');
 
     // Save the outfit to wardrobe
     const { data: wardrobeItem, error } = await supabase
@@ -43,14 +42,14 @@ export const saveOutfitToWardrobe = async (
 
     console.log('✅ Outfit saved with ID:', wardrobeItem.id);
 
-    // Start background processing for clothing extraction and AI image generation
+    // Start comprehensive AI-powered processing in background
     if (imageFile && wardrobeItem.id) {
-      console.log('🔄 Starting background processing...');
+      console.log('🔄 Starting comprehensive AI processing pipeline...');
       
       // Process in background - don't await to avoid blocking the response
-      processOutfitInBackground(wardrobeItem.id, imageFile)
+      processOutfitWithAIPipeline(wardrobeItem.id, imageFile, feedback, suggestions)
         .catch(error => {
-          console.error('❌ Background processing failed:', error);
+          console.error('❌ AI processing pipeline failed:', error);
         });
     }
 
@@ -62,34 +61,67 @@ export const saveOutfitToWardrobe = async (
   }
 };
 
-// Background processing function
-const processOutfitInBackground = async (wardrobeItemId: string, imageFile: File): Promise<void> => {
+// Comprehensive AI processing pipeline
+const processOutfitWithAIPipeline = async (
+  wardrobeItemId: string, 
+  imageFile: File, 
+  feedback: string, 
+  suggestions: string[]
+): Promise<void> => {
   try {
-    console.log('🔄 Starting background processing for wardrobe item:', wardrobeItemId);
+    console.log('🚀 Starting comprehensive AI processing for wardrobe item:', wardrobeItemId);
 
-    // Step 1: Extract clothing items using AI
-    const extractionResult = await extractClothingFromImage(imageFile, wardrobeItemId);
+    // Step 1: AI-Powered Clothing Extraction (Vision + Text + Datasets)
+    console.log('🔍 Step 1: Running AI-powered clothing extraction...');
+    const extractionResult = await extractClothingFromImage(
+      imageFile, 
+      wardrobeItemId, 
+      feedback, 
+      suggestions
+    );
     
-    if (extractionResult.success && extractionResult.clothingItems) {
-      console.log('✅ Clothing extraction completed, updating database...');
+    if (extractionResult.success && extractionResult.clothingItems && extractionResult.clothingItems.length > 0) {
+      console.log(`✅ Clothing extraction successful using method: ${extractionResult.method}`);
+      console.log(`📝 Extracted ${extractionResult.clothingItems.length} clothing items`);
       
-      // Update the wardrobe item with extracted clothing
-      const updateResult = await updateWardrobeItemWithClothing(wardrobeItemId, extractionResult.clothingItems);
+      // Step 2: Trigger AI Image Generation for extracted items
+      console.log('🎨 Step 2: Triggering AI image generation...');
+      await triggerAIImageGeneration(wardrobeItemId);
       
-      if (updateResult.success) {
-        // Step 2: Immediately trigger AI image generation for each clothing item
-        console.log('🎨 Triggering AI image generation...');
-        await triggerAIImageGeneration(wardrobeItemId);
-      } else {
-        console.error('❌ Failed to update wardrobe item with clothing:', updateResult.error);
-      }
-      
+      console.log('🎯 AI processing pipeline completed successfully');
     } else {
       console.warn('⚠️ Clothing extraction failed:', extractionResult.error);
+      
+      // Log the failure for analytics
+      await logProcessingFailure(wardrobeItemId, 'clothing_extraction', extractionResult.error);
     }
 
   } catch (error) {
-    console.error('❌ Background processing error:', error);
+    console.error('❌ AI processing pipeline error:', error);
+    await logProcessingFailure(wardrobeItemId, 'pipeline_error', error instanceof Error ? error.message : 'Unknown error');
+  }
+};
+
+// Helper function to log processing failures for debugging
+const logProcessingFailure = async (wardrobeItemId: string, failureType: string, errorMessage?: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('wardrobe_items')
+      .update({
+        processing_errors: {
+          type: failureType,
+          message: errorMessage,
+          timestamp: new Date().toISOString()
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', wardrobeItemId);
+
+    if (error) {
+      console.error('Failed to log processing failure:', error);
+    }
+  } catch (logError) {
+    console.error('Error logging processing failure:', logError);
   }
 };
 
