@@ -29,6 +29,11 @@ interface DigitalWardrobeTabProps {
   onItemsUpdated?: () => void;
 }
 
+// Type guard to check if extracted_clothing_items is an array
+const isClothingItemsArray = (items: any): items is any[] => {
+  return Array.isArray(items);
+};
+
 const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({ 
   wardrobeItems, 
   isLoading, 
@@ -55,7 +60,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
 
     // Find items that need polling (have clothing items but some are missing render images)
     const itemsNeedingPolling = wardrobeItems.filter(item => {
-      if (item.extracted_clothing_items && Array.isArray(item.extracted_clothing_items)) {
+      if (item.extracted_clothing_items && isClothingItemsArray(item.extracted_clothing_items)) {
         return item.extracted_clothing_items.some(
           (clothingItem: any) => clothingItem?.name && !clothingItem?.renderImageUrl
         );
@@ -88,11 +93,12 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
             continue;
           }
 
-          if (updatedItem && updatedItem.extracted_clothing_items) {
+          if (updatedItem && updatedItem.extracted_clothing_items && isClothingItemsArray(updatedItem.extracted_clothing_items)) {
             // Check if any clothing items now have render images that didn't before
+            const originalItems = isClothingItemsArray(item.extracted_clothing_items) ? item.extracted_clothing_items : [];
             const hasNewRenderImages = updatedItem.extracted_clothing_items.some(
               (clothingItem: any, index: number) => {
-                const originalItem = item.extracted_clothing_items?.[index];
+                const originalItem = originalItems[index];
                 return clothingItem?.renderImageUrl && !originalItem?.renderImageUrl;
               }
             );
@@ -157,7 +163,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
         extractedItemsType: typeof outfit.extracted_clothing_items
       });
 
-      if (outfit.extracted_clothing_items && Array.isArray(outfit.extracted_clothing_items)) {
+      if (outfit.extracted_clothing_items && isClothingItemsArray(outfit.extracted_clothing_items)) {
         outfit.extracted_clothing_items.forEach((item: any, index: number) => {
           const clothingItem: ClothingItem = {
             id: `${outfit.id}::${index}`,
@@ -251,7 +257,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
         return;
       }
 
-      if (!wardrobeItem.extracted_clothing_items || !Array.isArray(wardrobeItem.extracted_clothing_items)) {
+      if (!wardrobeItem.extracted_clothing_items || !isClothingItemsArray(wardrobeItem.extracted_clothing_items)) {
         console.error('❌ No extracted clothing items found for outfit:', outfitId);
         toast.error('No clothing items found in this outfit');
         return;
