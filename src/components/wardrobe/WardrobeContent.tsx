@@ -101,7 +101,7 @@ const WardrobeContent: React.FC = () => {
       <Tabs defaultValue="outfits" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="outfits">Outfit History</TabsTrigger>
-          <TabsTrigger value="wardrobe">My Wardrobe</TabsTrigger>
+          <TabsTrigger value="clothing">My Clothing</TabsTrigger>
         </TabsList>
         
         <TabsContent value="outfits" className="space-y-6">
@@ -142,7 +142,7 @@ const WardrobeContent: React.FC = () => {
           )}
         </TabsContent>
         
-        <TabsContent value="wardrobe">
+        <TabsContent value="clothing">
           <DigitalWardrobeTab 
             wardrobeItems={wardrobeItems || []}
             isLoading={isLoading}
