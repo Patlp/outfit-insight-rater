@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ClothingItem } from './ClothingItemsProcessor';
+import { ClothingItem } from '@/services/wardrobe/types';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash, Tag } from 'lucide-react';
 import {
