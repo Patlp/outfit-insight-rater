@@ -601,48 +601,339 @@ export type Database = {
       }
       outfit_inspirations: {
         Row: {
+          auto_imported: boolean | null
+          color_palette: Json | null
           created_at: string
           description: string | null
           extracted_elements: Json | null
           id: string
           image_url: string
           metadata: Json | null
+          pinterest_board_id: string | null
+          pinterest_board_name: string | null
+          pinterest_pin_id: string | null
           processing_status: string | null
           source_type: string
           source_url: string | null
+          style_confidence_score: number | null
           title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          auto_imported?: boolean | null
+          color_palette?: Json | null
           created_at?: string
           description?: string | null
           extracted_elements?: Json | null
           id?: string
           image_url: string
           metadata?: Json | null
+          pinterest_board_id?: string | null
+          pinterest_board_name?: string | null
+          pinterest_pin_id?: string | null
           processing_status?: string | null
           source_type: string
           source_url?: string | null
+          style_confidence_score?: number | null
           title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          auto_imported?: boolean | null
+          color_palette?: Json | null
           created_at?: string
           description?: string | null
           extracted_elements?: Json | null
           id?: string
           image_url?: string
           metadata?: Json | null
+          pinterest_board_id?: string | null
+          pinterest_board_name?: string | null
+          pinterest_pin_id?: string | null
           processing_status?: string | null
           source_type?: string
           source_url?: string | null
+          style_confidence_score?: number | null
           title?: string | null
           updated_at?: string
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "outfit_inspirations_pinterest_pin_id_fkey"
+            columns: ["pinterest_pin_id"]
+            isOneToOne: false
+            referencedRelation: "pinterest_pins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pinterest_boards: {
+        Row: {
+          category: string | null
+          connection_id: string
+          created_at: string
+          description: string | null
+          follower_count: number | null
+          id: string
+          image_url: string | null
+          is_secret: boolean | null
+          is_synced: boolean | null
+          last_synced_at: string | null
+          name: string
+          pin_count: number | null
+          pinterest_board_id: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          connection_id: string
+          created_at?: string
+          description?: string | null
+          follower_count?: number | null
+          id?: string
+          image_url?: string | null
+          is_secret?: boolean | null
+          is_synced?: boolean | null
+          last_synced_at?: string | null
+          name: string
+          pin_count?: number | null
+          pinterest_board_id: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          connection_id?: string
+          created_at?: string
+          description?: string | null
+          follower_count?: number | null
+          id?: string
+          image_url?: string | null
+          is_secret?: boolean | null
+          is_synced?: boolean | null
+          last_synced_at?: string | null
+          name?: string
+          pin_count?: number | null
+          pinterest_board_id?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinterest_boards_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "pinterest_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pinterest_connections: {
+        Row: {
+          access_token: string
+          board_count: number | null
+          created_at: string
+          display_name: string | null
+          follower_count: number | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          pin_count: number | null
+          pinterest_user_id: string
+          profile_image_url: string | null
+          refresh_token: string | null
+          sync_enabled: boolean | null
+          sync_frequency: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          access_token: string
+          board_count?: number | null
+          created_at?: string
+          display_name?: string | null
+          follower_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          pin_count?: number | null
+          pinterest_user_id: string
+          profile_image_url?: string | null
+          refresh_token?: string | null
+          sync_enabled?: boolean | null
+          sync_frequency?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          access_token?: string
+          board_count?: number | null
+          created_at?: string
+          display_name?: string | null
+          follower_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          pin_count?: number | null
+          pinterest_user_id?: string
+          profile_image_url?: string | null
+          refresh_token?: string | null
+          sync_enabled?: boolean | null
+          sync_frequency?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
         Relationships: []
+      }
+      pinterest_pins: {
+        Row: {
+          alt_text: string | null
+          board_id: string
+          comment_count: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          dominant_color: string | null
+          extracted_colors: string[] | null
+          id: string
+          image_url: string
+          is_imported: boolean | null
+          link_url: string | null
+          outfit_inspiration_id: string | null
+          pinterest_created_at: string | null
+          pinterest_pin_id: string
+          reaction_count: number | null
+          save_count: number | null
+          style_tags: string[] | null
+          tags: string[] | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          board_id: string
+          comment_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          dominant_color?: string | null
+          extracted_colors?: string[] | null
+          id?: string
+          image_url: string
+          is_imported?: boolean | null
+          link_url?: string | null
+          outfit_inspiration_id?: string | null
+          pinterest_created_at?: string | null
+          pinterest_pin_id: string
+          reaction_count?: number | null
+          save_count?: number | null
+          style_tags?: string[] | null
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          board_id?: string
+          comment_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          dominant_color?: string | null
+          extracted_colors?: string[] | null
+          id?: string
+          image_url?: string
+          is_imported?: boolean | null
+          link_url?: string | null
+          outfit_inspiration_id?: string | null
+          pinterest_created_at?: string | null
+          pinterest_pin_id?: string
+          reaction_count?: number | null
+          save_count?: number | null
+          style_tags?: string[] | null
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinterest_pins_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "pinterest_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinterest_pins_outfit_inspiration_id_fkey"
+            columns: ["outfit_inspiration_id"]
+            isOneToOne: false
+            referencedRelation: "outfit_inspirations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pinterest_sync_history: {
+        Row: {
+          boards_synced: number | null
+          completed_at: string | null
+          connection_id: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          pins_imported: number | null
+          pins_synced: number | null
+          started_at: string
+          status: string
+          sync_duration_ms: number | null
+          sync_type: string
+        }
+        Insert: {
+          boards_synced?: number | null
+          completed_at?: string | null
+          connection_id: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          pins_imported?: number | null
+          pins_synced?: number | null
+          started_at?: string
+          status?: string
+          sync_duration_ms?: number | null
+          sync_type: string
+        }
+        Update: {
+          boards_synced?: number | null
+          completed_at?: string | null
+          connection_id?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          pins_imported?: number | null
+          pins_synced?: number | null
+          started_at?: string
+          status?: string
+          sync_duration_ms?: number | null
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinterest_sync_history_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "pinterest_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       primary_fashion_taxonomy: {
         Row: {
