@@ -6,8 +6,9 @@ import { WardrobeItem } from '@/services/wardrobe';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WardrobeHeader from './WardrobeHeader';
 import DigitalWardrobeTab from './DigitalWardrobeTab';
+import OutfitHistoryTab from './OutfitHistoryTab';
 import InspirationsTab from '../inspirations/InspirationsTab';
-import { Shirt, Image } from 'lucide-react';
+import { Shirt, Image, Star } from 'lucide-react';
 
 const WardrobeContent: React.FC = () => {
   const { user } = useAuth();
@@ -39,10 +40,14 @@ const WardrobeContent: React.FC = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="wardrobe" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="wardrobe" className="flex items-center gap-2">
               <Shirt size={16} />
               My Wardrobe
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <Star size={16} />
+              Outfit History
             </TabsTrigger>
             <TabsTrigger value="inspirations" className="flex items-center gap-2">
               <Image size={16} />
@@ -54,6 +59,13 @@ const WardrobeContent: React.FC = () => {
             <DigitalWardrobeTab 
               wardrobeItems={wardrobeItems}
               isLoading={isLoading}
+              onItemsUpdated={fetchWardrobeItems}
+            />
+          </TabsContent>
+          
+          <TabsContent value="history">
+            <OutfitHistoryTab 
+              wardrobeItems={wardrobeItems}
               onItemsUpdated={fetchWardrobeItems}
             />
           </TabsContent>
