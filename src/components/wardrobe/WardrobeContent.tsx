@@ -8,6 +8,7 @@ import WardrobeFilters from './WardrobeFilters';
 import WardrobeGrid from './WardrobeGrid';
 import WardrobeEmptyState from './WardrobeEmptyState';
 import DigitalWardrobeTab from './DigitalWardrobeTab';
+import OutfitInspirationsTab from './OutfitInspirationsTab';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
@@ -99,9 +100,10 @@ const WardrobeContent: React.FC = () => {
       />
       
       <Tabs defaultValue="outfits" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="outfits">Outfit History</TabsTrigger>
           <TabsTrigger value="clothing">My Clothing</TabsTrigger>
+          <TabsTrigger value="inspirations">Inspirations</TabsTrigger>
         </TabsList>
         
         <TabsContent value="outfits" className="space-y-6">
@@ -148,6 +150,10 @@ const WardrobeContent: React.FC = () => {
             isLoading={isLoading}
             onItemsUpdated={refetch}
           />
+        </TabsContent>
+
+        <TabsContent value="inspirations">
+          <OutfitInspirationsTab />
         </TabsContent>
       </Tabs>
     </div>
