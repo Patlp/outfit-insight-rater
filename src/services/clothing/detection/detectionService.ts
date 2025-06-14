@@ -22,11 +22,26 @@ export const detectClothingItems = async (imageBase64: string): Promise<ObjectDe
       throw new Error(error.message);
     }
 
-    console.log(`✅ Detected ${data.detections?.length || 0} clothing items`);
-    return data;
+    if (!data.success) {
+      console.error('❌ Detection service returned error:', data.error);
+      throw new Error(data.error || 'Detection service failed');
+    }
+
+    const detections = data.detections || [];
+    console.log(`✅ Detected ${detections.length} clothing items`);
+    
+    // Log detection details for debugging
+    detections.forEach((detection, index) => {
+      console.log(`📍 Item ${index + 1}: ${detection.class} (confidence: ${detection.confidence.toFixed(2)}, bbox: [${detection.bbox.join(', ')}])`);
+    });
+
+    return { detections };
 
   } catch (error) {
     console.error('❌ Detection service error:', error);
-    throw error;
+    
+    // Return empty result instead of throwing to allow graceful fallback
+    console.log('🔄 Returning empty detection result for graceful fallback');
+    return { detections: [] };
   }
 };

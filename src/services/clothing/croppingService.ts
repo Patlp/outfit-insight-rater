@@ -27,6 +27,45 @@ export { detectClothingItems } from './detection/detectionService';
 export { cropImageFromCanvas, createCanvasFromFile } from './canvas/canvasUtils';
 export { uploadCroppedImage } from './upload/uploadService';
 
+const validateBoundingBox = (bbox: [number, number, number, number], canvasWidth: number, canvasHeight: number): boolean => {
+  const [x, y, width, height] = bbox;
+  
+  // Check if coordinates are valid numbers
+  if (!bbox.every(coord => typeof coord === 'number' && !isNaN(coord))) {
+    return false;
+  }
+  
+  // Check if bounding box is within canvas bounds
+  if (x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight) {
+    console.warn(`⚠️ Bounding box [${bbox.join(', ')}] is outside canvas bounds (${canvasWidth}x${canvasHeight})`);
+    return false;
+  }
+  
+  // Check minimum size (at least 20x20 pixels)
+  if (width < 20 || height < 20) {
+    console.warn(`⚠️ Bounding box too small: ${width}x${height}`);
+    return false;
+  }
+  
+  return true;
+};
+
+const adjustBoundingBox = (bbox: [number, number, number, number], canvasWidth: number, canvasHeight: number): BoundingBox => {
+  let [x, y, width, height] = bbox;
+  
+  // Clamp to canvas bounds
+  x = Math.max(0, Math.min(x, canvasWidth - 1));
+  y = Math.max(0, Math.min(y, canvasHeight - 1));
+  width = Math.min(width, canvasWidth - x);
+  height = Math.min(height, canvasHeight - y);
+  
+  // Ensure minimum size
+  width = Math.max(20, width);
+  height = Math.max(20, height);
+  
+  return { x, y, width, height };
+};
+
 export const processImageCropping = async (
   imageFile: File,
   wardrobeItemId: string
@@ -46,24 +85,31 @@ export const processImageCropping = async (
     }
 
     console.log(`🔍 Found ${detectionResult.detections.length} items to crop:`, 
-      detectionResult.detections.map(d => d.class));
+      detectionResult.detections.map(d => `${d.class} (${d.confidence.toFixed(2)})`));
 
     // Create canvas from image file
     const canvas = await createCanvasFromFile(imageFile);
+    console.log(`📐 Canvas dimensions: ${canvas.width}x${canvas.height}`);
     
     const croppedImages: CroppedImageData[] = [];
 
     // Process each detection
-    for (const detection of detectionResult.detections) {
+    for (let i = 0; i < detectionResult.detections.length; i++) {
+      const detection = detectionResult.detections[i];
+      
       try {
-        const boundingBox: BoundingBox = {
-          x: detection.bbox[0],
-          y: detection.bbox[1],
-          width: detection.bbox[2],
-          height: detection.bbox[3]
-        };
+        console.log(`🎯 Processing ${detection.class} (${i + 1}/${detectionResult.detections.length})`);
+        
+        // Validate bounding box
+        if (!validateBoundingBox(detection.bbox, canvas.width, canvas.height)) {
+          console.warn(`⚠️ Skipping ${detection.class} due to invalid bounding box`);
+          continue;
+        }
+        
+        // Adjust bounding box to canvas bounds
+        const boundingBox = adjustBoundingBox(detection.bbox, canvas.width, canvas.height);
 
-        console.log(`🎯 Cropping ${detection.class} with bbox:`, boundingBox);
+        console.log(`🎯 Cropping ${detection.class} with adjusted bbox:`, boundingBox);
 
         // Crop the image
         const croppedBlob = await cropImageFromCanvas(canvas, boundingBox);
@@ -86,7 +132,7 @@ export const processImageCropping = async (
 
         croppedImages.push(croppedImageData);
 
-        console.log(`✅ Successfully processed ${detection.class}:`, croppedImageData);
+        console.log(`✅ Successfully processed ${detection.class}: ${croppedImageUrl}`);
 
       } catch (error) {
         console.error(`❌ Failed to process ${detection.class}:`, error);
@@ -95,9 +141,6 @@ export const processImageCropping = async (
     }
 
     console.log(`🎯 Cropping complete: ${croppedImages.length}/${detectionResult.detections.length} items processed successfully`);
-    
-    // Log the final result for debugging
-    console.log('📋 Final cropped images data:', croppedImages);
     
     return croppedImages;
 
