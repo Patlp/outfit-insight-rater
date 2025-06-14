@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CreateInspirationRequest, InspirationResult, GetInspirationsResult } from './types';
+import { CreateInspirationRequest, InspirationResult, GetInspirationsResult, OutfitInspiration } from './types';
 
 export const createOutfitInspiration = async (
   userId: string,
@@ -30,7 +30,7 @@ export const createOutfitInspiration = async (
     }
 
     console.log('Outfit inspiration created successfully:', inspiration.id);
-    return { inspiration };
+    return { inspiration: inspiration as OutfitInspiration };
 
   } catch (error) {
     console.error('Error in createOutfitInspiration:', error);
@@ -54,7 +54,7 @@ export const getOutfitInspirations = async (userId: string): Promise<GetInspirat
     }
 
     console.log(`Fetched ${inspirations?.length || 0} outfit inspirations`);
-    return { inspirations: inspirations || [] };
+    return { inspirations: (inspirations || []) as OutfitInspiration[] };
 
   } catch (error) {
     console.error('Error in getOutfitInspirations:', error);

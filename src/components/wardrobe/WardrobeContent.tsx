@@ -35,7 +35,7 @@ const WardrobeContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-warm-cream">
-      <WardrobeHeader />
+      <WardrobeHeader itemCount={wardrobeItems.length} isLoading={isLoading} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="wardrobe" className="w-full">
