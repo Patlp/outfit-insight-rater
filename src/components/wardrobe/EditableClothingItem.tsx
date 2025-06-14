@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ClothingItem } from '@/services/wardrobe';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { toast } from 'sonner';
 import { Toggle } from '@/components/ui/toggle';
 import { generateClothingImage } from '@/services/clothing/aiImageGeneration';
 import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
+import ImageUploadField from './ImageUploadField';
 
 interface EditableClothingItemProps {
   item: ClothingItem;
@@ -27,6 +27,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category);
   const [showOriginalThumbnail, setShowOriginalThumbnail] = useState(false);
+  const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(item.renderImageUrl);
 
   const handleUpdate = () => {
     if (name.trim() === '' || category.trim() === '') {
@@ -34,7 +35,13 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
       return;
     }
 
-    onUpdate(item.id, { name, category });
+    const updates: Partial<ClothingItem> = { 
+      name, 
+      category,
+      ...(customImageUrl && { renderImageUrl: customImageUrl })
+    };
+
+    onUpdate(item.id, updates);
     setIsEditing(false);
     toast.success('Item updated');
   };
@@ -43,12 +50,17 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
     onDelete(item.id);
   };
 
+  const handleImageUploaded = (imageUrl: string) => {
+    setCustomImageUrl(imageUrl);
+    toast.success('Image uploaded! Don\'t forget to save your changes.');
+  };
+
   // Get the best image to display based on user preference
   const getDisplayImageUrl = () => {
     if (showOriginalThumbnail && originalImageUrl) {
       return originalImageUrl;
     }
-    return getRenderImageUrl(item, originalImageUrl);
+    return customImageUrl || getRenderImageUrl(item, originalImageUrl);
   };
 
   const displayImageUrl = getDisplayImageUrl();
@@ -163,6 +175,15 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
               />
             </div>
+            
+            {/* Image Upload Field */}
+            <ImageUploadField
+              currentImageUrl={customImageUrl || item.renderImageUrl}
+              itemName={name}
+              wardrobeItemId={item.outfitId}
+              onImageUploaded={handleImageUploaded}
+            />
+            
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setIsEditing(false)}>
                 Cancel

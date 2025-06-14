@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { WardrobeItem } from '@/services/wardrobe';
 import { toast } from 'sonner';
@@ -59,10 +58,74 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
     return filterAndSortItems(allClothingItems, searchTerm, filterCategory, sortBy);
   }, [allClothingItems, searchTerm, filterCategory, sortBy]);
 
-  const handleItemUpdate = (itemId: string, updates: Partial<ClothingItem>) => {
-    // Since these are read-only items from the wardrobe, we'll just show a success message
-    // but not actually update the database
-    toast.success('Item updated successfully');
+  const handleItemUpdate = async (itemId: string, updates: Partial<ClothingItem>) => {
+    try {
+      console.log('🔄 Updating item with ID:', itemId, 'Updates:', updates);
+      
+      // Parse the itemId to get outfitId and arrayIndex
+      const [outfitId, indexStr] = itemId.split('::');
+      const arrayIndex = parseInt(indexStr);
+
+      console.log(`🔍 Parsed - Outfit ID: ${outfitId}, Array Index: ${arrayIndex}`);
+
+      // Find the wardrobe item
+      const wardrobeItem = localWardrobeItems.find(item => item.id === outfitId);
+      
+      if (!wardrobeItem) {
+        console.error('❌ Wardrobe item not found with ID:', outfitId);
+        toast.error('Outfit not found');
+        return;
+      }
+
+      if (!wardrobeItem.extracted_clothing_items || !isClothingItemsArray(wardrobeItem.extracted_clothing_items)) {
+        console.error('❌ No extracted clothing items found for outfit:', outfitId);
+        toast.error('No clothing items found in this outfit');
+        return;
+      }
+
+      if (arrayIndex >= wardrobeItem.extracted_clothing_items.length || arrayIndex < 0) {
+        console.error('❌ Invalid array index:', arrayIndex, 'for array length:', wardrobeItem.extracted_clothing_items.length);
+        toast.error('Invalid item index');
+        return;
+      }
+
+      // Create updated clothing items array
+      const updatedClothingItems = [...wardrobeItem.extracted_clothing_items];
+      updatedClothingItems[arrayIndex] = {
+        ...updatedClothingItems[arrayIndex],
+        ...updates
+      };
+
+      console.log(`📝 Updated item at index ${arrayIndex}:`, updatedClothingItems[arrayIndex]);
+
+      // Update the database
+      const { error } = await supabase
+        .from('wardrobe_items')
+        .update({
+          extracted_clothing_items: updatedClothingItems,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', outfitId);
+
+      if (error) {
+        console.error('❌ Database error updating clothing item:', error);
+        toast.error('Failed to update item in database');
+        return;
+      }
+
+      console.log('✅ Clothing item updated successfully in database');
+      toast.success('Item updated successfully');
+      
+      // Refresh the wardrobe items
+      if (onItemsUpdated) {
+        console.log('🔄 Refreshing wardrobe items...');
+        onItemsUpdated();
+      }
+
+    } catch (error) {
+      console.error('❌ Error in handleItemUpdate:', error);
+      toast.error('Failed to update item');
+    }
   };
 
   const handleItemDelete = async (itemId: string) => {
