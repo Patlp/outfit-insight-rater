@@ -4,6 +4,7 @@ import { ClothingItem } from './ClothingItemsProcessor';
 import { Toggle } from '@/components/ui/toggle';
 import { Image, Camera, Shirt } from 'lucide-react';
 import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
+import AIGenerationStatus from './AIGenerationStatus';
 
 interface ItemImageDisplayProps {
   item: ClothingItem;
@@ -27,6 +28,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
 
   const displayImageUrl = getDisplayImageUrl();
   const needsRenderImage = itemNeedsRenderImage(item);
+  const isGenerating = needsRenderImage && !item.renderImageUrl;
 
   return (
     <div className="relative h-48 bg-gray-100">
@@ -70,29 +72,18 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
             </div>
           )}
           
-          {/* AI Generation Status Indicator */}
-          {needsRenderImage && !showOriginalThumbnail && (
-            <div className="absolute top-2 right-2">
-              <div className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                Generating...
-              </div>
-            </div>
-          )}
-          
-          {/* AI Generated Badge */}
-          {item.renderImageUrl && !showOriginalThumbnail && (
-            <div className="absolute top-2 right-2">
-              <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <span className="text-xs">✨</span>
-                AI Generated
-              </div>
-            </div>
-          )}
+          {/* AI Generation Status */}
+          <div className="absolute top-2 right-2">
+            <AIGenerationStatus
+              isGenerating={isGenerating}
+              hasRenderImage={!!item.renderImageUrl}
+              itemName={item.name}
+            />
+          </div>
 
           {/* Original Image Badge */}
           {showOriginalThumbnail && originalImageUrl && (
-            <div className="absolute top-2 right-2">
+            <div className="absolute bottom-2 right-2">
               <div className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
                 <span className="text-xs">📷</span>
                 Original
@@ -105,9 +96,13 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
           <div className="text-center">
             <Shirt size={32} className="text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No image available</p>
-            {needsRenderImage && !showOriginalThumbnail && (
-              <p className="text-xs text-blue-600 mt-1">AI image generating...</p>
-            )}
+            <div className="mt-2">
+              <AIGenerationStatus
+                isGenerating={isGenerating}
+                hasRenderImage={!!item.renderImageUrl}
+                itemName={item.name}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface GenerateImageResult {
   success: boolean;
@@ -13,7 +14,7 @@ export const generateClothingImage = async (
   arrayIndex: number
 ): Promise<GenerateImageResult> => {
   try {
-    console.log(`🎨 Starting AI image generation for: "${itemName}"`);
+    console.log(`🎨 Starting AI image generation for: "${itemName}" [${wardrobeItemId}:${arrayIndex}]`);
 
     const { data, error } = await supabase.functions.invoke('generate-clothing-image', {
       body: {
@@ -24,23 +25,29 @@ export const generateClothingImage = async (
     });
 
     if (error) {
-      console.error('❌ Edge function error:', error);
+      console.error('❌ Edge function invocation error:', error);
+      toast.error(`Failed to generate image for ${itemName}: ${error.message}`);
       return { success: false, error: error.message };
     }
 
     if (!data?.success) {
       console.error('❌ Image generation failed:', data?.error);
-      return { success: false, error: data?.error || 'Unknown error' };
+      const errorMessage = data?.error || 'Unknown error during image generation';
+      toast.error(`Image generation failed for ${itemName}: ${errorMessage}`);
+      return { success: false, error: errorMessage };
     }
 
-    console.log(`✅ AI image generated successfully: ${data.imageUrl}`);
+    console.log(`✅ AI image generated successfully for "${itemName}": ${data.imageUrl}`);
+    toast.success(`Generated AI image for ${itemName}`);
     return { success: true, imageUrl: data.imageUrl };
 
   } catch (error) {
-    console.error('❌ AI image generation error:', error);
+    console.error('❌ AI image generation service error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    toast.error(`Failed to generate image for ${itemName}: ${errorMessage}`);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: errorMessage
     };
   }
 };
@@ -51,6 +58,8 @@ export const updateWardrobeItemWithRenderImage = async (
   renderImageUrl: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log(`💾 Updating wardrobe item ${wardrobeItemId}[${arrayIndex}] with render image`);
+
     // First, get the current wardrobe item
     const { data: wardrobeItem, error: fetchError } = await supabase
       .from('wardrobe_items')
@@ -64,6 +73,7 @@ export const updateWardrobeItemWithRenderImage = async (
     }
 
     if (!wardrobeItem?.extracted_clothing_items || !Array.isArray(wardrobeItem.extracted_clothing_items)) {
+      console.error('❌ No extracted clothing items found or invalid format');
       return { success: false, error: 'No extracted clothing items found' };
     }
 
@@ -72,7 +82,8 @@ export const updateWardrobeItemWithRenderImage = async (
     if (updatedItems[arrayIndex] && typeof updatedItems[arrayIndex] === 'object') {
       updatedItems[arrayIndex] = {
         ...(updatedItems[arrayIndex] as Record<string, any>),
-        renderImageUrl
+        renderImageUrl,
+        renderImageGeneratedAt: new Date().toISOString()
       };
 
       // Update the database
@@ -89,10 +100,11 @@ export const updateWardrobeItemWithRenderImage = async (
         return { success: false, error: updateError.message };
       }
 
-      console.log(`✅ Updated wardrobe item ${wardrobeItemId} with render image`);
+      console.log(`✅ Successfully updated wardrobe item ${wardrobeItemId}[${arrayIndex}] with render image`);
       return { success: true };
     } else {
-      return { success: false, error: 'Invalid array index or item is not an object' };
+      console.error('❌ Invalid array index or item is not an object:', { arrayIndex, item: updatedItems[arrayIndex] });
+      return { success: false, error: 'Invalid array index or item format' };
     }
 
   } catch (error) {
@@ -108,44 +120,79 @@ export const generateImagesForClothingItems = async (
   wardrobeItemId: string,
   clothingItems: any[]
 ): Promise<void> => {
-  console.log(`🔄 Generating AI images for ${clothingItems.length} clothing items`);
+  if (!clothingItems || clothingItems.length === 0) {
+    console.log('⚠️ No clothing items to process for AI image generation');
+    return;
+  }
 
-  // Process items sequentially to avoid API rate limits
-  for (let i = 0; i < clothingItems.length; i++) {
-    const item = clothingItems[i];
-    if (!item?.name) continue;
+  console.log(`🔄 Starting AI image generation for ${clothingItems.length} clothing items`);
+  toast.info(`Generating AI images for ${clothingItems.length} clothing items...`);
 
-    // Skip if this item already has a render image
-    if (item.renderImageUrl) {
-      console.log(`⏭️ Skipping "${item.name}" - already has render image`);
-      continue;
-    }
+  let successCount = 0;
+  let failureCount = 0;
 
-    try {
-      console.log(`🎨 Generating image ${i + 1}/${clothingItems.length}: "${item.name}"`);
-
-      const result = await generateClothingImage(item.name, wardrobeItemId, i);
+  // Process items with controlled concurrency (2 at a time to avoid rate limits)
+  const batchSize = 2;
+  for (let i = 0; i < clothingItems.length; i += batchSize) {
+    const batch = clothingItems.slice(i, i + batchSize);
+    
+    const batchPromises = batch.map(async (item, batchIndex) => {
+      const arrayIndex = i + batchIndex;
       
-      if (result.success && result.imageUrl) {
-        const updateResult = await updateWardrobeItemWithRenderImage(wardrobeItemId, i, result.imageUrl);
-        if (updateResult.success) {
-          console.log(`✅ Successfully generated and saved render image for "${item.name}"`);
+      if (!item?.name) {
+        console.warn(`⚠️ Skipping item at index ${arrayIndex} - no name provided`);
+        return;
+      }
+
+      // Skip if this item already has a render image
+      if (item.renderImageUrl) {
+        console.log(`⏭️ Skipping "${item.name}" - already has render image`);
+        return;
+      }
+
+      try {
+        console.log(`🎨 Processing ${arrayIndex + 1}/${clothingItems.length}: "${item.name}"`);
+
+        const result = await generateClothingImage(item.name, wardrobeItemId, arrayIndex);
+        
+        if (result.success && result.imageUrl) {
+          const updateResult = await updateWardrobeItemWithRenderImage(wardrobeItemId, arrayIndex, result.imageUrl);
+          if (updateResult.success) {
+            console.log(`✅ Successfully generated and saved render image for "${item.name}"`);
+            successCount++;
+          } else {
+            console.error(`❌ Failed to save render image for "${item.name}":`, updateResult.error);
+            failureCount++;
+          }
         } else {
-          console.error(`❌ Failed to save render image for "${item.name}":`, updateResult.error);
+          console.warn(`⚠️ Failed to generate image for "${item.name}":`, result.error);
+          failureCount++;
         }
-      } else {
-        console.warn(`⚠️ Failed to generate image for "${item.name}":`, result.error);
-      }
 
-      // Add a small delay between requests to be nice to the API
-      if (i < clothingItems.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`❌ Error processing item "${item.name}":`, error);
+        failureCount++;
       }
+    });
 
-    } catch (error) {
-      console.error(`❌ Error processing item "${item.name}":`, error);
+    // Wait for the current batch to complete
+    await Promise.allSettled(batchPromises);
+    
+    // Add a delay between batches to be respectful to the API
+    if (i + batchSize < clothingItems.length) {
+      console.log('⏸️ Pausing between batches...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
-  console.log(`✅ Completed AI image generation for wardrobe item ${wardrobeItemId}`);
+  const totalProcessed = successCount + failureCount;
+  console.log(`🎯 AI image generation completed: ${successCount}/${totalProcessed} successful`);
+  
+  if (successCount > 0) {
+    toast.success(`Generated ${successCount} AI images successfully!`);
+  }
+  
+  if (failureCount > 0) {
+    toast.warning(`${failureCount} images failed to generate. Check console for details.`);
+  }
 };
