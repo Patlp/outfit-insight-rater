@@ -15,7 +15,6 @@ import WardrobeControls from './WardrobeControls';
 import WardrobeStats from './WardrobeStats';
 import EmptyWardrobeState from './EmptyWardrobeState';
 import WardrobeItemsGrid from './WardrobeItemsGrid';
-import ThumbnailToggle from './ThumbnailToggle';
 
 interface DigitalWardrobeTabProps {
   wardrobeItems: WardrobeItem[];
@@ -31,7 +30,6 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [showOriginalThumbnails, setShowOriginalThumbnails] = useState(false);
   const [localWardrobeItems, setLocalWardrobeItems] = useState<WardrobeItem[]>(wardrobeItems);
 
   // Update local state when wardrobeItems prop changes
@@ -186,13 +184,6 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <ThumbnailToggle
-          showOriginal={showOriginalThumbnails}
-          onToggle={setShowOriginalThumbnails}
-        />
-      </div>
-
       <WardrobeControls
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -216,7 +207,6 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
         onUpdate={handleItemUpdate}
         onDelete={handleItemDelete}
         onClearFilters={handleClearFilters}
-        showOriginalThumbnails={showOriginalThumbnails}
       />
     </div>
   );

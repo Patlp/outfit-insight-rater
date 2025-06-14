@@ -4,8 +4,9 @@ import { ClothingItem } from '@/services/wardrobe';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Delete, Edit, Check, Shirt } from 'lucide-react';
+import { Delete, Edit, Check, Shirt, Image, Camera } from 'lucide-react';
 import { toast } from 'sonner';
+import { Toggle } from '@/components/ui/toggle';
 import { generateClothingImage } from '@/services/clothing/aiImageGeneration';
 import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
 
@@ -14,19 +15,18 @@ interface EditableClothingItemProps {
   onUpdate: (id: string, updates: Partial<ClothingItem>) => void;
   onDelete: (id: string) => void;
   originalImageUrl?: string;
-  showOriginalThumbnail?: boolean;
 }
 
 const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   item,
   onUpdate,
   onDelete,
-  originalImageUrl,
-  showOriginalThumbnail = false
+  originalImageUrl
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category);
+  const [showOriginalThumbnail, setShowOriginalThumbnail] = useState(false);
 
   const handleUpdate = () => {
     if (name.trim() === '' || category.trim() === '') {
@@ -74,12 +74,36 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
               }}
             />
             
+            {/* Image Toggle Controls */}
+            {originalImageUrl && (
+              <div className="absolute top-2 left-2">
+                <div className="flex bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-md">
+                  <Toggle
+                    pressed={!showOriginalThumbnail}
+                    onPressedChange={(pressed) => setShowOriginalThumbnail(!pressed)}
+                    className="h-8 px-2 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700"
+                    size="sm"
+                  >
+                    <Image size={14} />
+                  </Toggle>
+                  <Toggle
+                    pressed={showOriginalThumbnail}
+                    onPressedChange={(pressed) => setShowOriginalThumbnail(pressed)}
+                    className="h-8 px-2 data-[state=on]:bg-gray-100 data-[state=on]:text-gray-700"
+                    size="sm"
+                  >
+                    <Camera size={14} />
+                  </Toggle>
+                </div>
+              </div>
+            )}
+            
             {/* AI Generation Status Indicator */}
             {needsRenderImage && !showOriginalThumbnail && (
-              <div className="absolute top-2 left-2">
+              <div className="absolute top-2 right-2">
                 <div className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  Generating AI image...
+                  Generating...
                 </div>
               </div>
             )}

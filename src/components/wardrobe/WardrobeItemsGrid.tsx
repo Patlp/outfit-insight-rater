@@ -8,15 +8,13 @@ interface WardrobeItemsGridProps {
   onUpdate: (itemId: string, updates: Partial<ClothingItem>) => void;
   onDelete: (itemId: string) => Promise<void>;
   onClearFilters: () => void;
-  showOriginalThumbnails?: boolean;
 }
 
 const WardrobeItemsGrid: React.FC<WardrobeItemsGridProps> = ({
   items,
   onUpdate,
   onDelete,
-  onClearFilters,
-  showOriginalThumbnails = false
+  onClearFilters
 }) => {
   if (items.length === 0) {
     return (
@@ -41,7 +39,6 @@ const WardrobeItemsGrid: React.FC<WardrobeItemsGridProps> = ({
           onUpdate={onUpdate}
           onDelete={onDelete}
           originalImageUrl={item.originalImageUrl}
-          showOriginalThumbnail={showOriginalThumbnails}
         />
       ))}
     </div>
