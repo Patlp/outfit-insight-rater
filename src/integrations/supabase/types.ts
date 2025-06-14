@@ -599,51 +599,6 @@ export type Database = {
         }
         Relationships: []
       }
-      outfit_inspirations: {
-        Row: {
-          created_at: string
-          description: string | null
-          extracted_elements: Json | null
-          id: string
-          image_url: string
-          metadata: Json | null
-          processing_status: string | null
-          source_type: string
-          source_url: string | null
-          title: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          extracted_elements?: Json | null
-          id?: string
-          image_url: string
-          metadata?: Json | null
-          processing_status?: string | null
-          source_type: string
-          source_url?: string | null
-          title?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          extracted_elements?: Json | null
-          id?: string
-          image_url?: string
-          metadata?: Json | null
-          processing_status?: string | null
-          source_type?: string
-          source_url?: string | null
-          title?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       primary_fashion_taxonomy: {
         Row: {
           academic_references: string[] | null
