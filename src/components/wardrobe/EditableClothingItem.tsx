@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ClothingItem } from '@/services/wardrobe';
 import { Input } from '@/components/ui/input';
@@ -13,13 +14,15 @@ interface EditableClothingItemProps {
   onUpdate: (id: string, updates: Partial<ClothingItem>) => void;
   onDelete: (id: string) => void;
   originalImageUrl?: string;
+  showOriginalThumbnail?: boolean;
 }
 
 const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   item,
   onUpdate,
   onDelete,
-  originalImageUrl
+  originalImageUrl,
+  showOriginalThumbnail = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(item.name);
@@ -40,8 +43,15 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
     onDelete(item.id);
   };
 
-  // Get the best image to display (AI-generated or original)
-  const displayImageUrl = getRenderImageUrl(item, originalImageUrl);
+  // Get the best image to display based on user preference
+  const getDisplayImageUrl = () => {
+    if (showOriginalThumbnail && originalImageUrl) {
+      return originalImageUrl;
+    }
+    return getRenderImageUrl(item, originalImageUrl);
+  };
+
+  const displayImageUrl = getDisplayImageUrl();
   const needsRenderImage = itemNeedsRenderImage(item);
 
   return (
@@ -65,7 +75,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
             />
             
             {/* AI Generation Status Indicator */}
-            {needsRenderImage && (
+            {needsRenderImage && !showOriginalThumbnail && (
               <div className="absolute top-2 left-2">
                 <div className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
@@ -75,11 +85,21 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
             )}
             
             {/* AI Generated Badge */}
-            {item.renderImageUrl && (
+            {item.renderImageUrl && !showOriginalThumbnail && (
               <div className="absolute top-2 right-2">
                 <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
                   <span className="text-xs">✨</span>
                   AI Generated
+                </div>
+              </div>
+            )}
+
+            {/* Original Image Badge */}
+            {showOriginalThumbnail && originalImageUrl && (
+              <div className="absolute top-2 right-2">
+                <div className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <span className="text-xs">📷</span>
+                  Original
                 </div>
               </div>
             )}
@@ -89,7 +109,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
             <div className="text-center">
               <Shirt size={32} className="text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500">No image available</p>
-              {needsRenderImage && (
+              {needsRenderImage && !showOriginalThumbnail && (
                 <p className="text-xs text-blue-600 mt-1">AI image generating...</p>
               )}
             </div>
