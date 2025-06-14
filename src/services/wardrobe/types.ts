@@ -27,6 +27,7 @@ export interface ClothingItem {
   originalImageUrl?: string;
   renderImageUrl?: string;
   arrayIndex: number;
+  description?: string;
 }
 
 export interface SaveOutfitResult {

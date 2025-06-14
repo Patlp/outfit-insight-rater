@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import ImageUploadField from './ImageUploadField';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ItemEditFormProps {
   item: ClothingItem;
@@ -14,6 +15,8 @@ interface ItemEditFormProps {
   setName: (name: string) => void;
   category: string;
   setCategory: (category: string) => void;
+  description: string;
+  setDescription: (description: string) => void;
   customImageUrl?: string;
   onImageUploaded: (imageUrl: string) => void;
   onUpdate: () => void;
@@ -26,6 +29,8 @@ const ItemEditForm: React.FC<ItemEditFormProps> = ({
   setName,
   category,
   setCategory,
+  description,
+  setDescription,
   customImageUrl,
   onImageUploaded,
   onUpdate,
@@ -57,6 +62,17 @@ const ItemEditForm: React.FC<ItemEditFormProps> = ({
           id="category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="description">Description (season, brand, etc.)</Label>
+        <Textarea
+          id="description"
+          placeholder="Add additional details like season, brand, fit, or other information"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="min-h-[80px] resize-y"
         />
       </div>
       

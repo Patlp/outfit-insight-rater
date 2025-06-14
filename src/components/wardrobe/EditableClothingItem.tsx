@@ -22,6 +22,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category);
+  const [description, setDescription] = useState(item.description || '');
   const [showOriginalThumbnail, setShowOriginalThumbnail] = useState(false);
   const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(item.renderImageUrl);
 
@@ -29,6 +30,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
     const updates: Partial<ClothingItem> = { 
       name, 
       category,
+      description: description.trim() || undefined,
       ...(customImageUrl && { renderImageUrl: customImageUrl })
     };
 
@@ -50,12 +52,14 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
     setIsEditing(true);
     setName(item.name);
     setCategory(item.category);
+    setDescription(item.description || '');
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setName(item.name);
     setCategory(item.category);
+    setDescription(item.description || '');
     setCustomImageUrl(item.renderImageUrl);
   };
 
@@ -78,6 +82,8 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
             setName={setName}
             category={category}
             setCategory={setCategory}
+            description={description}
+            setDescription={setDescription}
             customImageUrl={customImageUrl}
             onImageUploaded={handleImageUploaded}
             onUpdate={handleUpdate}
