@@ -31,7 +31,7 @@ export interface PinterestConnection {
 
 // Pinterest OAuth configuration
 const PINTEREST_CONFIG: PinterestAuthConfig = {
-  clientId: process.env.PINTEREST_CLIENT_ID || 'demo_client_id',
+  clientId: 'demo_client_id', // This will be replaced with real credentials via Supabase Edge Functions
   redirectUri: `${window.location.origin}/wardrobe?pinterest_callback=true`,
   scope: ['boards:read', 'pins:read', 'user_accounts:read']
 };
