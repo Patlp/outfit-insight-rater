@@ -6,6 +6,7 @@ interface TheNewBlackGenerationResult {
   success: boolean;
   imageUrl?: string;
   error?: string;
+  fallbackToOpenAI?: boolean;
 }
 
 export const generateTheNewBlackImage = async (
@@ -28,6 +29,17 @@ export const generateTheNewBlackImage = async (
 
     if (error) {
       console.error('❌ TheNewBlack edge function error:', error);
+      
+      // Check if we should fallback to OpenAI
+      if (data?.fallbackToOpenAI) {
+        console.log(`🔄 Falling back to OpenAI for "${itemName}"`);
+        toast.info(`TheNewBlack unavailable for ${itemName}, trying OpenAI instead...`);
+        
+        // Import and use OpenAI fallback
+        const { generateClothingImage } = await import('./aiImageGeneration');
+        return await generateClothingImage(itemName, wardrobeItemId, arrayIndex);
+      }
+      
       toast.error(`Failed to generate TheNewBlack image for ${itemName}: ${error.message}`);
       return { success: false, error: error.message };
     }
@@ -35,6 +47,17 @@ export const generateTheNewBlackImage = async (
     if (!data?.success) {
       console.error('❌ TheNewBlack generation failed:', data?.error);
       const errorMessage = data?.error || 'Unknown error during TheNewBlack generation';
+      
+      // Check if we should fallback to OpenAI
+      if (data?.fallbackToOpenAI) {
+        console.log(`🔄 Falling back to OpenAI for "${itemName}"`);
+        toast.info(`TheNewBlack unavailable for ${itemName}, trying OpenAI instead...`);
+        
+        // Import and use OpenAI fallback
+        const { generateClothingImage } = await import('./aiImageGeneration');
+        return await generateClothingImage(itemName, wardrobeItemId, arrayIndex);
+      }
+      
       toast.error(`TheNewBlack generation failed for ${itemName}: ${errorMessage}`);
       return { success: false, error: errorMessage };
     }
@@ -46,11 +69,22 @@ export const generateTheNewBlackImage = async (
   } catch (error) {
     console.error('❌ TheNewBlack generation service error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    toast.error(`Failed to generate TheNewBlack image for ${itemName}: ${errorMessage}`);
-    return { 
-      success: false, 
-      error: errorMessage
-    };
+    
+    // Try OpenAI fallback on network errors
+    console.log(`🔄 Network error, falling back to OpenAI for "${itemName}"`);
+    toast.info(`Network error with TheNewBlack, trying OpenAI for ${itemName}...`);
+    
+    try {
+      const { generateClothingImage } = await import('./aiImageGeneration');
+      return await generateClothingImage(itemName, wardrobeItemId, arrayIndex);
+    } catch (fallbackError) {
+      console.error('❌ OpenAI fallback also failed:', fallbackError);
+      toast.error(`Both TheNewBlack and OpenAI failed for ${itemName}`);
+      return { 
+        success: false, 
+        error: `Both services failed: ${errorMessage}` 
+      };
+    }
   }
 };
 
@@ -65,7 +99,7 @@ export const generateTheNewBlackImagesForClothingItems = async (
   }
 
   console.log(`🔄 Starting TheNewBlack generation for ${clothingItems.length} clothing items`);
-  toast.info(`Generating professional images for ${clothingItems.length} items using TheNewBlack...`);
+  toast.info(`Generating professional images for ${clothingItems.length} items using AI...`);
 
   let successCount = 0;
   let failureCount = 0;
@@ -100,21 +134,21 @@ export const generateTheNewBlackImagesForClothingItems = async (
         const updateResult = await updateWardrobeItemWithRenderImage(wardrobeItemId, i, result.imageUrl);
         
         if (updateResult.success) {
-          console.log(`✅ Successfully generated and saved TheNewBlack image for "${item.name}"`);
+          console.log(`✅ Successfully generated and saved AI image for "${item.name}"`);
           successCount++;
         } else {
-          console.error(`❌ Failed to save TheNewBlack image for "${item.name}":`, updateResult.error);
+          console.error(`❌ Failed to save AI image for "${item.name}":`, updateResult.error);
           failureCount++;
         }
       } else {
-        console.warn(`⚠️ Failed to generate TheNewBlack image for "${item.name}":`, result.error);
+        console.warn(`⚠️ Failed to generate AI image for "${item.name}":`, result.error);
         failureCount++;
       }
 
-      // Add delay between requests to be respectful to the API
+      // Add delay between requests to be respectful to APIs
       if (i < clothingItems.length - 1) {
         console.log('⏸️ Pausing between requests...');
-        await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
       }
 
     } catch (error) {
@@ -124,10 +158,10 @@ export const generateTheNewBlackImagesForClothingItems = async (
   }
 
   const totalProcessed = successCount + failureCount;
-  console.log(`🎯 TheNewBlack generation completed: ${successCount}/${totalProcessed} successful`);
+  console.log(`🎯 AI image generation completed: ${successCount}/${totalProcessed} successful`);
   
   if (successCount > 0) {
-    toast.success(`Generated ${successCount} professional images using TheNewBlack!`);
+    toast.success(`Generated ${successCount} professional images using AI!`);
   }
   
   if (failureCount > 0) {
@@ -142,7 +176,7 @@ const updateWardrobeItemWithRenderImage = async (
   renderImageUrl: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log(`💾 Updating wardrobe item ${wardrobeItemId}[${arrayIndex}] with TheNewBlack render image`);
+    console.log(`💾 Updating wardrobe item ${wardrobeItemId}[${arrayIndex}] with AI render image`);
 
     // First, get the current wardrobe item
     const { data: wardrobeItem, error: fetchError } = await supabase
@@ -168,7 +202,7 @@ const updateWardrobeItemWithRenderImage = async (
         ...(updatedItems[arrayIndex] as Record<string, any>),
         renderImageUrl,
         renderImageGeneratedAt: new Date().toISOString(),
-        renderImageProvider: 'thenewblack'
+        renderImageProvider: 'ai-generated'
       };
 
       // Update the database
@@ -185,7 +219,7 @@ const updateWardrobeItemWithRenderImage = async (
         return { success: false, error: updateError.message };
       }
 
-      console.log(`✅ Successfully updated wardrobe item ${wardrobeItemId}[${arrayIndex}] with TheNewBlack render image`);
+      console.log(`✅ Successfully updated wardrobe item ${wardrobeItemId}[${arrayIndex}] with AI render image`);
       return { success: true };
     } else {
       console.error('❌ Invalid array index or item is not an object:', { arrayIndex, item: updatedItems[arrayIndex] });
@@ -193,7 +227,7 @@ const updateWardrobeItemWithRenderImage = async (
     }
 
   } catch (error) {
-    console.error('❌ Error updating wardrobe item with TheNewBlack render image:', error);
+    console.error('❌ Error updating wardrobe item with AI render image:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

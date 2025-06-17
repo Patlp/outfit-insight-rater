@@ -19,6 +19,7 @@ interface GenerateImageResponse {
   success: boolean;
   imageUrl?: string;
   error?: string;
+  fallbackToOpenAI?: boolean;
 }
 
 serve(async (req) => {
@@ -51,7 +52,11 @@ serve(async (req) => {
     if (!thenewblackEmail || !thenewblackPassword) {
       console.error(`[${requestId}] ❌ TheNewBlack credentials not configured`);
       return new Response(
-        JSON.stringify({ success: false, error: 'TheNewBlack API credentials not configured' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'TheNewBlack API credentials not configured',
+          fallbackToOpenAI: true 
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -64,40 +69,109 @@ serve(async (req) => {
       );
     }
 
-    // Step 1: Authenticate with TheNewBlack API
+    // Step 1: Test API connectivity and authenticate with retry logic
     console.log(`[${requestId}] 🔐 Authenticating with TheNewBlack API...`);
     
-    const authResponse = await fetch('https://api.thenewblack.ai/v1/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: thenewblackEmail,
-        password: thenewblackPassword
-      })
-    });
+    let accessToken: string | null = null;
+    let authAttempts = 0;
+    const maxAuthAttempts = 2;
 
-    if (!authResponse.ok) {
-      console.error(`[${requestId}] ❌ Authentication failed:`, authResponse.status);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to authenticate with TheNewBlack API' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    while (authAttempts < maxAuthAttempts && !accessToken) {
+      authAttempts++;
+      console.log(`[${requestId}] 🔄 Auth attempt ${authAttempts}/${maxAuthAttempts}`);
+      
+      try {
+        const authController = new AbortController();
+        const authTimeout = setTimeout(() => authController.abort(), 15000); // 15 second timeout
+        
+        const authResponse = await fetch('https://api.thenewblack.ai/v1/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'RateMyFit-App/1.0',
+          },
+          body: JSON.stringify({
+            email: thenewblackEmail,
+            password: thenewblackPassword
+          }),
+          signal: authController.signal
+        });
+
+        clearTimeout(authTimeout);
+
+        if (!authResponse.ok) {
+          console.error(`[${requestId}] ❌ Authentication failed with status:`, authResponse.status);
+          const errorText = await authResponse.text().catch(() => 'No error details available');
+          console.error(`[${requestId}] Error details:`, errorText);
+          
+          if (authAttempts >= maxAuthAttempts) {
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: `TheNewBlack authentication failed: ${authResponse.status}`,
+                fallbackToOpenAI: true 
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          continue;
+        }
+
+        const authData = await authResponse.json();
+        accessToken = authData.access_token;
+        
+        if (!accessToken) {
+          console.error(`[${requestId}] ❌ No access token received from API`);
+          if (authAttempts >= maxAuthAttempts) {
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: 'Failed to get access token from TheNewBlack API',
+                fallbackToOpenAI: true 
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          continue;
+        }
+
+        console.log(`[${requestId}] ✅ Authentication successful on attempt ${authAttempts}`);
+        break;
+
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Auth attempt ${authAttempts} failed with error:`, error.message);
+        
+        if (error.name === 'AbortError') {
+          console.error(`[${requestId}] ❌ Authentication request timed out`);
+        }
+        
+        if (authAttempts >= maxAuthAttempts) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `TheNewBlack API connection failed: ${error.message}. Please check if the API is accessible.`,
+              fallbackToOpenAI: true 
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
 
-    const authData = await authResponse.json();
-    const accessToken = authData.access_token;
-    
+    // If we got here without a token, something went wrong
     if (!accessToken) {
-      console.error(`[${requestId}] ❌ No access token received`);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to get access token' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to authenticate with TheNewBlack API after multiple attempts',
+          fallbackToOpenAI: true 
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log(`[${requestId}] ✅ Authentication successful`);
 
     // Step 2: Download the original image if provided
     let imageBlob: Blob | undefined;
@@ -105,7 +179,15 @@ serve(async (req) => {
       console.log(`[${requestId}] 📥 Downloading original image...`);
       
       try {
-        const imageResponse = await fetch(originalImageUrl);
+        const imageController = new AbortController();
+        const imageTimeout = setTimeout(() => imageController.abort(), 10000);
+        
+        const imageResponse = await fetch(originalImageUrl, {
+          signal: imageController.signal
+        });
+        
+        clearTimeout(imageTimeout);
+        
         if (imageResponse.ok) {
           imageBlob = await imageResponse.blob();
           console.log(`[${requestId}] ✅ Downloaded image: ${imageBlob.size} bytes`);
@@ -113,147 +195,153 @@ serve(async (req) => {
           console.warn(`[${requestId}] ⚠️ Failed to download original image: ${imageResponse.status}`);
         }
       } catch (error) {
-        console.warn(`[${requestId}] ⚠️ Error downloading original image:`, error);
+        console.warn(`[${requestId}] ⚠️ Error downloading original image:`, error.message);
       }
     }
 
-    // Step 3: Generate Ghost Mannequin image
+    // Step 3: Generate Ghost Mannequin image with timeout
     console.log(`[${requestId}] 👻 Starting Ghost Mannequin generation...`);
 
-    const formData = new FormData();
-    
-    if (imageBlob) {
-      // Use the original image if available
-      formData.append('image', imageBlob, 'clothing.jpg');
-      formData.append('mode', 'ghost_mannequin');
-      formData.append('style', 'professional');
-      formData.append('background', 'white');
-    } else {
-      // If no original image, generate from text description
-      const prompt = `Professional product photography of ${itemName}, ghost mannequin style, white background, studio lighting, high quality, fashion e-commerce`;
-      formData.append('prompt', prompt);
-      formData.append('mode', 'text_to_image');
-      formData.append('style', 'ghost_mannequin');
-      formData.append('background', 'white');
-    }
-
-    const generationResponse = await fetch('https://api.thenewblack.ai/v1/ghost-mannequin/generate', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: formData
-    });
-
-    if (!generationResponse.ok) {
-      const errorData = await generationResponse.json().catch(() => null);
-      console.error(`[${requestId}] ❌ Ghost Mannequin generation failed:`, {
-        status: generationResponse.status,
-        error: errorData
-      });
+    try {
+      const formData = new FormData();
       
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `TheNewBlack API error: ${generationResponse.status} - ${errorData?.message || 'Unknown error'}` 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      if (imageBlob) {
+        // Use the original image if available
+        formData.append('image', imageBlob, 'clothing.jpg');
+        formData.append('mode', 'ghost_mannequin');
+        formData.append('style', 'professional');
+        formData.append('background', 'white');
+      } else {
+        // If no original image, generate from text description
+        const prompt = `Professional product photography of ${itemName}, ghost mannequin style, white background, studio lighting, high quality, fashion e-commerce`;
+        formData.append('prompt', prompt);
+        formData.append('mode', 'text_to_image');
+        formData.append('style', 'ghost_mannequin');
+        formData.append('background', 'white');
+      }
 
-    const generationData = await generationResponse.json();
-    
-    if (!generationData.image_url) {
-      console.error(`[${requestId}] ❌ No image URL in response:`, generationData);
-      return new Response(
-        JSON.stringify({ success: false, error: 'No image URL returned from TheNewBlack API' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      const genController = new AbortController();
+      const genTimeout = setTimeout(() => genController.abort(), 60000); // 60 second timeout
 
-    console.log(`[${requestId}] ✅ Ghost Mannequin image generated successfully`);
+      const generationResponse = await fetch('https://api.thenewblack.ai/v1/ghost-mannequin/generate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: formData,
+        signal: genController.signal
+      });
 
-    // Step 4: Download the generated image
-    console.log(`[${requestId}] 📥 Downloading generated image...`);
-    
-    const generatedImageResponse = await fetch(generationData.image_url);
-    
-    if (!generatedImageResponse.ok) {
-      console.error(`[${requestId}] ❌ Failed to download generated image:`, generatedImageResponse.status);
-      throw new Error(`Failed to download generated image: ${generatedImageResponse.status}`);
-    }
+      clearTimeout(genTimeout);
 
-    const generatedImageBlob = await generatedImageResponse.blob();
-    console.log(`[${requestId}] 📁 Downloaded generated image: ${generatedImageBlob.size} bytes`);
-    
-    // Step 5: Upload to Supabase storage
-    const sanitizedItemName = itemName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-    const fileName = `${wardrobeItemId}/${arrayIndex}_${sanitizedItemName}_thenewblack_${Date.now()}.jpg`;
-    
-    console.log(`[${requestId}] 💾 Uploading to storage: ${fileName}`);
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      if (!generationResponse.ok) {
+        const errorData = await generationResponse.json().catch(() => null);
+        console.error(`[${requestId}] ❌ Ghost Mannequin generation failed:`, {
+          status: generationResponse.status,
+          error: errorData
+        });
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `TheNewBlack generation failed: ${generationResponse.status} - ${errorData?.message || 'Unknown error'}`,
+            fallbackToOpenAI: true 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Upload to Supabase storage with retry logic
-    let uploadAttempt = 0;
-    const maxRetries = 3;
-    let uploadData, uploadError;
+      const generationData = await generationResponse.json();
+      
+      if (!generationData.image_url) {
+        console.error(`[${requestId}] ❌ No image URL in response:`, generationData);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'No image URL returned from TheNewBlack API',
+            fallbackToOpenAI: true 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    while (uploadAttempt < maxRetries) {
-      uploadAttempt++;
-      console.log(`[${requestId}] 📤 Upload attempt ${uploadAttempt}/${maxRetries}`);
+      console.log(`[${requestId}] ✅ Ghost Mannequin image generated successfully`);
 
-      const uploadResult = await supabase.storage
+      // Step 4: Download and upload the generated image
+      console.log(`[${requestId}] 📥 Downloading generated image...`);
+      
+      const generatedImageResponse = await fetch(generationData.image_url);
+      
+      if (!generatedImageResponse.ok) {
+        console.error(`[${requestId}] ❌ Failed to download generated image:`, generatedImageResponse.status);
+        throw new Error(`Failed to download generated image: ${generatedImageResponse.status}`);
+      }
+
+      const generatedImageBlob = await generatedImageResponse.blob();
+      console.log(`[${requestId}] 📁 Downloaded generated image: ${generatedImageBlob.size} bytes`);
+      
+      // Step 5: Upload to Supabase storage
+      const sanitizedItemName = itemName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+      const fileName = `${wardrobeItemId}/${arrayIndex}_${sanitizedItemName}_thenewblack_${Date.now()}.jpg`;
+      
+      console.log(`[${requestId}] 💾 Uploading to storage: ${fileName}`);
+      
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('clothing-renders')
         .upload(fileName, generatedImageBlob, {
           contentType: 'image/jpeg',
           upsert: false
         });
 
-      uploadData = uploadResult.data;
-      uploadError = uploadResult.error;
-
-      if (!uploadError) {
-        console.log(`[${requestId}] ✅ Upload successful on attempt ${uploadAttempt}`);
-        break;
+      if (uploadError) {
+        console.error(`[${requestId}] ❌ Upload failed:`, uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      console.warn(`[${requestId}] ⚠️ Upload attempt ${uploadAttempt} failed:`, uploadError);
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('clothing-renders')
+        .getPublicUrl(fileName);
+
+      console.log(`[${requestId}] 🌐 Generated public URL: ${publicUrl}`);
+
+      const response: GenerateImageResponse = {
+        success: true,
+        imageUrl: publicUrl
+      };
+
+      console.log(`[${requestId}] 🎉 TheNewBlack Ghost Mannequin generation completed successfully`);
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
+    } catch (error) {
+      console.error(`[${requestId}] ❌ Generation process failed:`, error.message);
       
-      if (uploadAttempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * uploadAttempt));
+      if (error.name === 'AbortError') {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'TheNewBlack generation request timed out',
+            fallbackToOpenAI: true 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+      
+      throw error;
     }
-
-    if (uploadError) {
-      console.error(`[${requestId}] ❌ All upload attempts failed:`, uploadError);
-      throw new Error(`Upload failed after ${maxRetries} attempts: ${uploadError.message}`);
-    }
-
-    // Get the public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('clothing-renders')
-      .getPublicUrl(fileName);
-
-    console.log(`[${requestId}] 🌐 Generated public URL: ${publicUrl}`);
-
-    const response: GenerateImageResponse = {
-      success: true,
-      imageUrl: publicUrl
-    };
-
-    console.log(`[${requestId}] 🎉 TheNewBlack Ghost Mannequin generation completed successfully`);
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
 
   } catch (error) {
     console.error(`[${requestId}] ❌ TheNewBlack image generation error:`, error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error during TheNewBlack image generation' 
+        error: error instanceof Error ? error.message : 'Unknown error during TheNewBlack image generation',
+        fallbackToOpenAI: true 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
