@@ -1,15 +1,21 @@
 
 import { generateImagesForClothingItems } from '@/services/clothing/aiImageGeneration';
+import { generateTheNewBlackImagesForClothingItems } from '@/services/clothing/theNewBlackIntegration';
 import { supabase } from '@/integrations/supabase/client';
 
-export const triggerAIImageGeneration = async (wardrobeItemId: string): Promise<void> => {
-  try {
-    console.log(`🚀 Triggering AI image generation for wardrobe item: ${wardrobeItemId}`);
+type ImageProvider = 'openai' | 'thenewblack';
 
-    // Get the wardrobe item with its extracted clothing items
+export const triggerAIImageGeneration = async (
+  wardrobeItemId: string, 
+  provider: ImageProvider = 'thenewblack'
+): Promise<void> => {
+  try {
+    console.log(`🚀 Triggering AI image generation for wardrobe item: ${wardrobeItemId} using ${provider}`);
+
+    // Get the wardrobe item with its extracted clothing items and original image
     const { data: wardrobeItem, error } = await supabase
       .from('wardrobe_items')
-      .select('extracted_clothing_items')
+      .select('extracted_clothing_items, image_url')
       .eq('id', wardrobeItemId)
       .single();
 
@@ -33,16 +39,27 @@ export const triggerAIImageGeneration = async (wardrobeItemId: string): Promise<
       return;
     }
 
-    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items`);
+    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using ${provider}`);
 
-    // Start the image generation process in the background
-    // We don't await this to avoid blocking the main flow
-    generateImagesForClothingItems(wardrobeItemId, wardrobeItem.extracted_clothing_items)
-      .catch(error => {
-        console.error('❌ Background AI image generation failed:', error);
+    // Choose the appropriate generation method based on provider
+    if (provider === 'thenewblack') {
+      // Use TheNewBlack Ghost Mannequin API with original image
+      generateTheNewBlackImagesForClothingItems(
+        wardrobeItemId, 
+        wardrobeItem.extracted_clothing_items,
+        wardrobeItem.image_url
+      ).catch(error => {
+        console.error('❌ Background TheNewBlack image generation failed:', error);
       });
+    } else {
+      // Fallback to OpenAI DALL-E
+      generateImagesForClothingItems(wardrobeItemId, wardrobeItem.extracted_clothing_items)
+        .catch(error => {
+          console.error('❌ Background OpenAI image generation failed:', error);
+        });
+    }
 
-    console.log('🔄 AI image generation started in background');
+    console.log(`🔄 AI image generation started in background using ${provider}`);
 
   } catch (error) {
     console.error('❌ Error triggering AI image generation:', error);

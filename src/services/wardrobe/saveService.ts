@@ -44,7 +44,7 @@ export const saveOutfitToWardrobe = async (
 
     // Start comprehensive AI-powered processing in background
     if (imageFile && wardrobeItem.id) {
-      console.log('🔄 Starting comprehensive AI processing pipeline...');
+      console.log('🔄 Starting comprehensive AI processing pipeline with TheNewBlack integration...');
       
       // Process in background - don't await to avoid blocking the response
       processOutfitWithAIPipeline(wardrobeItem.id, imageFile, feedback, suggestions)
@@ -61,7 +61,7 @@ export const saveOutfitToWardrobe = async (
   }
 };
 
-// Comprehensive AI processing pipeline
+// Comprehensive AI processing pipeline with TheNewBlack integration
 const processOutfitWithAIPipeline = async (
   wardrobeItemId: string, 
   imageFile: File, 
@@ -69,7 +69,7 @@ const processOutfitWithAIPipeline = async (
   suggestions: string[]
 ): Promise<void> => {
   try {
-    console.log('🚀 Starting comprehensive AI processing for wardrobe item:', wardrobeItemId);
+    console.log('🚀 Starting comprehensive AI processing with TheNewBlack for wardrobe item:', wardrobeItemId);
 
     // Step 1: AI-Powered Clothing Extraction (Vision + Text + Datasets)
     console.log('🔍 Step 1: Running AI-powered clothing extraction...');
@@ -84,11 +84,11 @@ const processOutfitWithAIPipeline = async (
       console.log(`✅ Clothing extraction successful using method: ${extractionResult.method}`);
       console.log(`📝 Extracted ${extractionResult.clothingItems.length} clothing items`);
       
-      // Step 2: Trigger AI Image Generation for extracted items
-      console.log('🎨 Step 2: Triggering AI image generation...');
-      await triggerAIImageGeneration(wardrobeItemId);
+      // Step 2: Trigger TheNewBlack Ghost Mannequin generation for extracted items
+      console.log('🎨 Step 2: Triggering TheNewBlack Ghost Mannequin generation...');
+      await triggerAIImageGeneration(wardrobeItemId, 'thenewblack');
       
-      console.log('🎯 AI processing pipeline completed successfully');
+      console.log('🎯 AI processing pipeline with TheNewBlack completed successfully');
     } else {
       console.warn('⚠️ Clothing extraction failed:', extractionResult.error);
       
