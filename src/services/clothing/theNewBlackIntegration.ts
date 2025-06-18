@@ -7,6 +7,7 @@ interface TheNewBlackGenerationResult {
   imageUrl?: string;
   error?: string;
   fallbackToOpenAI?: boolean;
+  debugInfo?: any;
 }
 
 export const generateTheNewBlackImage = async (
@@ -16,7 +17,7 @@ export const generateTheNewBlackImage = async (
   originalImageUrl?: string
 ): Promise<TheNewBlackGenerationResult> => {
   try {
-    console.log(`🎨 Starting TheNewBlack generation for: "${itemName}" [${wardrobeItemId}:${arrayIndex}]`);
+    console.log(`🎨 Starting Enhanced TheNewBlack generation for: "${itemName}" [${wardrobeItemId}:${arrayIndex}]`);
 
     const { data, error } = await supabase.functions.invoke('generate-thenewblack-image', {
       body: {
@@ -29,11 +30,17 @@ export const generateTheNewBlackImage = async (
 
     if (error) {
       console.error('❌ TheNewBlack edge function error:', error);
+      console.error('🔍 Debug info available:', data?.debugInfo);
+      
+      // Log network connectivity details if available
+      if (data?.debugInfo?.networkConnectivity) {
+        console.log('🌐 Network connectivity test results:', data.debugInfo.networkConnectivity);
+      }
       
       // Check if we should fallback to OpenAI
       if (data?.fallbackToOpenAI) {
-        console.log(`🔄 Falling back to OpenAI for "${itemName}"`);
-        toast.info(`TheNewBlack unavailable for ${itemName}, trying OpenAI instead...`);
+        console.log(`🔄 Falling back to OpenAI for "${itemName}" due to TheNewBlack connectivity issues`);
+        toast.info(`TheNewBlack service unavailable for ${itemName}, using OpenAI instead...`);
         
         // Import and use OpenAI fallback
         const { generateClothingImage } = await import('./aiImageGeneration');
@@ -41,17 +48,19 @@ export const generateTheNewBlackImage = async (
       }
       
       toast.error(`Failed to generate TheNewBlack image for ${itemName}: ${error.message}`);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, debugInfo: data?.debugInfo };
     }
 
     if (!data?.success) {
       console.error('❌ TheNewBlack generation failed:', data?.error);
+      console.error('🔍 Debug info:', data?.debugInfo);
+      
       const errorMessage = data?.error || 'Unknown error during TheNewBlack generation';
       
       // Check if we should fallback to OpenAI
       if (data?.fallbackToOpenAI) {
-        console.log(`🔄 Falling back to OpenAI for "${itemName}"`);
-        toast.info(`TheNewBlack unavailable for ${itemName}, trying OpenAI instead...`);
+        console.log(`🔄 Falling back to OpenAI for "${itemName}" due to service issues`);
+        toast.info(`TheNewBlack service issues for ${itemName}, using OpenAI instead...`);
         
         // Import and use OpenAI fallback
         const { generateClothingImage } = await import('./aiImageGeneration');
@@ -59,12 +68,22 @@ export const generateTheNewBlackImage = async (
       }
       
       toast.error(`TheNewBlack generation failed for ${itemName}: ${errorMessage}`);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, debugInfo: data?.debugInfo };
     }
 
-    console.log(`✅ TheNewBlack image generated successfully for "${itemName}": ${data.imageUrl}`);
-    toast.success(`Generated professional image for ${itemName} using TheNewBlack`);
-    return { success: true, imageUrl: data.imageUrl };
+    console.log(`✅ Enhanced TheNewBlack image generated successfully for "${itemName}": ${data.imageUrl}`);
+    
+    // Log debug info for successful requests too
+    if (data.debugInfo) {
+      console.log('🔍 Success debug info:', {
+        authEndpointsAttempted: data.debugInfo.authEndpointsAttempted,
+        generationEndpointsAttempted: data.debugInfo.generationEndpointsAttempted,
+        networkConnectivity: data.debugInfo.networkConnectivity
+      });
+    }
+    
+    toast.success(`Generated professional image for ${itemName} using TheNewBlack Ghost Mannequin`);
+    return { success: true, imageUrl: data.imageUrl, debugInfo: data.debugInfo };
 
   } catch (error) {
     console.error('❌ TheNewBlack generation service error:', error);
