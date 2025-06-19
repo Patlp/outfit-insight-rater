@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import { Toggle } from '@/components/ui/toggle';
 import { Image, Camera, Shirt } from 'lucide-react';
-import { getBestImageUrl, hasAIGeneratedImage, isAIImagePersisted } from './ClothingItemsProcessor';
-import AIGenerationStatus from './AIGenerationStatus';
+import { getBestImageUrl, hasAIGeneratedImage } from './ClothingItemsProcessor';
 
 interface ItemImageDisplayProps {
   item: ExtractedClothingItem;
@@ -34,14 +32,10 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
 
   const displayImageUrl = getDisplayImageUrl();
   const hasPersistedAI = hasAIGeneratedImage(item as any);
-  const isPersisted = isAIImagePersisted(item as any);
-  const needsGeneration = !hasPersistedAI && item.name;
 
   // Log the image status for debugging
   console.log(`🔍 Image status for "${item.name}":`, {
     hasPersistedAI,
-    isPersisted,
-    needsGeneration,
     renderImageUrl: item.renderImageUrl,
     displayImageUrl,
     showOriginalThumbnail
@@ -94,53 +88,12 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
               </div>
             </div>
           )}
-          
-          {/* AI Generation Status */}
-          <div className="absolute top-2 right-2">
-            <AIGenerationStatus
-              isGenerating={Boolean(needsGeneration)}
-              hasRenderImage={Boolean(hasPersistedAI)}
-              itemName={item.name}
-            />
-          </div>
-
-          {/* Image Type Badge */}
-          <div className="absolute bottom-2 right-2">
-            {(showOriginalThumbnail && Boolean(originalImageUrl)) ? (
-              <div className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <span className="text-xs">📷</span>
-                Original
-              </div>
-            ) : hasPersistedAI ? (
-              <div className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <span className="text-xs">🎨</span>
-                AI Generated
-              </div>
-            ) : null}
-          </div>
-
-          {/* Persisted Status Indicator */}
-          {(hasPersistedAI && isPersisted && !showOriginalThumbnail) && (
-            <div className="absolute bottom-2 left-2">
-              <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <span className="text-xs">💾</span>
-                Saved
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
             <Shirt size={32} className="text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No image available</p>
-            <div className="mt-2">
-              <AIGenerationStatus
-                isGenerating={Boolean(needsGeneration)}
-                hasRenderImage={Boolean(hasPersistedAI)}
-                itemName={item.name}
-              />
-            </div>
           </div>
         </div>
       )}
