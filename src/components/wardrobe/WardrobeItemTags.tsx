@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Shirt, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ClothingItemsProcessor from './ClothingItemsProcessor';
+import ClothingItemsProcessor from './ClothingItemsProcessor.tsx';
 import GenerationProgressIndicator from './GenerationProgressIndicator';
 
 interface WardrobeItemTagsProps {
