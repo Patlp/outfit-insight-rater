@@ -29,6 +29,25 @@ export interface ClothingItem {
   [key: string]: any;
 }
 
+// Type for extracted clothing items that includes the original image URL
+export interface ExtractedClothingItem {
+  id?: string;
+  name: string;
+  category?: string;
+  descriptors?: string[];
+  confidence?: number;
+  renderImageUrl?: string;
+  renderImageProvider?: string;
+  renderImageGeneratedAt?: string;
+  croppedImageUrl?: string;
+  originalImageUrl?: string;
+  imageType?: string;
+  contextualProcessing?: boolean;
+  accuracyLevel?: string;
+  description?: string;
+  [key: string]: any;
+}
+
 // Type guard to check if data is an array of clothing items
 export const isClothingItemsArray = (data: any): data is any[] => {
   return Array.isArray(data);
@@ -47,6 +66,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
     }
 
     console.log(`📋 Processing ${wardrobeItem.extracted_clothing_items.length} clothing items from outfit ${wardrobeItem.id}`);
+    console.log(`📸 Original outfit image URL: ${wardrobeItem.image_url}`);
 
     wardrobeItem.extracted_clothing_items.forEach((clothingItem: any, index: number) => {
       if (!clothingItem?.name) {
@@ -64,7 +84,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
         renderImageProvider: clothingItem.renderImageProvider,
         renderImageGeneratedAt: clothingItem.renderImageGeneratedAt,
         croppedImageUrl: clothingItem.croppedImageUrl,
-        originalImageUrl: wardrobeItem.image_url,
+        originalImageUrl: wardrobeItem.image_url, // ✅ NOW PROPERLY MAPPING THE ORIGINAL IMAGE URL
         outfitId: wardrobeItem.id,
         outfitImageUrl: wardrobeItem.image_url,
         outfitRating: wardrobeItem.rating_score,
@@ -82,7 +102,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
         ...clothingItem
       };
 
-      console.log(`✅ Processed clothing item: "${processedItem.name}" (${processedItem.id})`);
+      console.log(`✅ Processed clothing item: "${processedItem.name}" (${processedItem.id}) with original image: ${processedItem.originalImageUrl}`);
       allClothingItems.push(processedItem);
     });
   });
