@@ -10,6 +10,11 @@ const isClothingItemsArray = (data: any): data is any[] => {
   return Array.isArray(data);
 };
 
+// Type guard to check if Json is an array of cropped images
+const isCroppedImagesArray = (data: any): data is any[] => {
+  return Array.isArray(data);
+};
+
 export const triggerAIImageGeneration = async (
   wardrobeItemId: string, 
   provider: ImageProvider = 'thenewblack'
@@ -41,6 +46,10 @@ export const triggerAIImageGeneration = async (
       return;
     }
 
+    // Type guard for cropped images
+    const croppedImages = wardrobeItem.cropped_images;
+    const croppedImagesArray = isCroppedImagesArray(croppedImages) ? croppedImages : [];
+
     // Filter out items that already have render images
     const itemsNeedingImages = extractedItems.filter(
       (item: any, index: number) => !item?.renderImageUrl
@@ -60,7 +69,7 @@ export const triggerAIImageGeneration = async (
         wardrobeItemId, 
         extractedItems,
         wardrobeItem.image_url,
-        wardrobeItem.cropped_images
+        croppedImagesArray
       ).catch(error => {
         console.error('❌ Background TheNewBlack image generation failed:', error);
       });
