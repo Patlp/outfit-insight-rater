@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ExtractedClothingItem } from './ClothingItemsProcessor';
+import { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import { Toggle } from '@/components/ui/toggle';
 import { Image, Camera, Shirt } from 'lucide-react';
 import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
