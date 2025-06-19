@@ -14,8 +14,7 @@ interface WardrobeControlsProps {
   filterCategory: string;
   onFilterChange: (category: string) => void;
   categories: string[];
-  onAddItem: () => void;
-  onBulkUploadComplete: () => void;
+  onClearFilters: () => void;
 }
 
 const WardrobeControls: React.FC<WardrobeControlsProps> = ({
@@ -26,9 +25,17 @@ const WardrobeControls: React.FC<WardrobeControlsProps> = ({
   filterCategory,
   onFilterChange,
   categories,
-  onAddItem,
-  onBulkUploadComplete
+  onClearFilters
 }) => {
+  const handleAddItem = () => {
+    // For now, we'll just show a message about using the bulk upload
+    console.log('Add item functionality not implemented yet');
+  };
+
+  const handleBulkUploadComplete = () => {
+    console.log('Bulk upload completed');
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
@@ -73,17 +80,23 @@ const WardrobeControls: React.FC<WardrobeControlsProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-2">
-        <Button onClick={onAddItem} variant="outline" size="sm">
+        <Button onClick={handleAddItem} variant="outline" size="sm">
           <Plus size={16} className="mr-1" />
           Add Item
         </Button>
         
-        <BulkUploadDialog onUploadComplete={onBulkUploadComplete}>
+        <BulkUploadDialog onUploadComplete={handleBulkUploadComplete}>
           <Button variant="outline" size="sm">
             <Upload size={16} className="mr-1" />
             Bulk Upload
           </Button>
         </BulkUploadDialog>
+
+        {(searchTerm || filterCategory !== 'all') && (
+          <Button onClick={onClearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -5,15 +5,15 @@ import EditableClothingItem from './EditableClothingItem';
 
 interface WardrobeItemsGridProps {
   items: ClothingItem[];
-  onUpdate: (itemId: string, updates: Partial<ClothingItem>) => void;
-  onDelete: (itemId: string) => Promise<void>;
+  onItemUpdate: (itemId: string, updates: Partial<ClothingItem>) => Promise<void>;
+  onItemDelete: (itemId: string) => Promise<void>;
   onClearFilters: () => void;
 }
 
 const WardrobeItemsGrid: React.FC<WardrobeItemsGridProps> = ({
   items,
-  onUpdate,
-  onDelete,
+  onItemUpdate,
+  onItemDelete,
   onClearFilters
 }) => {
   if (items.length === 0) {
@@ -36,8 +36,8 @@ const WardrobeItemsGrid: React.FC<WardrobeItemsGridProps> = ({
         <EditableClothingItem
           key={item.id}
           item={item}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
+          onUpdate={onItemUpdate}
+          onDelete={onItemDelete}
           originalImageUrl={item.originalImageUrl}
         />
       ))}
