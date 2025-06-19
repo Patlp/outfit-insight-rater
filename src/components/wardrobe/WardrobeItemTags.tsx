@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Shirt, Sparkles, Eye, EyeOff, CheckCircle, Zap, Star } from 'lucide-react';
+import { Shirt, Sparkles, Eye, EyeOff, CheckCircle, Zap, Star, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ClothingItemsProcessor, { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import GenerationProgressIndicator from './GenerationProgressIndicator';
@@ -41,26 +41,26 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
 
   const hasClothingItems = clothingItems.length > 0;
   const aiGeneratedCount = clothingItems.filter(item => item?.renderImageUrl).length;
-  const enhancedCount = clothingItems.filter(item => 
-    item?.renderImageProvider === 'openai_enhanced'
+  const contextAwareCount = clothingItems.filter(item => 
+    item?.renderImageProvider?.includes('context_aware')
   ).length;
   const totalItems = clothingItems.length;
 
   return (
     <div className="space-y-4">
-      {/* Enhanced AI Status Notice */}
-      <div className="flex items-start gap-2 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-3">
-        <Star size={16} className="text-blue-600 mt-0.5 shrink-0" />
-        <div className="text-sm text-blue-800">
-          <span className="font-medium">Enhanced OpenAI Generation System:</span> Now featuring professional studio-quality image generation with clothing-specific prompts and DALL-E 3 for ultra-realistic product photography.
+      {/* Context-Aware AI Status Notice */}
+      <div className="flex items-start gap-2 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-3">
+        <Target size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+        <div className="text-sm text-emerald-800">
+          <span className="font-medium">Context-Aware AI Generation System:</span> Now featuring maximum accuracy image generation with taxonomy integration, enhanced item detection, and contextual prompts for ultra-precise clothing representation.
         </div>
       </div>
 
-      {/* Professional Quality Notice */}
-      <div className="flex items-start gap-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
-        <Zap size={16} className="text-green-600 mt-0.5 shrink-0" />
-        <div className="text-sm text-green-800">
-          <span className="font-medium">Professional Standards:</span> All generated images meet ASOS, Zara, and Uniqlo quality standards with studio lighting, white backgrounds, and ghost mannequin styling for your digital wardrobe.
+      {/* Accuracy Enhancement Notice */}
+      <div className="flex items-start gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
+        <Zap size={16} className="text-blue-600 mt-0.5 shrink-0" />
+        <div className="text-sm text-blue-800">
+          <span className="font-medium">Enhanced Accuracy:</span> Our new system uses fashion taxonomy data, contextual understanding, and smart prompt engineering to generate images that accurately match your tagged clothing items.
         </div>
       </div>
 
@@ -85,10 +85,10 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
                   {aiGeneratedCount} AI Generated
                 </Badge>
               )}
-              {enhancedCount > 0 && (
-                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
-                  <Star size={10} className="mr-1" />
-                  {enhancedCount} Enhanced
+              {contextAwareCount > 0 && (
+                <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700">
+                  <Target size={10} className="mr-1" />
+                  {contextAwareCount} Context-Aware
                 </Badge>
               )}
             </div>

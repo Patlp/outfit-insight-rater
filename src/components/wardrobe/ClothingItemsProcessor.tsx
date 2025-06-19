@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, Image as ImageIcon, Clock } from 'lucide-react';
+import { Sparkles, RefreshCw, Image as ImageIcon, Clock, Target } from 'lucide-react';
 import { toast } from 'sonner';
-import { triggerAIImageGeneration } from '@/services/wardrobe/aiImageIntegration';
+import { triggerContextAwareAIImageGeneration } from '@/services/wardrobe/aiImageIntegration';
 import ItemImageDisplay from './ItemImageDisplay';
 
 // Use a local interface for the extracted clothing items from wardrobe_items.extracted_clothing_items
@@ -22,6 +22,8 @@ export interface ExtractedClothingItem {
   boundingBox?: any;
   croppingConfidence?: number;
   imageType?: string;
+  contextualProcessing?: boolean;
+  accuracyLevel?: string;
   [key: string]: any;
 }
 
@@ -44,12 +46,12 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
 
     setIsGenerating(true);
     try {
-      console.log('🔄 Manually triggering enhanced AI image generation for newly uploaded content...');
-      await triggerAIImageGeneration(wardrobeItemId, 'enhanced_openai');
-      toast.success('Enhanced AI image generation started! Note: Only applies to newly uploaded content.');
+      console.log('🔄 Manually triggering context-aware AI image generation for newly uploaded content...');
+      await triggerContextAwareAIImageGeneration(wardrobeItemId, 'context_aware_openai');
+      toast.success('Context-aware AI image generation started! Maximum accuracy for newly uploaded content.');
     } catch (error) {
-      console.error('❌ Error triggering enhanced AI generation:', error);
-      toast.error('Failed to start enhanced AI image generation');
+      console.error('❌ Error triggering context-aware AI generation:', error);
+      toast.error('Failed to start context-aware AI image generation');
     } finally {
       setIsGenerating(false);
     }
@@ -57,6 +59,9 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
 
   const hasAnyRenderImages = extractedClothingItems.some(item => item.renderImageUrl);
   const itemsWithoutImages = extractedClothingItems.filter(item => !item.renderImageUrl).length;
+  const contextAwareCount = extractedClothingItems.filter(item => 
+    item.renderImageProvider?.includes('context_aware')
+  ).length;
 
   if (!extractedClothingItems || extractedClothingItems.length === 0) {
     return (
@@ -71,20 +76,20 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
     <div className="space-y-4">
       {/* Action Bar - Only show for newly uploaded content */}
       {itemsWithoutImages > 0 && (
-        <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-sm text-blue-700">
-            <Sparkles size={16} />
-            <span>{itemsWithoutImages} items can be enhanced with AI</span>
-            <div className="flex items-center gap-1 text-xs text-blue-600">
+        <div className="flex items-center justify-between bg-emerald-50 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm text-emerald-700">
+            <Target size={16} />
+            <span>{itemsWithoutImages} items can be enhanced with Context-Aware AI</span>
+            <div className="flex items-center gap-1 text-xs text-emerald-600">
               <Clock size={12} />
-              <span>Only for newly uploaded content</span>
+              <span>Maximum accuracy for newly uploaded content</span>
             </div>
           </div>
           <Button
             onClick={handleRegenerateImages}
             disabled={isGenerating}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-emerald-600 hover:bg-emerald-700"
           >
             {isGenerating ? (
               <>
@@ -93,8 +98,8 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
               </>
             ) : (
               <>
-                <Sparkles size={14} className="mr-1" />
-                Generate AI Images
+                <Target size={14} className="mr-1" />
+                Generate Accurate Images
               </>
             )}
           </Button>
@@ -152,9 +157,26 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
 
               {/* AI Generation Status */}
               {item.renderImageUrl && (
-                <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 rounded-full px-2 py-1">
-                  <Sparkles size={10} />
-                  <span>Enhanced by {item.renderImageProvider || 'AI'}</span>
+                <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 rounded-full px-2 py-1">
+                  {item.renderImageProvider?.includes('context_aware') ? (
+                    <Target size={10} />
+                  ) : (
+                    <Sparkles size={10} />
+                  )}
+                  <span>
+                    {item.renderImageProvider?.includes('context_aware') 
+                      ? 'Context-Aware AI' 
+                      : `Enhanced by ${item.renderImageProvider || 'AI'}`
+                    }
+                  </span>
+                </div>
+              )}
+
+              {/* Accuracy Level Indicator */}
+              {item.accuracyLevel === 'maximum' && (
+                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 rounded-full px-2 py-1">
+                  <Target size={10} />
+                  <span>Maximum Accuracy</span>
                 </div>
               )}
             </div>
@@ -165,7 +187,11 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
       {/* Summary */}
       {hasAnyRenderImages && (
         <div className="text-center text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
-          Professional images powered by Enhanced OpenAI DALL-E 3 (applied to newly uploaded content only)
+          {contextAwareCount > 0 ? (
+            <>Professional images powered by Context-Aware AI with Taxonomy Integration ({contextAwareCount} high-accuracy)</>
+          ) : (
+            <>Professional images powered by Enhanced OpenAI DALL-E 3 (applied to newly uploaded content only)</>
+          )}
         </div>
       )}
     </div>

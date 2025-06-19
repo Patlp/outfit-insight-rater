@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
 import { processImageCropping } from '@/services/clothing/croppingService';
 import { SaveOutfitResult } from './types';
-import { triggerEnhancedAIImageGeneration } from './aiImageIntegration';
+import { triggerContextAwareAIImageGeneration } from './aiImageIntegration';
 
 export const saveOutfitToWardrobe = async (
   userId: string,
@@ -17,7 +17,7 @@ export const saveOutfitToWardrobe = async (
   imageFile?: File
 ): Promise<SaveOutfitResult> => {
   try {
-    console.log('💾 Starting ENHANCED outfit save process with professional AI generation...');
+    console.log('💾 Starting CONTEXT-AWARE outfit save process with maximum accuracy AI generation...');
 
     // Save the outfit to wardrobe
     const { data: wardrobeItem, error } = await supabase
@@ -42,14 +42,14 @@ export const saveOutfitToWardrobe = async (
 
     console.log('✅ Outfit saved with ID:', wardrobeItem.id);
 
-    // Start ENHANCED AI-powered processing pipeline
+    // Start CONTEXT-AWARE AI-powered processing pipeline
     if (imageFile && wardrobeItem.id) {
-      console.log('🚀 Starting ENHANCED AI processing pipeline with professional-grade generation...');
+      console.log('🚀 Starting CONTEXT-AWARE AI processing pipeline with maximum accuracy generation...');
       
-      // Process in background with enhanced quality
-      processOutfitWithEnhancedAIPipeline(wardrobeItem.id, imageFile, feedback, suggestions, imageUrl)
+      // Process in background with context-aware accuracy
+      processOutfitWithContextAwareAIPipeline(wardrobeItem.id, imageFile, feedback, suggestions, imageUrl)
         .catch(error => {
-          console.error('❌ Enhanced AI processing pipeline failed:', error);
+          console.error('❌ Context-aware AI processing pipeline failed:', error);
         });
     }
 
@@ -61,8 +61,8 @@ export const saveOutfitToWardrobe = async (
   }
 };
 
-// Enhanced AI processing pipeline with professional-grade generation
-const processOutfitWithEnhancedAIPipeline = async (
+// Context-aware AI processing pipeline with maximum accuracy
+const processOutfitWithContextAwareAIPipeline = async (
   wardrobeItemId: string, 
   imageFile: File, 
   feedback: string, 
@@ -70,10 +70,10 @@ const processOutfitWithEnhancedAIPipeline = async (
   originalImageUrl: string
 ): Promise<void> => {
   try {
-    console.log('🚀 Starting ENHANCED AI processing pipeline for wardrobe item:', wardrobeItemId);
+    console.log('🚀 Starting CONTEXT-AWARE AI processing pipeline for wardrobe item:', wardrobeItemId);
 
-    // Step 1: Enhanced Clothing Extraction
-    console.log('🔍 Step 1: Running enhanced clothing extraction...');
+    // Step 1: Enhanced Clothing Extraction with taxonomy integration
+    console.log('🔍 Step 1: Running enhanced clothing extraction with taxonomy integration...');
     const extractionResult = await extractClothingFromImage(
       imageFile, 
       wardrobeItemId, 
@@ -89,45 +89,45 @@ const processOutfitWithEnhancedAIPipeline = async (
       const croppedImages = await processImageCropping(imageFile, wardrobeItemId);
       
       if (croppedImages.length > 0) {
-        console.log(`📸 Successfully cropped ${croppedImages.length} items for enhanced generation`);
+        console.log(`📸 Successfully cropped ${croppedImages.length} items for context-aware generation`);
         
         await updateWardrobeItemWithCroppedImages(wardrobeItemId, croppedImages);
         
-        // Step 3: Enhanced clothing items with professional metadata
-        const enhancedClothingItems = await enhanceClothingItemsWithProfessionalData(
+        // Step 3: Enhanced clothing items with contextual metadata
+        const contextualClothingItems = await enhanceClothingItemsWithContextualData(
           extractionResult.clothingItems,
           croppedImages
         );
         
-        await updateWardrobeItemWithEnhancedClothingItems(wardrobeItemId, enhancedClothingItems);
+        await updateWardrobeItemWithContextualClothingItems(wardrobeItemId, contextualClothingItems);
         
-        // Step 4: ENHANCED Professional AI Generation with OpenAI only
-        console.log('🎨 Step 4: Triggering ENHANCED professional AI generation with OpenAI...');
-        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_openai');
+        // Step 4: CONTEXT-AWARE Professional AI Generation with maximum accuracy
+        console.log('🎯 Step 4: Triggering CONTEXT-AWARE professional AI generation with maximum accuracy...');
+        await triggerContextAwareAIImageGeneration(wardrobeItemId, 'context_aware_openai');
         
-        console.log('🎯 ENHANCED AI processing pipeline completed successfully');
+        console.log('🎯 CONTEXT-AWARE AI processing pipeline completed successfully');
       } else {
-        console.warn('⚠️ No items cropped, using enhanced generation with original image');
-        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_openai');
+        console.warn('⚠️ No items cropped, using context-aware generation with original image');
+        await triggerContextAwareAIImageGeneration(wardrobeItemId, 'context_aware_openai');
       }
       
     } else {
       console.warn('⚠️ Enhanced clothing extraction failed:', extractionResult.error);
-      await logProcessingFailure(wardrobeItemId, 'enhanced_extraction', extractionResult.error);
+      await logProcessingFailure(wardrobeItemId, 'contextual_extraction', extractionResult.error);
     }
 
   } catch (error) {
-    console.error('❌ Enhanced AI processing pipeline error:', error);
-    await logProcessingFailure(wardrobeItemId, 'enhanced_pipeline_error', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ Context-aware AI processing pipeline error:', error);
+    await logProcessingFailure(wardrobeItemId, 'contextual_pipeline_error', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
-// Enhanced function to add professional metadata to clothing items
-const enhanceClothingItemsWithProfessionalData = async (
+// Enhanced function to add contextual metadata to clothing items
+const enhanceClothingItemsWithContextualData = async (
   clothingItems: any[],
   croppedImages: any[]
 ): Promise<any[]> => {
-  console.log('🔗 Enhancing clothing items with professional metadata...');
+  console.log('🔗 Enhancing clothing items with contextual metadata for accurate generation...');
   
   return clothingItems.map((item, index) => {
     // Advanced matching algorithm for cropped images
@@ -143,23 +143,23 @@ const enhanceClothingItemsWithProfessionalData = async (
     });
     
     if (matchingCroppedImage) {
-      console.log(`✅ Professional match: "${item.name}" → cropped image`);
+      console.log(`✅ Contextual match: "${item.name}" → cropped image for accurate generation`);
       return {
         ...item,
         croppedImageUrl: matchingCroppedImage.cropped_image_url,
         boundingBox: matchingCroppedImage.bounding_box,
         croppingConfidence: matchingCroppedImage.confidence,
-        imageType: 'cropped_professional',
-        enhancedProcessing: true,
-        qualityLevel: 'professional'
+        imageType: 'cropped_contextual',
+        contextualProcessing: true,
+        accuracyLevel: 'maximum'
       };
     } else {
-      console.log(`⚠️ No professional match for "${item.name}" - will use enhanced generation`);
+      console.log(`⚠️ No contextual match for "${item.name}" - will use context-aware generation`);
       return {
         ...item,
-        imageType: 'needs_enhanced_generation',
-        enhancedProcessing: true,
-        qualityLevel: 'professional'
+        imageType: 'needs_contextual_generation',
+        contextualProcessing: true,
+        accuracyLevel: 'maximum'
       };
     }
   });
@@ -193,30 +193,30 @@ const updateWardrobeItemWithCroppedImages = async (
   }
 };
 
-// Update wardrobe item with enhanced clothing items
-const updateWardrobeItemWithEnhancedClothingItems = async (
+// Update wardrobe item with contextual clothing items
+const updateWardrobeItemWithContextualClothingItems = async (
   wardrobeItemId: string,
-  enhancedClothingItems: any[]
+  contextualClothingItems: any[]
 ): Promise<void> => {
   try {
-    console.log(`💾 Updating wardrobe item ${wardrobeItemId} with enhanced clothing items`);
+    console.log(`💾 Updating wardrobe item ${wardrobeItemId} with contextual clothing items`);
     
     const { error } = await supabase
       .from('wardrobe_items')
       .update({
-        extracted_clothing_items: enhancedClothingItems,
+        extracted_clothing_items: contextualClothingItems,
         updated_at: new Date().toISOString()
       })
       .eq('id', wardrobeItemId);
 
     if (error) {
-      console.error('❌ Error updating wardrobe item with enhanced clothing items:', error);
+      console.error('❌ Error updating wardrobe item with contextual clothing items:', error);
       throw error;
     }
 
-    console.log('✅ Successfully updated wardrobe item with enhanced clothing items');
+    console.log('✅ Successfully updated wardrobe item with contextual clothing items');
   } catch (error) {
-    console.error('❌ Failed to update wardrobe item with enhanced clothing items:', error);
+    console.error('❌ Failed to update wardrobe item with contextual clothing items:', error);
     throw error;
   }
 };
