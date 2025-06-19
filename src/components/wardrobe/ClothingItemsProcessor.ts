@@ -5,6 +5,7 @@ export interface ClothingItem {
   id: string;
   name: string;
   category: string;
+  descriptors?: string[]; // Add this field
   color?: string;
   brand?: string;
   material?: string;
@@ -22,6 +23,7 @@ export interface ClothingItem {
   imageType?: string;
   croppingConfidence?: number;
   outfitId: string;
+  outfitRating?: number; // Add this field
   arrayIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -29,7 +31,8 @@ export interface ClothingItem {
 
 export interface ExtractedClothingItem {
   name: string;
-  category: string;
+  category?: string;
+  descriptors?: string[];
   color?: string;
   brand?: string;
   material?: string;
@@ -46,6 +49,7 @@ export interface ExtractedClothingItem {
   accuracyLevel?: string;
   imageType?: string;
   croppingConfidence?: number;
+  [key: string]: any; // Add index signature for Json compatibility
 }
 
 export const isClothingItemsArray = (items: any): items is ExtractedClothingItem[] => {
@@ -80,6 +84,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
           id: `${wardrobeItem.id}::${index}`,
           name: extractedItem.name || 'Unknown Item',
           category: extractedItem.category || 'uncategorized',
+          descriptors: extractedItem.descriptors,
           color: extractedItem.color,
           brand: extractedItem.brand,
           material: extractedItem.material,
@@ -88,7 +93,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
           description: extractedItem.description,
           tags: extractedItem.tags || [],
           renderImageUrl: extractedItem.renderImageUrl,
-          originalImageUrl: extractedItem.originalImageUrl || originalImageUrl, // Ensure we preserve the original image URL
+          originalImageUrl: extractedItem.originalImageUrl || originalImageUrl,
           croppedImageUrl: extractedItem.croppedImageUrl,
           boundingBox: extractedItem.boundingBox,
           confidence: extractedItem.confidence,
@@ -97,6 +102,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
           imageType: extractedItem.imageType,
           croppingConfidence: extractedItem.croppingConfidence,
           outfitId: wardrobeItem.id,
+          outfitRating: wardrobeItem.rating_score || undefined,
           arrayIndex: index,
           createdAt: wardrobeItem.created_at,
           updatedAt: wardrobeItem.updated_at

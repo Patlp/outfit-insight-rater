@@ -3,6 +3,7 @@ export interface WardrobeItem {
   id: string;
   user_id: string;
   image_url: string;
+  original_image_url?: string; // Add this missing field
   rating_score: number | null;
   feedback: string | null;
   suggestions: string[] | null;
@@ -19,7 +20,7 @@ export interface ClothingItem {
   id: string;
   name: string;
   category?: string;
-  descriptors?: string[];
+  descriptors?: string[]; // Add this field
   confidence?: number;
   renderImageUrl?: string;
   renderImageProvider?: string;
@@ -28,7 +29,7 @@ export interface ClothingItem {
   originalImageUrl?: string;
   outfitId: string;
   outfitImageUrl?: string;
-  outfitRating?: number;
+  outfitRating?: number; // Add this field
   outfitFeedback?: string;
   createdAt: string;
   imageType?: string;
