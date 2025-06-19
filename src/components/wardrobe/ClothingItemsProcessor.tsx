@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 import { triggerAIImageGeneration } from '@/services/wardrobe/aiImageIntegration';
 import ItemImageDisplay from './ItemImageDisplay';
 
-export interface ClothingItem {
+// Use a local interface for the extracted clothing items from wardrobe_items.extracted_clothing_items
+export interface ExtractedClothingItem {
   name: string;
   descriptors?: string[];
   category?: string;
@@ -25,7 +26,7 @@ export interface ClothingItem {
 }
 
 interface ClothingItemsProcessorProps {
-  extractedClothingItems: ClothingItem[];
+  extractedClothingItems: ExtractedClothingItem[];
   wardrobeItemId: string;
   originalImageUrl?: string;
 }

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Shirt, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ClothingItemsProcessor from './ClothingItemsProcessor.tsx';
+import ClothingItemsProcessor, { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import GenerationProgressIndicator from './GenerationProgressIndicator';
 
 interface WardrobeItemTagsProps {
@@ -31,7 +31,7 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
     
     try {
       if (Array.isArray(extractedClothingItems)) {
-        return extractedClothingItems;
+        return extractedClothingItems as ExtractedClothingItem[];
       }
       return [];
     } catch (error) {

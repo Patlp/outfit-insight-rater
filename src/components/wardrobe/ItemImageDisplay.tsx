@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { ClothingItem } from './ClothingItemsProcessor';
+import { ExtractedClothingItem } from './ClothingItemsProcessor';
 import { Toggle } from '@/components/ui/toggle';
 import { Image, Camera, Shirt } from 'lucide-react';
 import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
 import AIGenerationStatus from './AIGenerationStatus';
 
 interface ItemImageDisplayProps {
-  item: ClothingItem;
+  item: ExtractedClothingItem;
   originalImageUrl?: string;
   showOriginalThumbnail: boolean;
   onToggleImageView: (showOriginal: boolean) => void;
