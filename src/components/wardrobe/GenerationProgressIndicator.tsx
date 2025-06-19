@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { checkGenerationProgress } from '@/services/wardrobe/aiImageIntegration';
 
 interface GenerationProgressIndicatorProps {
@@ -69,44 +68,17 @@ const GenerationProgressIndicator: React.FC<GenerationProgressIndicatorProps> = 
 
   return (
     <div className="bg-white border rounded-lg p-4 shadow-sm space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isComplete ? (
-            <CheckCircle size={16} className="text-green-600" />
-          ) : (
-            <Loader2 size={16} className="text-blue-600 animate-spin" />
-          )}
-          <span className="text-sm font-medium">
-            {isComplete ? 'AI Image Generation Complete' : 'Generating Professional Images...'}
-          </span>
-        </div>
-        <Badge variant="secondary" className="text-xs">
-          TheNewBlack AI
-        </Badge>
+      <div className="flex items-center gap-2">
+        <Loader2 size={16} className="text-blue-600 animate-spin" />
+        <span className="text-sm font-medium">
+          Adding clothes to My Clothing
+        </span>
       </div>
 
       <Progress value={progressPercentage} className="h-2" />
 
       <div className="flex justify-between items-center text-xs text-gray-600">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <CheckCircle size={12} className="text-green-600" />
-            <span>{progress.completed} completed</span>
-          </div>
-          {progress.inProgress > 0 && (
-            <div className="flex items-center gap-1">
-              <Clock size={12} className="text-blue-600" />
-              <span>{progress.inProgress} in progress</span>
-            </div>
-          )}
-          {progress.failed > 0 && (
-            <div className="flex items-center gap-1">
-              <AlertCircle size={12} className="text-red-600" />
-              <span>{progress.failed} failed</span>
-            </div>
-          )}
-        </div>
-        <span>{progress.completed}/{progress.total}</span>
+        <span>{progress.completed}/{progress.total} completed</span>
       </div>
     </div>
   );

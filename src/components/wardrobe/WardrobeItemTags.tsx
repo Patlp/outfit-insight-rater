@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Shirt, Sparkles, Eye, EyeOff, CheckCircle, Zap, Star, Target } from 'lucide-react';
+import { Shirt, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ClothingItemsProcessor, { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import GenerationProgressIndicator from './GenerationProgressIndicator';
@@ -40,37 +40,17 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
   }, [extractedClothingItems, refreshKey]);
 
   const hasClothingItems = clothingItems.length > 0;
-  const aiGeneratedCount = clothingItems.filter(item => item?.renderImageUrl).length;
-  const contextAwareCount = clothingItems.filter(item => 
-    item?.renderImageProvider?.includes('context_aware')
-  ).length;
   const totalItems = clothingItems.length;
 
   return (
     <div className="space-y-4">
-      {/* Context-Aware AI Status Notice */}
-      <div className="flex items-start gap-2 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-3">
-        <Target size={16} className="text-emerald-600 mt-0.5 shrink-0" />
-        <div className="text-sm text-emerald-800">
-          <span className="font-medium">Context-Aware AI Generation System:</span> Now featuring maximum accuracy image generation with taxonomy integration, enhanced item detection, and contextual prompts for ultra-precise clothing representation.
-        </div>
-      </div>
-
-      {/* Accuracy Enhancement Notice */}
-      <div className="flex items-start gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-        <Zap size={16} className="text-blue-600 mt-0.5 shrink-0" />
-        <div className="text-sm text-blue-800">
-          <span className="font-medium">Enhanced Accuracy:</span> Our new system uses fashion taxonomy data, contextual understanding, and smart prompt engineering to generate images that accurately match your tagged clothing items.
-        </div>
-      </div>
-
       {/* Generation Progress Indicator */}
       <GenerationProgressIndicator 
         wardrobeItemId={itemId}
         onComplete={handleGenerationComplete}
       />
 
-      {/* Enhanced Clothing Items Section */}
+      {/* Clothing Items Section - Tags Only */}
       {hasClothingItems && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -79,18 +59,6 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
               <span className="text-sm font-medium text-gray-700">
                 Detected Items ({totalItems})
               </span>
-              {aiGeneratedCount > 0 && (
-                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
-                  <Sparkles size={10} className="mr-1" />
-                  {aiGeneratedCount} AI Generated
-                </Badge>
-              )}
-              {contextAwareCount > 0 && (
-                <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700">
-                  <Target size={10} className="mr-1" />
-                  {contextAwareCount} Context-Aware
-                </Badge>
-              )}
             </div>
             <Button
               variant="ghost"
@@ -113,11 +81,39 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
           </div>
 
           {showClothingItems && (
-            <ClothingItemsProcessor
-              key={refreshKey}
-              extractedClothingItems={clothingItems}
-              wardrobeItemId={itemId}
-            />
+            <div className="space-y-2">
+              {clothingItems.map((item, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                  <span className="font-medium text-sm capitalize text-gray-900">
+                    {item.name}
+                  </span>
+                  {item.category && (
+                    <Badge variant="secondary" className="text-xs">
+                      {item.category}
+                    </Badge>
+                  )}
+                  {item.confidence && (
+                    <Badge variant="outline" className="text-xs">
+                      {Math.round(item.confidence * 100)}%
+                    </Badge>
+                  )}
+                  {item.descriptors && item.descriptors.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {item.descriptors.slice(0, 3).map((descriptor, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {descriptor}
+                        </Badge>
+                      ))}
+                      {item.descriptors.length > 3 && (
+                        <Badge variant="outline" className="text-xs text-gray-500">
+                          +{item.descriptors.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
