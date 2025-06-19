@@ -6,6 +6,9 @@ import WardrobeItemImage from './WardrobeItemImage';
 import WardrobeItemDetails from './WardrobeItemDetails';
 import WardrobeItemTags from './WardrobeItemTags';
 import WardrobeItemActions from './WardrobeItemActions';
+import ScoreDisplay from '@/components/rating/ScoreDisplay';
+import FeedbackSection from '@/components/rating/FeedbackSection';
+import SuggestionsSection from '@/components/rating/SuggestionsSection';
 
 interface WardrobeItemCardProps {
   item: WardrobeItem;
@@ -23,24 +26,40 @@ const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) 
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 bg-white">
+      {/* Original Outfit Image */}
       <WardrobeItemImage 
         imageUrl={item.image_url}
         score={item.rating_score || 0}
       />
       
       <CardContent className="p-6 space-y-4">
-        {/* Clothing Items section moved to the top */}
+        {/* Rating and Analysis Section - Same as home screen */}
+        {item.rating_score && item.rating_score > 0 && (
+          <div className="space-y-4">
+            <ScoreDisplay score={item.rating_score} />
+            
+            {item.feedback && (
+              <FeedbackSection feedback={item.feedback} />
+            )}
+            
+            {item.suggestions && item.suggestions.length > 0 && (
+              <SuggestionsSection suggestions={item.suggestions} />
+            )}
+          </div>
+        )}
+        
+        {/* Clothing Items section */}
         <WardrobeItemTags
           feedback={item.feedback}
           extractedClothingItems={item.extracted_clothing_items}
           itemId={item.id}
         />
         
-        {/* Detailed Feedback and other details come after */}
+        {/* Additional details */}
         <WardrobeItemDetails
           createdAt={item.created_at}
           occasionContext={item.occasion_context}
-          feedback={item.feedback}
+          feedback={null} // Don't duplicate feedback here since it's shown above
         />
       </CardContent>
       

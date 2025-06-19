@@ -50,7 +50,7 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
         onComplete={handleGenerationComplete}
       />
 
-      {/* Clothing Items Section - Tags Only */}
+      {/* Clothing Items Section - Tags Only without confidence */}
       {hasClothingItems && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -92,11 +92,7 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
                       {item.category}
                     </Badge>
                   )}
-                  {item.confidence && (
-                    <Badge variant="outline" className="text-xs">
-                      {Math.round(item.confidence * 100)}%
-                    </Badge>
-                  )}
+                  {/* Removed confidence percentage display */}
                   {item.descriptors && item.descriptors.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {item.descriptors.slice(0, 3).map((descriptor, idx) => (
