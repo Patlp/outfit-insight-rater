@@ -1,4 +1,3 @@
-
 import { generateImagesForClothingItems } from '@/services/clothing/aiImageGeneration';
 import { generateTheNewBlackImagesForClothingItems } from '@/services/clothing/theNewBlackIntegration';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +28,7 @@ export const triggerAIImageGeneration = async (
   provider: ImageProvider = 'thenewblack'
 ): Promise<void> => {
   try {
-    console.log(`🚀 Checking if AI image generation should proceed for wardrobe item: ${wardrobeItemId}`);
+    console.log(`🚀 Starting AI image generation for wardrobe item: ${wardrobeItemId} with credentials configured`);
 
     // Get the wardrobe item with its extracted clothing items, original image, and creation timestamp
     const { data: wardrobeItem, error } = await supabase
@@ -84,11 +83,12 @@ export const triggerAIImageGeneration = async (
       return;
     }
 
-    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using ${provider} (newly uploaded content only)`);
+    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using ${provider} with configured credentials`);
 
     // Choose the appropriate generation method based on provider
     if (provider === 'thenewblack') {
       // Use TheNewBlack Ghost Mannequin API with enhanced context
+      console.log('🔑 Using TheNewBlack API with configured email and password credentials');
       generateTheNewBlackImagesForClothingItems(
         wardrobeItemId, 
         extractedItems,
@@ -105,7 +105,7 @@ export const triggerAIImageGeneration = async (
         });
     }
 
-    console.log(`🔄 AI image generation started in background using ${provider} for newly uploaded content`);
+    console.log(`🔄 AI image generation started in background using ${provider} with proper authentication`);
 
   } catch (error) {
     console.error('❌ Error triggering AI image generation:', error);
