@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import { Toggle } from '@/components/ui/toggle';
@@ -79,7 +80,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
                 </Toggle>
                 <Toggle
                   pressed={showOriginalThumbnail}
-                  onPressedChange={() => onToggleImageView(!showOriginalThumbnail)}
+                  onPressedChange={(pressed) => onToggleImageView(pressed)}
                   className="h-8 px-2 data-[state=on]:bg-gray-100 data-[state=on]:text-gray-700"
                   size="sm"
                   title="Show Original Photo"
