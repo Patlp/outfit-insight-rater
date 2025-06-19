@@ -37,7 +37,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
           <img
             src={displayImageUrl}
             alt={item.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-white"
             onLoad={() => {
               console.log('✅ Item image loaded:', displayImageUrl);
             }}
