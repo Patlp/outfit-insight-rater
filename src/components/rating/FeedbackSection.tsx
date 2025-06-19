@@ -3,6 +3,7 @@ import React from 'react';
 import { Shirt, Palette, Users, Star, Layers } from 'lucide-react';
 import FeedbackCard from './FeedbackCard';
 import { parseMarkdownBold } from '@/utils/textFormatting';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface FeedbackSectionProps {
   feedback: string;
@@ -140,17 +141,26 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ feedback }) => {
       <h3 className="text-lg font-semibold mb-4 text-fashion-600">
         Detailed Feedback
       </h3>
-      <div className="space-y-3">
+      <Accordion type="multiple" className="space-y-2">
         {feedbackSections.map((section, index) => (
-          <FeedbackCard
-            key={index}
-            title={section.title}
-            content={section.content}
-            icon={section.icon}
-            sentiment={section.sentiment}
-          />
+          <AccordionItem key={index} value={`item-${index}`} className="border rounded-lg">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <section.icon className="w-5 h-5 text-gray-600" />
+                <span className="font-semibold text-gray-900">{section.title}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <FeedbackCard
+                title=""
+                content={section.content}
+                icon={section.icon}
+                sentiment={section.sentiment}
+              />
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 };
