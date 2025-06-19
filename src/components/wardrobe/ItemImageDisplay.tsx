@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import { Toggle } from '@/components/ui/toggle';
@@ -38,7 +39,8 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
     hasPersistedAI,
     renderImageUrl: item.renderImageUrl,
     displayImageUrl,
-    showOriginalThumbnail
+    showOriginalThumbnail,
+    originalImageUrl
   });
 
   // Ensure boolean values for Toggle components

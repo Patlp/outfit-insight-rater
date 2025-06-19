@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
@@ -25,13 +26,13 @@ export const saveOutfitToWardrobe = async (
       .insert({
         user_id: userId,
         image_url: imageUrl,
+        original_image_url: imageUrl, // Set the new column with the original image URL
         rating_score: score,
         feedback,
         suggestions,
         gender,
         occasion_context: occasionContext,
-        feedback_mode: feedbackMode || 'normal',
-        original_image_url: imageUrl // Preserve the original image URL for the toggle
+        feedback_mode: feedbackMode || 'normal'
       })
       .select()
       .single();
