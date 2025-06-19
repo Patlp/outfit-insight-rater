@@ -19,7 +19,7 @@ export const generateTheNewBlackImage = async (
   croppedImageUrl?: string
 ): Promise<TheNewBlackGenerationResult> => {
   try {
-    console.log(`🎨 Starting Enhanced TheNewBlack generation for: "${itemName}" [${wardrobeItemId}:${arrayIndex}]`);
+    console.log(`🎨 Starting TheNewBlack generation for: "${itemName}" [${wardrobeItemId}:${arrayIndex}]`);
 
     // Use cropped image if available, otherwise fall back to original
     const imageToProcess = croppedImageUrl || originalImageUrl;
@@ -42,18 +42,6 @@ export const generateTheNewBlackImage = async (
 
     if (error) {
       console.error('❌ TheNewBlack edge function error:', error);
-      console.error('🔍 Debug info available:', data?.debugInfo);
-      
-      // Log detailed debug information
-      if (data?.debugInfo) {
-        console.log('🔍 Authentication attempts:', data.debugInfo.authEndpointsAttempted);
-        console.log('🔍 Generation attempts:', data.debugInfo.generationEndpointsAttempted);
-        console.log('🔍 Network connectivity:', data.debugInfo.networkConnectivity);
-        console.log('🔍 API validation:', data.debugInfo.apiValidation);
-      }
-      
-      // Show user-friendly error message
-      const userMessage = data?.userMessage || `Failed to generate TheNewBlack image for ${itemName}: ${error.message}`;
       
       // Check if we should fallback to OpenAI
       if (data?.fallbackToOpenAI) {
@@ -65,18 +53,17 @@ export const generateTheNewBlackImage = async (
         return await generateClothingImage(itemName, wardrobeItemId, arrayIndex);
       }
       
+      const userMessage = data?.userMessage || `Failed to generate TheNewBlack image for ${itemName}: ${error.message}`;
       toast.error(userMessage);
       return { 
         success: false, 
         error: error.message, 
-        debugInfo: data?.debugInfo,
         userMessage 
       };
     }
 
     if (!data?.success) {
       console.error('❌ TheNewBlack generation failed:', data?.error);
-      console.error('🔍 Debug info:', data?.debugInfo);
       
       const errorMessage = data?.error || 'Unknown error during TheNewBlack generation';
       const userMessage = data?.userMessage || `TheNewBlack generation failed for ${itemName}: ${errorMessage}`;
@@ -95,23 +82,11 @@ export const generateTheNewBlackImage = async (
       return { 
         success: false, 
         error: errorMessage, 
-        debugInfo: data?.debugInfo,
         userMessage 
       };
     }
 
-    console.log(`✅ Enhanced TheNewBlack image generated successfully for "${itemName}": ${data.imageUrl}`);
-    
-    // Log success debug info
-    if (data.debugInfo) {
-      console.log('🔍 Success debug info:', {
-        authEndpointsAttempted: data.debugInfo.authEndpointsAttempted,
-        generationEndpointsAttempted: data.debugInfo.generationEndpointsAttempted,
-        networkConnectivity: data.debugInfo.networkConnectivity,
-        apiValidation: data.debugInfo.apiValidation,
-        usedCroppedImage: !!croppedImageUrl
-      });
-    }
+    console.log(`✅ TheNewBlack image generated successfully for "${itemName}": ${data.imageUrl}`);
     
     const imageType = croppedImageUrl ? 'cropped image' : 'original image';
     toast.success(`Generated professional image for ${itemName} using TheNewBlack AI (${imageType})`);
