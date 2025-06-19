@@ -1,106 +1,186 @@
 
 import { WardrobeItem } from '@/services/wardrobe';
 
+// ClothingItem interface for individual clothing items in the wardrobe
 export interface ClothingItem {
-  id: string;
+  id: string; // Format: "wardrobeItemId::arrayIndex"
   name: string;
-  category: string;
-  confidence: number;
-  source: string;
-  outfitId: string;
-  outfitDate: string;
-  outfitScore: number;
-  originalImageUrl?: string;
+  category?: string;
+  descriptors?: string[];
+  confidence?: number;
   renderImageUrl?: string;
-  arrayIndex: number;
+  renderImageProvider?: string;
+  renderImageGeneratedAt?: string;
+  croppedImageUrl?: string;
+  originalImageUrl?: string;
+  outfitId: string;
+  outfitImageUrl?: string;
+  outfitRating?: number;
+  outfitFeedback?: string;
+  createdAt: string;
+  imageType?: string;
+  contextualProcessing?: boolean;
+  accuracyLevel?: string;
+  [key: string]: any;
 }
 
-// Type guard to check if extracted_clothing_items is an array
-export const isClothingItemsArray = (items: any): items is any[] => {
-  return Array.isArray(items);
+// Type guard to check if data is an array of clothing items
+export const isClothingItemsArray = (data: any): data is any[] => {
+  return Array.isArray(data);
 };
 
+// Process wardrobe items to extract all individual clothing items
 export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingItem[] => {
-  const items: ClothingItem[] = [];
+  console.log('🔄 Processing wardrobe items for clothing extraction:', wardrobeItems.length);
   
-  console.log('Processing wardrobe items:', wardrobeItems.length);
-  
-  wardrobeItems.forEach((outfit, outfitIndex) => {
-    console.log(`Processing outfit ${outfitIndex + 1}:`, {
-      id: outfit.id,
-      hasExtractedItems: !!outfit.extracted_clothing_items,
-      originalImageUrl: outfit.image_url,
-      extractedItemsType: typeof outfit.extracted_clothing_items
+  const allClothingItems: ClothingItem[] = [];
+
+  wardrobeItems.forEach((wardrobeItem) => {
+    if (!wardrobeItem.extracted_clothing_items || !isClothingItemsArray(wardrobeItem.extracted_clothing_items)) {
+      console.log(`⚠️ Skipping wardrobe item ${wardrobeItem.id} - no valid extracted clothing items`);
+      return;
+    }
+
+    console.log(`📋 Processing ${wardrobeItem.extracted_clothing_items.length} clothing items from outfit ${wardrobeItem.id}`);
+
+    wardrobeItem.extracted_clothing_items.forEach((clothingItem: any, index: number) => {
+      if (!clothingItem?.name) {
+        console.log(`⚠️ Skipping clothing item at index ${index} - no name`);
+        return;
+      }
+
+      const processedItem: ClothingItem = {
+        id: `${wardrobeItem.id}::${index}`,
+        name: clothingItem.name,
+        category: clothingItem.category || 'uncategorized',
+        descriptors: clothingItem.descriptors || [],
+        confidence: clothingItem.confidence || 0,
+        renderImageUrl: clothingItem.renderImageUrl,
+        renderImageProvider: clothingItem.renderImageProvider,
+        renderImageGeneratedAt: clothingItem.renderImageGeneratedAt,
+        croppedImageUrl: clothingItem.croppedImageUrl,
+        originalImageUrl: wardrobeItem.image_url,
+        outfitId: wardrobeItem.id,
+        outfitImageUrl: wardrobeItem.image_url,
+        outfitRating: wardrobeItem.rating_score,
+        outfitFeedback: wardrobeItem.feedback,
+        createdAt: wardrobeItem.created_at || new Date().toISOString(),
+        imageType: clothingItem.imageType || 'original',
+        contextualProcessing: clothingItem.contextualProcessing || false,
+        accuracyLevel: clothingItem.accuracyLevel || 'standard',
+        // Copy any additional properties
+        ...clothingItem
+      };
+
+      console.log(`✅ Processed clothing item: "${processedItem.name}" (${processedItem.id})`);
+      allClothingItems.push(processedItem);
     });
+  });
 
-    if (outfit.extracted_clothing_items && isClothingItemsArray(outfit.extracted_clothing_items)) {
-      outfit.extracted_clothing_items.forEach((item: any, index: number) => {
-        const clothingItem: ClothingItem = {
-          id: `${outfit.id}::${index}`,
-          name: item.name || 'Unknown Item',
-          category: item.category || 'other',
-          confidence: item.confidence || 0.8,
-          source: item.source || 'ai',
-          outfitId: outfit.id,
-          outfitDate: outfit.created_at,
-          outfitScore: outfit.rating_score || 0,
-          originalImageUrl: outfit.image_url,
-          renderImageUrl: item.renderImageUrl || null,
-          arrayIndex: index
-        };
+  console.log(`📊 Total processed clothing items: ${allClothingItems.length}`);
+  return allClothingItems;
+};
 
-        items.push(clothingItem);
-        console.log(`✅ Added clothing item "${item.name}" with render image: ${item.renderImageUrl || 'none'}`);
-      });
+// Get unique categories from clothing items
+export const getUniqueCategories = (clothingItems: ClothingItem[]): string[] => {
+  const categories = new Set<string>();
+  
+  clothingItems.forEach(item => {
+    if (item.category) {
+      categories.add(item.category);
     }
   });
+
+  const sortedCategories = Array.from(categories).sort();
+  console.log('📂 Unique categories found:', sortedCategories);
   
-  console.log(`Total clothing items extracted: ${items.length}`);
-  console.log(`Items with AI render images: ${items.filter(item => item.renderImageUrl).length}`);
-  
-  return items;
+  return ['all', ...sortedCategories];
 };
 
-export const getUniqueCategories = (items: ClothingItem[]): string[] => {
-  const uniqueCategories = [...new Set(items.map(item => item.category))];
-  return uniqueCategories.sort();
-};
-
+// Filter and sort clothing items
 export const filterAndSortItems = (
-  items: ClothingItem[],
+  clothingItems: ClothingItem[],
   searchTerm: string,
   filterCategory: string,
   sortBy: string
 ): ClothingItem[] => {
-  let filtered = items;
+  console.log(`🔍 Filtering ${clothingItems.length} items with search: "${searchTerm}", category: "${filterCategory}", sort: "${sortBy}"`);
+  
+  let filtered = clothingItems;
 
-  // Filter by search term
-  if (searchTerm) {
-    filtered = filtered.filter(item =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  // Apply search filter
+  if (searchTerm.trim()) {
+    const searchLower = searchTerm.toLowerCase().trim();
+    filtered = filtered.filter(item => {
+      const nameMatch = item.name.toLowerCase().includes(searchLower);
+      const categoryMatch = item.category?.toLowerCase().includes(searchLower);
+      const descriptorMatch = item.descriptors?.some(desc => 
+        desc.toLowerCase().includes(searchLower)
+      );
+      
+      return nameMatch || categoryMatch || descriptorMatch;
+    });
   }
 
-  // Filter by category
+  // Apply category filter
   if (filterCategory !== 'all') {
     filtered = filtered.filter(item => item.category === filterCategory);
   }
 
-  // Sort items
-  filtered.sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'category':
-        return a.category.localeCompare(b.category);
-      case 'date':
-        return new Date(b.outfitDate).getTime() - new Date(a.outfitDate).getTime();
-      case 'score':
-        return b.outfitScore - a.outfitScore;
-      default:
-        return 0;
-    }
-  });
+  // Apply sorting
+  switch (sortBy) {
+    case 'name':
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'category':
+      filtered.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
+      break;
+    case 'date':
+    default:
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      break;
+  }
 
+  console.log(`📊 Filtered results: ${filtered.length} items`);
   return filtered;
+};
+
+// Helper function to get the best available image URL for display
+export const getBestImageUrl = (item: ClothingItem): string | undefined => {
+  // Priority: Context-aware AI > Enhanced AI > Regular AI > Cropped > Original
+  if (item.renderImageUrl) {
+    return item.renderImageUrl;
+  }
+  
+  if (item.croppedImageUrl) {
+    return item.croppedImageUrl;
+  }
+  
+  return item.originalImageUrl;
+};
+
+// Helper function to determine if an item has AI-generated images
+export const hasAIGeneratedImage = (item: ClothingItem): boolean => {
+  return !!item.renderImageUrl;
+};
+
+// Helper function to get image generation status
+export const getImageGenerationStatus = (item: ClothingItem): {
+  hasImage: boolean;
+  isAIGenerated: boolean;
+  isContextAware: boolean;
+  provider?: string;
+  accuracy?: string;
+} => {
+  const hasImage = !!item.renderImageUrl;
+  const isAIGenerated = hasImage;
+  const isContextAware = item.renderImageProvider?.includes('context_aware') || false;
+  
+  return {
+    hasImage,
+    isAIGenerated,
+    isContextAware,
+    provider: item.renderImageProvider,
+    accuracy: item.accuracyLevel
+  };
 };

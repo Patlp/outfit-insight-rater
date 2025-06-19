@@ -2,9 +2,9 @@
 import React from 'react';
 import { ClothingItem } from './ClothingItemsProcessor';
 import WardrobeControls from './WardrobeControls';
+import WardrobeItemsGrid from './WardrobeItemsGrid';
 import WardrobeStats from './WardrobeStats';
 import EmptyWardrobeState from './EmptyWardrobeState';
-import WardrobeItemsGrid from './WardrobeItemsGrid';
 
 interface WardrobeMainContentProps {
   allClothingItems: ClothingItem[];
@@ -39,41 +39,58 @@ const WardrobeMainContent: React.FC<WardrobeMainContentProps> = ({
   handleBulkUploadComplete,
   handleClearFilters
 }) => {
-  if (allClothingItems.length === 0) {
-    return (
-      <EmptyWardrobeState
-        onAddItem={handleAddItem}
-        onBulkUploadComplete={handleBulkUploadComplete}
-      />
-    );
-  }
+  console.log('🎨 WardrobeMainContent rendering with:', {
+    totalItems: allClothingItems.length,
+    filteredItems: filteredAndSortedItems.length,
+    categories: categories.length,
+    searchTerm,
+    filterCategory,
+    sortBy
+  });
 
   return (
     <div className="space-y-6">
+      {/* Statistics */}
+      <WardrobeStats 
+        totalItems={allClothingItems.length}
+        categories={categories.length - 1} // Subtract 'all' category
+        aiGenerateCount={allClothingItems.filter(item => item.renderImageUrl).length}
+      />
+
+      {/* Controls */}
       <WardrobeControls
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        filterCategory={filterCategory}
-        onFilterChange={setFilterCategory}
         sortBy={sortBy}
         onSortChange={setSortBy}
+        filterCategory={filterCategory}
+        onFilterChange={setFilterCategory}
         categories={categories}
         onAddItem={handleAddItem}
         onBulkUploadComplete={handleBulkUploadComplete}
       />
 
-      <WardrobeStats
-        filteredItemsCount={filteredAndSortedItems.length}
-        totalItemsCount={allClothingItems.length}
-        allItems={allClothingItems}
-      />
-
-      <WardrobeItemsGrid
-        items={filteredAndSortedItems}
-        onUpdate={handleItemUpdate}
-        onDelete={handleItemDelete}
-        onClearFilters={handleClearFilters}
-      />
+      {/* Main Content */}
+      {allClothingItems.length === 0 ? (
+        <EmptyWardrobeState />
+      ) : filteredAndSortedItems.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 mb-4">No items match your current filters.</p>
+          <button
+            onClick={handleClearFilters}
+            className="text-fashion-500 hover:text-fashion-600 font-medium"
+          >
+            Clear all filters
+          </button>
+        </div>
+      ) : (
+        <WardrobeItemsGrid
+          items={filteredAndSortedItems}
+          onUpdate={handleItemUpdate}
+          onDelete={handleItemDelete}
+          onClearFilters={handleClearFilters}
+        />
+      )}
     </div>
   );
 };

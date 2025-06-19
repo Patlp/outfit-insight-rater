@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { WardrobeItem } from '@/services/wardrobe';
 import { toast } from 'sonner';
@@ -44,6 +45,7 @@ export const WardrobeItemsManager: React.FC<WardrobeItemsManagerProps> = ({
 
   // Update local state when wardrobeItems prop changes
   useEffect(() => {
+    console.log('🔄 WardrobeItemsManager: wardrobeItems updated', wardrobeItems.length);
     setLocalWardrobeItems(wardrobeItems);
   }, [wardrobeItems]);
 
@@ -56,17 +58,36 @@ export const WardrobeItemsManager: React.FC<WardrobeItemsManagerProps> = ({
 
   // Extract all individual clothing items from all outfits with original images
   const allClothingItems = useMemo(() => {
-    return processWardrobeItems(localWardrobeItems);
+    console.log('🔄 Processing wardrobe items for clothing extraction...');
+    const items = processWardrobeItems(localWardrobeItems);
+    console.log('📊 Extracted clothing items:', items.length);
+    
+    // Log some sample items for debugging
+    if (items.length > 0) {
+      console.log('🔍 Sample extracted items:', items.slice(0, 3).map(item => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        hasRenderImage: !!item.renderImageUrl,
+        hasOriginalImage: !!item.originalImageUrl
+      })));
+    }
+    
+    return items;
   }, [localWardrobeItems]);
 
   // Get unique categories for filtering
   const categories = useMemo(() => {
-    return getUniqueCategories(allClothingItems);
+    const uniqueCategories = getUniqueCategories(allClothingItems);
+    console.log('📂 Available categories:', uniqueCategories);
+    return uniqueCategories;
   }, [allClothingItems]);
 
   // Filter and sort items
   const filteredAndSortedItems = useMemo(() => {
-    return filterAndSortItems(allClothingItems, searchTerm, filterCategory, sortBy);
+    const filtered = filterAndSortItems(allClothingItems, searchTerm, filterCategory, sortBy);
+    console.log('🔍 Filtered items:', filtered.length, 'from', allClothingItems.length);
+    return filtered;
   }, [allClothingItems, searchTerm, filterCategory, sortBy]);
 
   const handleItemUpdate = async (itemId: string, updates: Partial<ClothingItem>) => {
@@ -226,6 +247,19 @@ export const WardrobeItemsManager: React.FC<WardrobeItemsManagerProps> = ({
     setSearchTerm('');
     setFilterCategory('all');
   };
+
+  // Debug logging
+  useEffect(() => {
+    console.log('📊 WardrobeItemsManager state:', {
+      totalWardrobeItems: localWardrobeItems.length,
+      totalClothingItems: allClothingItems.length,
+      filteredItems: filteredAndSortedItems.length,
+      searchTerm,
+      filterCategory,
+      sortBy,
+      categories: categories.length
+    });
+  }, [localWardrobeItems, allClothingItems, filteredAndSortedItems, searchTerm, filterCategory, sortBy, categories]);
 
   return (
     <>

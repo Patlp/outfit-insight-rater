@@ -1,17 +1,18 @@
 
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Search, Plus, Upload } from 'lucide-react';
 import BulkUploadDialog from './BulkUploadDialog';
 
 interface WardrobeControlsProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  filterCategory: string;
-  onFilterChange: (category: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  filterCategory: string;
+  onFilterChange: (category: string) => void;
   categories: string[];
   onAddItem: () => void;
   onBulkUploadComplete: () => void;
@@ -20,53 +21,70 @@ interface WardrobeControlsProps {
 const WardrobeControls: React.FC<WardrobeControlsProps> = ({
   searchTerm,
   onSearchChange,
-  filterCategory,
-  onFilterChange,
   sortBy,
   onSortChange,
+  filterCategory,
+  onFilterChange,
   categories,
   onAddItem,
   onBulkUploadComplete
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-        <Input
-          placeholder="Search clothing items..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-      
-      <Select value={filterCategory} onValueChange={onFilterChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Filter by category" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Categories</SelectItem>
-          {categories.map(category => (
-            <SelectItem key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      
-      <Select value={sortBy} onValueChange={onSortChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Sort by" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="name">Name</SelectItem>
-          <SelectItem value="category">Category</SelectItem>
-          <SelectItem value="date">Recently Added</SelectItem>
-          <SelectItem value="score">Outfit Score</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="space-y-4">
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Search clothing items..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-      <BulkUploadDialog onUploadComplete={onBulkUploadComplete} />
+        {/* Category Filter */}
+        <Select value={filterCategory} onValueChange={onFilterChange}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Sort */}
+        <Select value={sortBy} onValueChange={onSortChange}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date">Newest First</SelectItem>
+            <SelectItem value="name">Name (A-Z)</SelectItem>
+            <SelectItem value="category">Category</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        <Button onClick={onAddItem} variant="outline" size="sm">
+          <Plus size={16} className="mr-1" />
+          Add Item
+        </Button>
+        
+        <BulkUploadDialog onUploadComplete={onBulkUploadComplete}>
+          <Button variant="outline" size="sm">
+            <Upload size={16} className="mr-1" />
+            Bulk Upload
+          </Button>
+        </BulkUploadDialog>
+      </div>
     </div>
   );
 };
