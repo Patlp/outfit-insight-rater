@@ -79,7 +79,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
                 </Toggle>
                 <Toggle
                   pressed={showOriginalThumbnail}
-                  onPressedChange={(pressed) => onToggleImageView(pressed)}
+                  onPressedChange={() => onToggleImageView(!showOriginalThumbnail)}
                   className="h-8 px-2 data-[state=on]:bg-gray-100 data-[state=on]:text-gray-700"
                   size="sm"
                   title="Show Original Photo"
