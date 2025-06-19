@@ -62,10 +62,12 @@ serve(async (req) => {
       );
     }
 
-    // Create enhanced prompt for DALL-E with better specificity
-    const prompt = `A high-quality product photography style image of a ${itemName}. The item should be displayed flat lay style or on a clean white mannequin torso, professionally lit with soft studio lighting. The background is pure white. The image should be clean, minimalist, and focus entirely on the ${itemName} with no other clothing items, text, or distracting elements. Style: professional fashion photography, catalog style, high resolution.`;
+    // Create enhanced prompt for clean product photography
+    const prompt = `Professional product photography of a single ${itemName} only. Clean, isolated item floating in invisible support with perfect lighting. Pure white background, no shadows, no mannequin, no model, no additional clothing items, no accessories, no logos, no text, no artistic effects. Focus solely on the ${itemName} with realistic fabric texture and natural lighting. Single item presentation, professionally centered, high resolution catalog style.
 
-    console.log(`[${requestId}] 📝 Using enhanced prompt for: ${itemName}`);
+NEGATIVE PROMPT: no mannequin, no model, no person, no background elements, no additional clothing, no accessories, no logos, no text, no artistic effects, no shadows, no environmental elements, no creative styling, no brand elements.`;
+
+    console.log(`[${requestId}] 📝 Using clean product photography prompt for: ${itemName}`);
 
     // Generate image using OpenAI DALL-E with timeout handling
     const controller = new AbortController();

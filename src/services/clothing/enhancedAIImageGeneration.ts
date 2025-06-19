@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -9,12 +8,13 @@ interface ClothingPromptTemplate {
   lightingSetup: string;
   cameraAngle: string;
   qualityKeywords: string[];
+  negativePrompt: string;
 }
 
 interface GenerationConfig {
   resolution: string;
   quality: 'high' | 'medium' | 'low';
-  style: 'flat_lay' | 'ghost_mannequin' | 'product_shot';
+  style: 'flat_lay' | 'floating' | 'product_shot';
   background: 'white' | 'neutral' | 'transparent';
   variants: number;
   temperature: number;
@@ -31,73 +31,80 @@ interface EnhancedGenerationResult {
   error?: string;
 }
 
-// Clothing-specific prompt templates for professional product photography
+// Clean product photography templates without mannequins or brand references
 const CLOTHING_PROMPT_TEMPLATES: Record<string, ClothingPromptTemplate> = {
   'shirt': {
-    basePrompt: 'Professional product photography of a {color} {material} shirt',
+    basePrompt: 'Professional product photography of a single {color} {material} shirt floating with invisible support',
     styleModifiers: ['fitted', 'relaxed', 'tailored', 'casual', 'formal'],
-    backgroundOptions: ['pure white studio background', 'soft gradient background'],
-    lightingSetup: 'soft studio lighting with minimal shadows',
-    cameraAngle: 'front view, flat lay or ghost mannequin style',
-    qualityKeywords: ['high resolution', 'crisp details', 'fabric texture visible', 'professional catalog style']
+    backgroundOptions: ['pure white background', 'seamless white backdrop'],
+    lightingSetup: 'soft professional lighting with no shadows',
+    cameraAngle: 'front view, floating presentation, centered composition',
+    qualityKeywords: ['high resolution', 'crisp fabric details', 'clean composition', 'professional catalog style'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional clothing, no accessories, no logos, no text, no shadows'
   },
   'dress': {
-    basePrompt: 'High-end fashion photography of a {color} {material} dress',
+    basePrompt: 'Professional product photography of a single {color} {material} dress with invisible support',
     styleModifiers: ['flowing', 'structured', 'elegant', 'casual', 'formal'],
-    backgroundOptions: ['pristine white background', 'minimalist studio setting'],
-    lightingSetup: 'professional studio lighting highlighting fabric drape',
-    cameraAngle: 'full garment view, ghost mannequin or flat lay presentation',
-    qualityKeywords: ['luxury catalog quality', 'fabric texture detail', 'clean composition']
+    backgroundOptions: ['pristine white background', 'clean white backdrop'],
+    lightingSetup: 'professional studio lighting highlighting fabric drape without shadows',
+    cameraAngle: 'full garment view, floating presentation, natural drape',
+    qualityKeywords: ['luxury catalog quality', 'fabric texture detail', 'clean isolated composition'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional items, no accessories, no logos, no artistic effects'
   },
   'pants': {
-    basePrompt: 'Professional product shot of {color} {material} pants',
+    basePrompt: 'Professional product photography of {color} {material} pants floating with invisible support',
     styleModifiers: ['slim-fit', 'regular-fit', 'wide-leg', 'tailored', 'casual'],
-    backgroundOptions: ['clean white background', 'neutral studio backdrop'],
-    lightingSetup: 'even studio lighting without harsh shadows',
-    cameraAngle: 'full-length view, flat lay or ghost mannequin style',
-    qualityKeywords: ['crisp details', 'fabric texture', 'professional e-commerce quality']
+    backgroundOptions: ['clean white background', 'pure white backdrop'],
+    lightingSetup: 'even professional lighting without harsh shadows',
+    cameraAngle: 'full-length view, floating presentation, natural shape',
+    qualityKeywords: ['crisp details', 'fabric texture', 'professional e-commerce quality'],
+    negativePrompt: 'no mannequin, no model, no person, no background, no additional clothing, no accessories, no shadows, no logos'
   },
   'shoes': {
-    basePrompt: 'Premium product photography of {color} {material} shoes',
+    basePrompt: 'Premium product photography of {color} {material} shoes floating on invisible support',
     styleModifiers: ['polished', 'casual', 'athletic', 'formal', 'vintage'],
-    backgroundOptions: ['pure white seamless background', 'minimalist product stage'],
-    lightingSetup: 'professional product lighting with subtle reflections',
-    cameraAngle: '3/4 angle view showcasing design details',
-    qualityKeywords: ['high-definition', 'material texture', 'luxury retail quality']
+    backgroundOptions: ['pure white seamless background', 'clean white backdrop'],
+    lightingSetup: 'professional product lighting with subtle highlights only',
+    cameraAngle: '3/4 angle view showcasing design details, floating presentation',
+    qualityKeywords: ['high-definition', 'material texture', 'luxury retail quality'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional items, no shadows, no reflections'
   },
   'jacket': {
-    basePrompt: 'Studio fashion photography of a {color} {material} jacket',
+    basePrompt: 'Professional product photography of a {color} {material} jacket with invisible support',
     styleModifiers: ['structured', 'casual', 'formal', 'oversized', 'fitted'],
-    backgroundOptions: ['white infinity background', 'clean studio environment'],
-    lightingSetup: 'professional fashion lighting with soft shadows',
-    cameraAngle: 'front view, ghost mannequin or carefully styled flat lay',
-    qualityKeywords: ['designer quality', 'fabric detail', 'professional catalog standard']
+    backgroundOptions: ['white seamless background', 'pure white backdrop'],
+    lightingSetup: 'professional fashion lighting without shadows',
+    cameraAngle: 'front view, floating presentation, natural garment shape',
+    qualityKeywords: ['designer quality', 'fabric detail', 'professional catalog standard'],
+    negativePrompt: 'no mannequin, no model, no person, no background, no additional clothing, no accessories, no shadows, no logos'
   },
   'accessories': {
-    basePrompt: 'Luxury product photography of a {color} {material} {item}',
+    basePrompt: 'Professional product photography of a {color} {material} {item} floating on invisible support',
     styleModifiers: ['elegant', 'modern', 'classic', 'contemporary', 'minimalist'],
-    backgroundOptions: ['pristine white background', 'soft gradient backdrop'],
-    lightingSetup: 'controlled studio lighting with premium presentation',
-    cameraAngle: 'optimal angle highlighting design features',
-    qualityKeywords: ['jewelry quality', 'premium details', 'luxury retail presentation']
+    backgroundOptions: ['pristine white background', 'clean white backdrop'],
+    lightingSetup: 'controlled studio lighting with clean presentation',
+    cameraAngle: 'optimal angle highlighting design features, floating presentation',
+    qualityKeywords: ['jewelry quality', 'premium details', 'luxury retail presentation'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional items, no shadows, no reflections, no logos'
   }
 };
 
 // Default template for unknown clothing types
 const DEFAULT_TEMPLATE: ClothingPromptTemplate = {
-  basePrompt: 'Professional product photography of a {color} {material} clothing item',
+  basePrompt: 'Professional product photography of a {color} {material} clothing item floating with invisible support',
   styleModifiers: ['modern', 'classic', 'contemporary'],
-  backgroundOptions: ['clean white background', 'neutral studio setting'],
-  lightingSetup: 'professional studio lighting',
-  cameraAngle: 'optimal product view',
-  qualityKeywords: ['high quality', 'professional', 'catalog standard']
+  backgroundOptions: ['clean white background', 'pure white backdrop'],
+  lightingSetup: 'professional studio lighting without shadows',
+  cameraAngle: 'optimal product view, floating presentation',
+  qualityKeywords: ['high quality', 'professional', 'catalog standard'],
+  negativePrompt: 'no mannequin, no model, no person, no background elements, no additional clothing, no accessories, no shadows, no logos'
 };
 
 export class EnhancedClothingImageGenerator {
   private defaultConfig: GenerationConfig = {
     resolution: '1024x1024',
     quality: 'high',
-    style: 'ghost_mannequin',
+    style: 'floating',
     background: 'white',
     variants: 1,
     temperature: 0.3,
@@ -114,13 +121,13 @@ export class EnhancedClothingImageGenerator {
     const startTime = Date.now();
     const finalConfig = { ...this.defaultConfig, ...config };
     
-    console.log(`🎨 Enhanced AI generation starting for "${itemName}" with OpenAI`);
+    console.log(`🎨 Enhanced AI generation starting for "${itemName}" with clean product photography`);
 
     // Extract clothing details for enhanced prompting
     const clothingDetails = this.extractClothingDetails(itemName);
-    const prompt = this.generateEnhancedPrompt(clothingDetails, finalConfig);
+    const prompt = this.generateCleanProductPrompt(clothingDetails, finalConfig);
     
-    console.log(`📝 Generated enhanced prompt: ${prompt}`);
+    console.log(`📝 Generated clean product prompt: ${prompt}`);
 
     // Use OpenAI for generation
     const result = await this.generateWithOpenAI(
@@ -135,7 +142,7 @@ export class EnhancedClothingImageGenerator {
     
     if (result.success) {
       console.log(`✅ Enhanced AI generation completed in ${result.processingTime}ms`);
-      toast.success(`Generated professional image for ${itemName} (OpenAI)`);
+      toast.success(`Generated clean product image for ${itemName}`);
     } else {
       console.error(`❌ Enhanced AI generation failed: ${result.error}`);
       toast.error(`Failed to generate image for ${itemName}`);
@@ -171,7 +178,7 @@ export class EnhancedClothingImageGenerator {
     return { type, color, material, style };
   }
 
-  private generateEnhancedPrompt(
+  private generateCleanProductPrompt(
     details: { type: string; color: string; material: string; style: string },
     config: GenerationConfig
   ): string {
@@ -184,51 +191,54 @@ export class EnhancedClothingImageGenerator {
       .replace('{item}', details.type);
 
     // Add style configuration
-    const styleKeywords = this.getStyleKeywords(config.style);
+    const styleKeywords = this.getCleanStyleKeywords(config.style);
     prompt += `, ${styleKeywords}`;
 
     // Add background and lighting
     prompt += `, ${template.backgroundOptions[0]}, ${template.lightingSetup}`;
 
     // Add quality and technical specifications
-    const qualitySpecs = this.getQualitySpecifications(config);
+    const qualitySpecs = this.getCleanQualitySpecifications(config);
     prompt += `, ${qualitySpecs}`;
 
-    // Add brand-style references for better results
-    prompt += ', professional fashion catalog photography, ASOS style, Zara quality, Uniqlo presentation';
+    // Add clean product photography specifications
+    prompt += ', professional product photography, clean isolated presentation, high resolution catalog style';
 
     // Add technical camera and lighting details
-    prompt += ', shot with professional camera, soft box lighting, no harsh shadows, clean composition';
+    prompt += ', shot with professional camera, soft box lighting, no harsh shadows, clean composition, single item focus';
+
+    // Add negative prompt for strict exclusions
+    prompt += `\n\nNEGATIVE PROMPT: ${template.negativePrompt}, no creative styling, no environmental elements, no brand elements, no artistic effects`;
 
     return prompt;
   }
 
-  private getStyleKeywords(style: GenerationConfig['style']): string {
+  private getCleanStyleKeywords(style: GenerationConfig['style']): string {
     switch (style) {
       case 'flat_lay':
-        return 'flat lay styling, arranged neatly on white surface, top-down view';
-      case 'ghost_mannequin':
-        return 'ghost mannequin effect, invisible model, natural garment shape';
+        return 'flat lay styling, arranged neatly on invisible surface, top-down view, no shadows';
+      case 'floating':
+        return 'floating presentation, invisible support, natural garment shape, no mannequin';
       case 'product_shot':
-        return 'product photography style, professional presentation, catalog quality';
+        return 'product photography style, professional presentation, clean isolated focus';
       default:
-        return 'professional product styling';
+        return 'professional clean product styling, floating presentation';
     }
   }
 
-  private getQualitySpecifications(config: GenerationConfig): string {
+  private getCleanQualitySpecifications(config: GenerationConfig): string {
     const specs = [`${config.resolution} resolution`];
     
     if (config.quality === 'high') {
-      specs.push('ultra-high definition', 'crisp details', 'professional grade');
+      specs.push('ultra-high definition', 'crisp details', 'professional grade', 'clean composition');
     } else if (config.quality === 'medium') {
-      specs.push('high quality', 'clear details');
+      specs.push('high quality', 'clear details', 'professional presentation');
     }
 
     if (config.background === 'transparent') {
-      specs.push('transparent background', 'PNG format');
+      specs.push('transparent background', 'PNG format', 'no shadows');
     } else {
-      specs.push('pure white background', 'seamless backdrop');
+      specs.push('pure white background', 'seamless backdrop', 'no shadows');
     }
 
     return specs.join(', ');
@@ -262,7 +272,7 @@ export class EnhancedClothingImageGenerator {
       return {
         success: true,
         imageUrl: data.imageUrl,
-        provider: 'openai_enhanced',
+        provider: 'openai_clean_product',
         quality: config.quality,
         processingTime: 0,
         metadata: data.metadata
@@ -285,7 +295,7 @@ export class EnhancedClothingImageGenerator {
     config: Partial<GenerationConfig> = {},
     originalImageUrl?: string
   ): Promise<{ success: number; failed: number; results: EnhancedGenerationResult[] }> {
-    console.log(`🚀 Starting enhanced batch generation for ${clothingItems.length} items`);
+    console.log(`🚀 Starting clean product batch generation for ${clothingItems.length} items`);
     
     let success = 0;
     let failed = 0;
@@ -337,10 +347,10 @@ export class EnhancedClothingImageGenerator {
       }
     }
 
-    console.log(`🎯 Enhanced batch generation completed: ${success} success, ${failed} failed`);
+    console.log(`🎯 Clean product batch generation completed: ${success} success, ${failed} failed`);
     
     if (success > 0) {
-      toast.success(`Generated ${success} professional images!`);
+      toast.success(`Generated ${success} clean product images!`);
     }
     if (failed > 0) {
       toast.warning(`${failed} images failed to generate`);
@@ -365,7 +375,7 @@ export class EnhancedClothingImageGenerator {
       throw new Error('Failed to fetch wardrobe item');
     }
 
-    // Update specific item with enhanced metadata
+    // Update specific item with clean product metadata
     const updatedItems = Array.from(wardrobeItem.extracted_clothing_items as any[]);
     if (updatedItems[arrayIndex]) {
       updatedItems[arrayIndex] = {
@@ -376,7 +386,7 @@ export class EnhancedClothingImageGenerator {
         renderImageQuality: result.quality,
         renderImageProcessingTime: result.processingTime,
         renderImageMetadata: result.metadata,
-        imageType: 'ai_enhanced'
+        imageType: 'ai_clean_product'
       };
 
       // Update database

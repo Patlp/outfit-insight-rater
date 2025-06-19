@@ -22,37 +22,42 @@ interface ContextAwareGenerationConfig {
   enhancePrompts: boolean;
 }
 
-// Comprehensive clothing type detection with taxonomy integration
+// Clean product photography detection without brand references
 const ENHANCED_CLOTHING_DETECTION = {
   footwear: {
     keywords: ['shoes', 'boots', 'sneakers', 'heels', 'flats', 'sandals', 'loafers', 'pumps', 'oxfords', 'moccasins', 'clogs', 'stilettos', 'wedges', 'platforms', 'espadrilles', 'ballet flats', 'ankle boots', 'knee boots', 'riding boots'],
     category: 'footwear',
-    basePrompt: 'Professional product photography of {color} {material} {style} {item} on white background',
-    qualityKeywords: ['high resolution', 'product photography', 'clean background', 'professional lighting', 'detailed texture']
+    basePrompt: 'Professional product photography of {color} {material} {style} {item} floating with invisible support on pure white background',
+    qualityKeywords: ['high resolution', 'product photography', 'clean background', 'professional lighting', 'detailed texture', 'no shadows'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional items, no shadows, no reflections, no logos'
   },
   tops: {
     keywords: ['shirt', 'blouse', 'top', 'sweater', 'cardigan', 'jacket', 'blazer', 'hoodie', 't-shirt', 'tank', 'camisole', 'vest', 'polo', 'turtleneck'],
     category: 'tops',
-    basePrompt: 'Professional clothing photography of {color} {material} {style} {item}, ghost mannequin style on white background',
-    qualityKeywords: ['fashion photography', 'ghost mannequin', 'fabric texture', 'professional studio lighting']
+    basePrompt: 'Professional clothing photography of {color} {material} {style} {item}, floating with invisible support on white background',
+    qualityKeywords: ['fashion photography', 'floating presentation', 'fabric texture', 'professional studio lighting', 'no shadows'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional clothing, no accessories, no shadows, no logos'
   },
   bottoms: {
     keywords: ['pants', 'jeans', 'trousers', 'shorts', 'skirt', 'leggings', 'chinos', 'slacks', 'capri', 'culottes'],
     category: 'bottoms',
-    basePrompt: 'Professional clothing photography of {color} {material} {style} {item}, flat lay or ghost mannequin on white background',
-    qualityKeywords: ['clothing photography', 'professional presentation', 'clean styling', 'fabric detail']
+    basePrompt: 'Professional clothing photography of {color} {material} {style} {item}, floating presentation on white background',
+    qualityKeywords: ['clothing photography', 'professional presentation', 'clean styling', 'fabric detail', 'no shadows'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional clothing, no shadows, no logos'
   },
   dresses: {
     keywords: ['dress', 'gown', 'sundress', 'maxi', 'midi', 'mini', 'cocktail', 'evening'],
     category: 'dresses',
-    basePrompt: 'Professional fashion photography of {color} {material} {style} {item}, ghost mannequin on white background',
-    qualityKeywords: ['fashion photography', 'elegant presentation', 'dress silhouette', 'professional styling']
+    basePrompt: 'Professional fashion photography of {color} {material} {style} {item}, floating with invisible support on white background',
+    qualityKeywords: ['fashion photography', 'elegant presentation', 'dress silhouette', 'professional styling', 'no shadows'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional items, no shadows, no logos'
   },
   accessories: {
     keywords: ['belt', 'bag', 'purse', 'backpack', 'hat', 'scarf', 'jewelry', 'necklace', 'bracelet', 'earrings', 'watch', 'sunglasses', 'handbag', 'tote', 'clutch'],
     category: 'accessories',
-    basePrompt: 'Professional product photography of {color} {material} {style} {item} on white background',
-    qualityKeywords: ['luxury product photography', 'detailed craftsmanship', 'premium presentation', 'accessory styling']
+    basePrompt: 'Professional product photography of {color} {material} {style} {item} floating on invisible support with white background',
+    qualityKeywords: ['luxury product photography', 'detailed craftsmanship', 'premium presentation', 'accessory styling', 'no shadows'],
+    negativePrompt: 'no mannequin, no model, no person, no background elements, no additional items, no shadows, no reflections, no logos'
   }
 };
 
@@ -87,19 +92,19 @@ export class ContextAwareClothingImageGenerator {
     const startTime = Date.now();
     const finalConfig = { ...this.defaultConfig, ...config };
     
-    console.log(`🎯 Starting context-aware generation for: "${itemName}"`);
+    console.log(`🎯 Starting context-aware clean product generation for: "${itemName}"`);
     
     try {
       // Step 1: Enhance item with contextual data
       const enhancedItem = await this.enhanceItemWithContext(itemName, wardrobeItemId, finalConfig, originalImageUrl);
       
-      // Step 2: Generate contextual prompt
-      const contextualPrompt = this.generateContextualPrompt(enhancedItem, finalConfig);
+      // Step 2: Generate clean contextual prompt
+      const contextualPrompt = this.generateCleanContextualPrompt(enhancedItem, finalConfig);
       
-      console.log(`📝 Generated contextual prompt: ${contextualPrompt}`);
+      console.log(`📝 Generated clean contextual prompt: ${contextualPrompt}`);
       
       // Step 3: Generate image with enhanced prompt
-      const result = await this.generateWithEnhancedOpenAI(
+      const result = await this.generateWithCleanEnhancedOpenAI(
         itemName,
         wardrobeItemId,
         arrayIndex,
@@ -110,8 +115,8 @@ export class ContextAwareClothingImageGenerator {
       const processingTime = Date.now() - startTime;
       
       if (result.success) {
-        console.log(`✅ Context-aware generation completed in ${processingTime}ms`);
-        toast.success(`Generated accurate image for ${itemName}`);
+        console.log(`✅ Context-aware clean generation completed in ${processingTime}ms`);
+        toast.success(`Generated clean product image for ${itemName}`);
         
         return {
           ...result,
@@ -120,16 +125,16 @@ export class ContextAwareClothingImageGenerator {
             processingTime,
             contextualData: enhancedItem,
             prompt: contextualPrompt,
-            generationType: 'context-aware'
+            generationType: 'context-aware-clean'
           }
         };
       } else {
-        console.error(`❌ Context-aware generation failed: ${result.error}`);
+        console.error(`❌ Context-aware clean generation failed: ${result.error}`);
         return result;
       }
       
     } catch (error) {
-      console.error(`❌ Context-aware generation error:`, error);
+      console.error(`❌ Context-aware clean generation error:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -242,7 +247,7 @@ export class ContextAwareClothingImageGenerator {
     return null;
   }
 
-  private generateContextualPrompt(
+  private generateCleanContextualPrompt(
     item: ContextualClothingItem,
     config: ContextAwareGenerationConfig
   ): string {
@@ -253,7 +258,7 @@ export class ContextAwareClothingImageGenerator {
     // Extract color, material, and style from item name and taxonomy
     const details = this.extractItemDetails(item);
     
-    // Build base prompt from template
+    // Build base prompt from clean template
     let prompt = typeConfig.basePrompt
       .replace('{color}', details.color)
       .replace('{material}', details.material)
@@ -279,20 +284,26 @@ export class ContextAwareClothingImageGenerator {
     // Add quality and technical specifications
     prompt += `, ${typeConfig.qualityKeywords.join(', ')}`;
     
-    // Add professional photography specifications
-    prompt += ', professional studio lighting, high-resolution, catalog quality, clean composition, no shadows';
+    // Add clean professional photography specifications
+    prompt += ', professional product photography, clean isolated presentation, high resolution catalog style';
+    
+    // Add technical camera and lighting details
+    prompt += ', shot with professional camera, soft box lighting, no harsh shadows, clean composition, single item focus';
     
     // Add specific style directive based on configuration
     switch (config.style) {
       case 'catalog_style':
-        prompt += ', e-commerce catalog style, consistent lighting';
+        prompt += ', e-commerce catalog style, consistent lighting, floating presentation';
         break;
       case 'studio_shot':
-        prompt += ', studio photography, premium presentation';
+        prompt += ', studio photography, premium presentation, invisible support';
         break;
       default:
-        prompt += ', product photography style';
+        prompt += ', product photography style, floating presentation';
     }
+    
+    // Add negative prompt for strict exclusions
+    prompt += `\n\nNEGATIVE PROMPT: ${typeConfig.negativePrompt}, no creative styling, no environmental elements, no brand elements, no artistic effects`;
     
     return prompt;
   }
@@ -336,7 +347,7 @@ export class ContextAwareClothingImageGenerator {
     return { color, material, style, itemType };
   }
 
-  private async generateWithEnhancedOpenAI(
+  private async generateWithCleanEnhancedOpenAI(
     itemName: string,
     wardrobeItemId: string,
     arrayIndex: number,
@@ -366,12 +377,12 @@ export class ContextAwareClothingImageGenerator {
         imageUrl: data.imageUrl,
         metadata: {
           ...data.metadata,
-          generationType: 'context-aware-enhanced',
+          generationType: 'context-aware-clean-product',
           promptUsed: prompt
         }
       };
     } catch (error) {
-      console.error(`❌ Context-aware OpenAI generation failed:`, error);
+      console.error(`❌ Context-aware clean OpenAI generation failed:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -385,7 +396,7 @@ export class ContextAwareClothingImageGenerator {
     originalImageUrl?: string,
     config: Partial<ContextAwareGenerationConfig> = {}
   ): Promise<{ success: number; failed: number; results: any[] }> {
-    console.log(`🚀 Starting context-aware batch generation for ${clothingItems.length} items`);
+    console.log(`🚀 Starting context-aware clean batch generation for ${clothingItems.length} items`);
     
     // Initialize with taxonomy data
     await this.initialize();
@@ -437,10 +448,10 @@ export class ContextAwareClothingImageGenerator {
       }
     }
 
-    console.log(`🎯 Context-aware batch generation completed: ${success} success, ${failed} failed`);
+    console.log(`🎯 Context-aware clean batch generation completed: ${success} success, ${failed} failed`);
     
     if (success > 0) {
-      toast.success(`Generated ${success} accurate contextual images!`);
+      toast.success(`Generated ${success} clean contextual images!`);
     }
     if (failed > 0) {
       toast.warning(`${failed} images failed to generate`);
@@ -465,16 +476,16 @@ export class ContextAwareClothingImageGenerator {
       throw new Error('Failed to fetch wardrobe item');
     }
 
-    // Update specific item with contextual metadata
+    // Update specific item with clean contextual metadata
     const updatedItems = Array.from(wardrobeItem.extracted_clothing_items as any[]);
     if (updatedItems[arrayIndex]) {
       updatedItems[arrayIndex] = {
         ...updatedItems[arrayIndex],
         renderImageUrl: result.imageUrl,
         renderImageGeneratedAt: new Date().toISOString(),
-        renderImageProvider: 'context_aware_openai',
+        renderImageProvider: 'context_aware_clean_openai',
         renderImageMetadata: result.metadata,
-        imageType: 'context_aware_ai',
+        imageType: 'context_aware_clean_product',
         generationAccuracy: 'high'
       };
 
