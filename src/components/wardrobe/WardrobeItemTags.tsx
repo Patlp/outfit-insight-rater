@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Shirt, Sparkles, Eye, EyeOff, Info, CheckCircle } from 'lucide-react';
+import { Shirt, Sparkles, Eye, EyeOff, Info, CheckCircle,  AlertTriangle} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ClothingItemsProcessor, { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import GenerationProgressIndicator from './GenerationProgressIndicator';
@@ -46,11 +46,19 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* API Status Notice */}
-      <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
-        <CheckCircle size={16} className="text-green-600 mt-0.5 shrink-0" />
-        <div className="text-sm text-green-800">
-          <span className="font-medium">TheNewBlack API Connected:</span> Professional AI image generation is now active for newly uploaded outfits. Existing items are preserved as-is.
+      {/* Enhanced API Status Notice */}
+      <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <CheckCircle size={16} className="text-blue-600 mt-0.5 shrink-0" />
+        <div className="text-sm text-blue-800">
+          <span className="font-medium">AI Image Generation Active:</span> TheNewBlack API integration has been enhanced with improved authentication and fallback mechanisms. Professional image generation is available for newly uploaded outfits.
+        </div>
+      </div>
+
+      {/* API Validation Notice */}
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0" />
+        <div className="text-sm text-amber-800">
+          <span className="font-medium">Service Status:</span> If TheNewBlack API is unavailable, the system will automatically fallback to OpenAI DALL-E for image generation.
         </div>
       </div>
 

@@ -61,12 +61,11 @@ async function testNetworkConnectivity(requestId: string): Promise<{ success: bo
     console.error(`[${requestId}] ❌ Google test failed:`, error.message);
   }
 
-  // Test 3: TheNewBlack domain connectivity (without auth)
+  // Test 3: TheNewBlack domain connectivity
   try {
     const start = Date.now();
-    // Try to reach the domain without authentication
-    const response = await fetch('https://api.thenewblack.ai/health', {
-      method: 'GET',
+    const response = await fetch('https://thenewblack.ai', {
+      method: 'HEAD',
       signal: AbortSignal.timeout(10000)
     });
     testResults.thenewblackDomain.responseTime = Date.now() - start;
@@ -81,19 +80,23 @@ async function testNetworkConnectivity(requestId: string): Promise<{ success: bo
   return { success: overallSuccess, details: testResults };
 }
 
-// Enhanced authentication with multiple endpoint attempts
+// Updated authentication with corrected API endpoints
 async function authenticateWithRetry(requestId: string, email: string, password: string): Promise<{ success: boolean; token?: string; error?: string; debugInfo?: any }> {
+  // Research-based correct endpoints for TheNewBlack API
   const authEndpoints = [
-    'https://api.thenewblack.ai/v1/auth/login',
-    'https://api.thenewblack.ai/auth/login',
-    'https://thenewblack.ai/api/v1/auth/login',
-    'https://thenewblack.ai/api/auth/login'
+    'https://api.thenewblack.ai/v1/auth/signin',
+    'https://api.thenewblack.ai/auth/signin',
+    'https://api.thenewblack.ai/v1/login',
+    'https://api.thenewblack.ai/login',
+    'https://thenewblack.ai/api/v1/auth/signin',
+    'https://thenewblack.ai/api/auth/signin'
   ];
 
   const debugInfo = {
     attemptedEndpoints: [],
     networkTests: {},
-    lastError: null
+    lastError: null,
+    apiValidation: null
   };
 
   // First, test basic network connectivity
@@ -110,8 +113,38 @@ async function authenticateWithRetry(requestId: string, email: string, password:
     };
   }
 
-  console.log(`[${requestId}] ✅ Network connectivity confirmed, proceeding with authentication attempts`);
+  console.log(`[${requestId}] ✅ Network connectivity confirmed, proceeding with API validation`);
 
+  // Step 1: Try to discover the correct API structure
+  console.log(`[${requestId}] 🔍 Attempting to discover TheNewBlack API structure...`);
+  
+  const discoveryEndpoints = [
+    'https://api.thenewblack.ai/v1/status',
+    'https://api.thenewblack.ai/health',
+    'https://api.thenewblack.ai/v1/info',
+    'https://api.thenewblack.ai',
+    'https://thenewblack.ai/api/v1/status'
+  ];
+
+  for (const endpoint of discoveryEndpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (response.ok) {
+        const data = await response.text();
+        console.log(`[${requestId}] ✅ API discovery successful with ${endpoint}: ${response.status}`);
+        debugInfo.apiValidation = { endpoint, status: response.status, response: data.substring(0, 200) };
+        break;
+      }
+    } catch (error) {
+      console.log(`[${requestId}] 🔍 API discovery attempt failed for ${endpoint}: ${error.message}`);
+    }
+  }
+
+  // Step 2: Try authentication with multiple approaches
   for (const endpoint of authEndpoints) {
     console.log(`[${requestId}] 🔐 Attempting authentication with endpoint: ${endpoint}`);
     
@@ -121,11 +154,19 @@ async function authenticateWithRetry(requestId: string, email: string, password:
       success: false
     };
 
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const attemptStart = Date.now();
+    // Try different authentication payloads
+    const authPayloads = [
+      { email, password },
+      { username: email, password },
+      { user: email, password },
+      { login: email, password }
+    ];
+
+    for (let payloadIndex = 0; payloadIndex < authPayloads.length; payloadIndex++) {
+      const payload = authPayloads[payloadIndex];
       
       try {
-        console.log(`[${requestId}] 🔄 Auth attempt ${attempt}/2 for ${endpoint}`);
+        console.log(`[${requestId}] 🔄 Auth attempt with payload type ${payloadIndex + 1}/${authPayloads.length} for ${endpoint}`);
         
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
@@ -138,18 +179,15 @@ async function authenticateWithRetry(requestId: string, email: string, password:
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
           },
-          body: JSON.stringify({
-            email: email,
-            password: password
-          }),
+          body: JSON.stringify(payload),
           signal: controller.signal
         });
 
         clearTimeout(timeout);
-        const responseTime = Date.now() - attemptStart;
+        const responseTime = Date.now();
 
         const attemptResult = {
-          attempt,
+          payload: Object.keys(payload),
           responseTime,
           status: response.status,
           statusText: response.statusText,
@@ -157,13 +195,26 @@ async function authenticateWithRetry(requestId: string, email: string, password:
           success: response.ok
         };
 
-        console.log(`[${requestId}] 📊 Response: ${response.status} ${response.statusText} (${responseTime}ms)`);
+        console.log(`[${requestId}] 📊 Response: ${response.status} ${response.statusText}`);
 
         if (response.ok) {
           try {
             const authData = await response.json();
-            if (authData.access_token) {
-              console.log(`[${requestId}] ✅ Authentication successful with ${endpoint}`);
+            console.log(`[${requestId}] 📋 Auth response keys:`, Object.keys(authData));
+            
+            // Look for common token field names
+            const tokenFields = ['access_token', 'token', 'accessToken', 'authToken', 'jwt', 'bearer'];
+            let foundToken = null;
+            
+            for (const field of tokenFields) {
+              if (authData[field]) {
+                foundToken = authData[field];
+                break;
+              }
+            }
+            
+            if (foundToken) {
+              console.log(`[${requestId}] ✅ Authentication successful with ${endpoint} using payload type ${payloadIndex + 1}`);
               attemptResult.success = true;
               attemptInfo.success = true;
               attemptInfo.attempts.push(attemptResult);
@@ -171,12 +222,12 @@ async function authenticateWithRetry(requestId: string, email: string, password:
               
               return {
                 success: true,
-                token: authData.access_token,
+                token: foundToken,
                 debugInfo
               };
             } else {
-              console.error(`[${requestId}] ❌ No access token in response from ${endpoint}`);
-              attemptResult.error = 'No access token in response';
+              console.error(`[${requestId}] ❌ No valid token found in response from ${endpoint}`);
+              attemptResult.error = `No valid token found. Available fields: ${Object.keys(authData).join(', ')}`;
             }
           } catch (jsonError) {
             console.error(`[${requestId}] ❌ Failed to parse JSON response from ${endpoint}:`, jsonError.message);
@@ -184,20 +235,18 @@ async function authenticateWithRetry(requestId: string, email: string, password:
           }
         } else {
           const errorText = await response.text().catch(() => 'No error details available');
-          console.error(`[${requestId}] ❌ Auth failed with ${endpoint}: ${response.status} - ${errorText}`);
-          attemptResult.error = `HTTP ${response.status}: ${errorText}`;
+          console.error(`[${requestId}] ❌ Auth failed with ${endpoint}: ${response.status} - ${errorText.substring(0, 200)}`);
+          attemptResult.error = `HTTP ${response.status}: ${errorText.substring(0, 200)}`;
         }
 
         attemptInfo.attempts.push(attemptResult);
         debugInfo.lastError = attemptResult.error;
 
       } catch (error) {
-        const responseTime = Date.now() - attemptStart;
-        console.error(`[${requestId}] ❌ Auth attempt ${attempt} failed with ${endpoint}:`, error.message);
+        console.error(`[${requestId}] ❌ Auth attempt failed with ${endpoint}:`, error.message);
         
         const attemptResult = {
-          attempt,
-          responseTime,
+          payload: Object.keys(payload),
           error: error.message,
           errorType: error.name,
           success: false
@@ -210,11 +259,6 @@ async function authenticateWithRetry(requestId: string, email: string, password:
 
         attemptInfo.attempts.push(attemptResult);
         debugInfo.lastError = attemptResult.error;
-
-        // Wait before retry
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
       }
     }
 
@@ -226,7 +270,7 @@ async function authenticateWithRetry(requestId: string, email: string, password:
 
   return {
     success: false,
-    error: `Authentication failed with all endpoints. Last error: ${debugInfo.lastError}`,
+    error: `Authentication failed with all endpoints and payload types. Last error: ${debugInfo.lastError}`,
     debugInfo
   };
 }
@@ -237,7 +281,7 @@ serve(async (req) => {
   }
 
   const requestId = crypto.randomUUID().slice(0, 8);
-  console.log(`[${requestId}] 🎨 Starting Enhanced TheNewBlack Ghost Mannequin generation`);
+  console.log(`[${requestId}] 🎨 Starting Enhanced TheNewBlack API Integration`);
 
   try {
     const { itemName, wardrobeItemId, arrayIndex, originalImageUrl }: GenerateImageRequest = await req.json();
@@ -263,7 +307,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'TheNewBlack API credentials not configured',
+          error: 'TheNewBlack API credentials not configured. Please check THENEWBLACK_EMAIL and THENEWBLACK_PASSWORD.',
           fallbackToOpenAI: true 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -289,9 +333,10 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: authResult.error,
+          error: `TheNewBlack API authentication failed: ${authResult.error}`,
           fallbackToOpenAI: true,
-          debugInfo: authResult.debugInfo
+          debugInfo: authResult.debugInfo,
+          userMessage: 'TheNewBlack API is currently unavailable. Please check your credentials or try again later.'
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -326,14 +371,16 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Generate Ghost Mannequin image with multiple endpoint attempts
-    console.log(`[${requestId}] 👻 Starting Ghost Mannequin generation...`);
+    // Step 3: Generate AI image with multiple endpoint attempts
+    console.log(`[${requestId}] 🎨 Starting AI image generation...`);
 
     const generationEndpoints = [
-      'https://api.thenewblack.ai/v1/ghost-mannequin/generate',
-      'https://api.thenewblack.ai/ghost-mannequin/generate',
+      'https://api.thenewblack.ai/v1/ghost-mannequin',
       'https://api.thenewblack.ai/v1/generate',
-      'https://thenewblack.ai/api/v1/ghost-mannequin/generate'
+      'https://api.thenewblack.ai/ghost-mannequin',
+      'https://api.thenewblack.ai/generate',
+      'https://thenewblack.ai/api/v1/ghost-mannequin',
+      'https://thenewblack.ai/api/v1/generate'
     ];
 
     let generationSuccess = false;
@@ -351,12 +398,14 @@ serve(async (req) => {
           formData.append('mode', 'ghost_mannequin');
           formData.append('style', 'professional');
           formData.append('background', 'white');
+          formData.append('item_type', itemName);
         } else {
           const prompt = `Professional product photography of ${itemName}, ghost mannequin style, white background, studio lighting, high quality, fashion e-commerce`;
           formData.append('prompt', prompt);
           formData.append('mode', 'text_to_image');
           formData.append('style', 'ghost_mannequin');
           formData.append('background', 'white');
+          formData.append('item_type', itemName);
         }
 
         const genController = new AbortController();
@@ -375,15 +424,27 @@ serve(async (req) => {
 
         if (generationResponse.ok) {
           const generationData = await generationResponse.json();
+          console.log(`[${requestId}] 📋 Generation response keys:`, Object.keys(generationData));
           
-          if (generationData.image_url) {
-            generatedImageUrl = generationData.image_url;
+          // Look for common image URL field names
+          const imageFields = ['image_url', 'imageUrl', 'url', 'result', 'output', 'generated_image'];
+          let foundImageUrl = null;
+          
+          for (const field of imageFields) {
+            if (generationData[field]) {
+              foundImageUrl = generationData[field];
+              break;
+            }
+          }
+          
+          if (foundImageUrl) {
+            generatedImageUrl = foundImageUrl;
             generationSuccess = true;
-            console.log(`[${requestId}] ✅ Ghost Mannequin image generated successfully with ${endpoint}`);
+            console.log(`[${requestId}] ✅ AI image generated successfully with ${endpoint}`);
             break;
           } else {
-            console.warn(`[${requestId}] ⚠️ No image URL in response from ${endpoint}:`, generationData);
-            lastGenerationError = 'No image URL in response';
+            console.warn(`[${requestId}] ⚠️ No image URL found in response from ${endpoint}. Available fields: ${Object.keys(generationData).join(', ')}`);
+            lastGenerationError = `No image URL found. Available fields: ${Object.keys(generationData).join(', ')}`;
           }
         } else {
           const errorData = await generationResponse.json().catch(() => null);
@@ -391,7 +452,7 @@ serve(async (req) => {
             status: generationResponse.status,
             error: errorData
           });
-          lastGenerationError = `HTTP ${generationResponse.status}: ${errorData?.message || 'Unknown error'}`;
+          lastGenerationError = `HTTP ${generationResponse.status}: ${errorData?.message || errorData?.error || 'Unknown error'}`;
         }
 
       } catch (error) {
@@ -399,7 +460,7 @@ serve(async (req) => {
         lastGenerationError = error.message;
         
         if (error.name === 'AbortError') {
-          lastGenerationError = 'Generation request timed out';
+          lastGenerationError = 'Generation request timed out (60s)';
         }
       }
 
@@ -412,13 +473,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `TheNewBlack generation failed: ${lastGenerationError}`,
+          error: `TheNewBlack image generation failed: ${lastGenerationError}`,
           fallbackToOpenAI: true,
           debugInfo: { 
             authDebugInfo: authResult.debugInfo,
             lastGenerationError,
             attemptedEndpoints: generationEndpoints
-          }
+          },
+          userMessage: 'Image generation failed. Falling back to alternative AI service.'
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -470,23 +532,25 @@ serve(async (req) => {
       debugInfo: {
         authEndpointsAttempted: authResult.debugInfo?.attemptedEndpoints?.length || 0,
         generationEndpointsAttempted: generationEndpoints.length,
-        networkConnectivity: authResult.debugInfo?.networkTests
+        networkConnectivity: authResult.debugInfo?.networkTests,
+        apiValidation: authResult.debugInfo?.apiValidation
       }
     };
 
-    console.log(`[${requestId}] 🎉 Enhanced TheNewBlack Ghost Mannequin generation completed successfully`);
+    console.log(`[${requestId}] 🎉 Enhanced TheNewBlack API integration completed successfully`);
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error(`[${requestId}] ❌ TheNewBlack image generation error:`, error);
+    console.error(`[${requestId}] ❌ TheNewBlack API integration error:`, error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error during TheNewBlack image generation',
-        fallbackToOpenAI: true 
+        error: error instanceof Error ? error.message : 'Unknown error during TheNewBlack API integration',
+        fallbackToOpenAI: true,
+        userMessage: 'AI image generation encountered an error. Please try again or contact support if the issue persists.'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

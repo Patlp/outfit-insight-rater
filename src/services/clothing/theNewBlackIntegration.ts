@@ -8,6 +8,7 @@ interface TheNewBlackGenerationResult {
   error?: string;
   fallbackToOpenAI?: boolean;
   debugInfo?: any;
+  userMessage?: string;
 }
 
 export const generateTheNewBlackImage = async (
@@ -43,14 +44,20 @@ export const generateTheNewBlackImage = async (
       console.error('❌ TheNewBlack edge function error:', error);
       console.error('🔍 Debug info available:', data?.debugInfo);
       
-      // Log network connectivity details if available
-      if (data?.debugInfo?.networkConnectivity) {
-        console.log('🌐 Network connectivity test results:', data.debugInfo.networkConnectivity);
+      // Log detailed debug information
+      if (data?.debugInfo) {
+        console.log('🔍 Authentication attempts:', data.debugInfo.authEndpointsAttempted);
+        console.log('🔍 Generation attempts:', data.debugInfo.generationEndpointsAttempted);
+        console.log('🔍 Network connectivity:', data.debugInfo.networkConnectivity);
+        console.log('🔍 API validation:', data.debugInfo.apiValidation);
       }
+      
+      // Show user-friendly error message
+      const userMessage = data?.userMessage || `Failed to generate TheNewBlack image for ${itemName}: ${error.message}`;
       
       // Check if we should fallback to OpenAI
       if (data?.fallbackToOpenAI) {
-        console.log(`🔄 Falling back to OpenAI for "${itemName}" due to TheNewBlack connectivity issues`);
+        console.log(`🔄 Falling back to OpenAI for "${itemName}" due to TheNewBlack API issues`);
         toast.info(`TheNewBlack service unavailable for ${itemName}, using OpenAI instead...`);
         
         // Import and use OpenAI fallback
@@ -58,8 +65,13 @@ export const generateTheNewBlackImage = async (
         return await generateClothingImage(itemName, wardrobeItemId, arrayIndex);
       }
       
-      toast.error(`Failed to generate TheNewBlack image for ${itemName}: ${error.message}`);
-      return { success: false, error: error.message, debugInfo: data?.debugInfo };
+      toast.error(userMessage);
+      return { 
+        success: false, 
+        error: error.message, 
+        debugInfo: data?.debugInfo,
+        userMessage 
+      };
     }
 
     if (!data?.success) {
@@ -67,6 +79,7 @@ export const generateTheNewBlackImage = async (
       console.error('🔍 Debug info:', data?.debugInfo);
       
       const errorMessage = data?.error || 'Unknown error during TheNewBlack generation';
+      const userMessage = data?.userMessage || `TheNewBlack generation failed for ${itemName}: ${errorMessage}`;
       
       // Check if we should fallback to OpenAI
       if (data?.fallbackToOpenAI) {
@@ -78,25 +91,35 @@ export const generateTheNewBlackImage = async (
         return await generateClothingImage(itemName, wardrobeItemId, arrayIndex);
       }
       
-      toast.error(`TheNewBlack generation failed for ${itemName}: ${errorMessage}`);
-      return { success: false, error: errorMessage, debugInfo: data?.debugInfo };
+      toast.error(userMessage);
+      return { 
+        success: false, 
+        error: errorMessage, 
+        debugInfo: data?.debugInfo,
+        userMessage 
+      };
     }
 
     console.log(`✅ Enhanced TheNewBlack image generated successfully for "${itemName}": ${data.imageUrl}`);
     
-    // Log debug info for successful requests too
+    // Log success debug info
     if (data.debugInfo) {
       console.log('🔍 Success debug info:', {
         authEndpointsAttempted: data.debugInfo.authEndpointsAttempted,
         generationEndpointsAttempted: data.debugInfo.generationEndpointsAttempted,
         networkConnectivity: data.debugInfo.networkConnectivity,
+        apiValidation: data.debugInfo.apiValidation,
         usedCroppedImage: !!croppedImageUrl
       });
     }
     
     const imageType = croppedImageUrl ? 'cropped image' : 'original image';
-    toast.success(`Generated professional image for ${itemName} using TheNewBlack Ghost Mannequin (${imageType})`);
-    return { success: true, imageUrl: data.imageUrl, debugInfo: data.debugInfo };
+    toast.success(`Generated professional image for ${itemName} using TheNewBlack AI (${imageType})`);
+    return { 
+      success: true, 
+      imageUrl: data.imageUrl, 
+      debugInfo: data.debugInfo 
+    };
 
   } catch (error) {
     console.error('❌ TheNewBlack generation service error:', error);
@@ -114,7 +137,8 @@ export const generateTheNewBlackImage = async (
       toast.error(`Both TheNewBlack and OpenAI failed for ${itemName}`);
       return { 
         success: false, 
-        error: `Both services failed: ${errorMessage}` 
+        error: `Both services failed: ${errorMessage}`,
+        userMessage: `Unable to generate image for ${itemName}. Please try again later.`
       };
     }
   }

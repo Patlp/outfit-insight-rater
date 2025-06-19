@@ -28,7 +28,7 @@ export const triggerAIImageGeneration = async (
   provider: ImageProvider = 'thenewblack'
 ): Promise<void> => {
   try {
-    console.log(`🚀 Starting AI image generation for wardrobe item: ${wardrobeItemId} with credentials configured`);
+    console.log(`🚀 Starting enhanced AI image generation for wardrobe item: ${wardrobeItemId} with improved API integration`);
 
     // Get the wardrobe item with its extracted clothing items, original image, and creation timestamp
     const { data: wardrobeItem, error } = await supabase
@@ -83,32 +83,32 @@ export const triggerAIImageGeneration = async (
       return;
     }
 
-    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using ${provider} with configured credentials`);
+    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using enhanced ${provider} integration`);
 
     // Choose the appropriate generation method based on provider
     if (provider === 'thenewblack') {
-      // Use TheNewBlack Ghost Mannequin API with enhanced context
-      console.log('🔑 Using TheNewBlack API with configured email and password credentials');
+      // Use enhanced TheNewBlack API with improved authentication and validation
+      console.log('🔑 Using enhanced TheNewBlack API with improved authentication, endpoint discovery, and fallback mechanisms');
       generateTheNewBlackImagesForClothingItems(
         wardrobeItemId, 
         extractedItems,
         wardrobeItem.image_url,
         croppedImagesArray
       ).catch(error => {
-        console.error('❌ Background TheNewBlack image generation failed:', error);
+        console.error('❌ Enhanced TheNewBlack image generation failed:', error);
       });
     } else {
       // Fallback to OpenAI DALL-E
       generateImagesForClothingItems(wardrobeItemId, extractedItems)
         .catch(error => {
-          console.error('❌ Background OpenAI image generation failed:', error);
+          console.error('❌ OpenAI image generation failed:', error);
         });
     }
 
-    console.log(`🔄 AI image generation started in background using ${provider} with proper authentication`);
+    console.log(`🔄 Enhanced AI image generation started in background using ${provider} with comprehensive error handling`);
 
   } catch (error) {
-    console.error('❌ Error triggering AI image generation:', error);
+    console.error('❌ Error triggering enhanced AI image generation:', error);
   }
 };
 
