@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
@@ -42,13 +41,13 @@ export const saveOutfitToWardrobe = async (
       return { error: error.message };
     }
 
-    console.log('✅ Outfit saved with ID:', wardrobeItem.id, 'with original image URL preserved');
+    console.log('✅ Outfit saved with ID:', wardrobeItem.id, 'with original image URL preserved:', imageUrl);
 
     // Start CONTEXT-AWARE AI-powered processing pipeline
     if (imageFile && wardrobeItem.id) {
       console.log('🚀 Starting CONTEXT-AWARE AI processing pipeline with maximum accuracy generation...');
       
-      // Process in background with context-aware accuracy
+      // Process in background with context-aware accuracy, passing the preserved image URL
       processOutfitWithContextAwareAIPipeline(wardrobeItem.id, imageFile, feedback, suggestions, imageUrl)
         .catch(error => {
           console.error('❌ Context-aware AI processing pipeline failed:', error);
@@ -73,6 +72,7 @@ const processOutfitWithContextAwareAIPipeline = async (
 ): Promise<void> => {
   try {
     console.log('🚀 Starting CONTEXT-AWARE AI processing pipeline for wardrobe item:', wardrobeItemId);
+    console.log('📸 Using original image URL for clothing items:', originalImageUrl);
 
     // Step 1: Enhanced Clothing Extraction with taxonomy integration
     console.log('🔍 Step 1: Running enhanced clothing extraction with taxonomy integration...');
@@ -99,7 +99,7 @@ const processOutfitWithContextAwareAIPipeline = async (
         const contextualClothingItems = await enhanceClothingItemsWithContextualData(
           extractionResult.clothingItems,
           croppedImages,
-          originalImageUrl // Pass the original image URL to be preserved in each clothing item
+          originalImageUrl
         );
         
         await updateWardrobeItemWithContextualClothingItems(wardrobeItemId, contextualClothingItems);
@@ -140,6 +140,7 @@ const enhanceClothingItemsWithContextualData = async (
   originalImageUrl?: string
 ): Promise<any[]> => {
   console.log('🔗 Enhancing clothing items with contextual metadata for accurate generation...');
+  console.log('📸 Original image URL being preserved for all items:', originalImageUrl);
   
   return clothingItems.map((item, index) => {
     // Advanced matching algorithm for cropped images
@@ -154,26 +155,29 @@ const enhanceClothingItemsWithContextualData = async (
              itemName.split(' ').some(word => croppedName.split(' ').includes(word));
     });
     
+    const enhancedItem = {
+      ...item,
+      contextualProcessing: true,
+      accuracyLevel: 'maximum',
+      originalImageUrl: originalImageUrl // Ensure this is set for all items
+    };
+    
     if (matchingCroppedImage) {
       console.log(`✅ Contextual match: "${item.name}" → cropped image for accurate generation`);
+      console.log(`📸 Setting originalImageUrl for "${item.name}": ${originalImageUrl}`);
       return {
-        ...item,
+        ...enhancedItem,
         croppedImageUrl: matchingCroppedImage.cropped_image_url,
         boundingBox: matchingCroppedImage.bounding_box,
         croppingConfidence: matchingCroppedImage.confidence,
-        imageType: 'cropped_contextual',
-        contextualProcessing: true,
-        accuracyLevel: 'maximum',
-        originalImageUrl: originalImageUrl // Preserve the original image URL for the toggle
+        imageType: 'cropped_contextual'
       };
     } else {
       console.log(`⚠️ No contextual match for "${item.name}" - will use context-aware generation`);
+      console.log(`📸 Setting originalImageUrl for "${item.name}": ${originalImageUrl}`);
       return {
-        ...item,
-        imageType: 'needs_contextual_generation',
-        contextualProcessing: true,
-        accuracyLevel: 'maximum',
-        originalImageUrl: originalImageUrl // Preserve the original image URL for the toggle
+        ...enhancedItem,
+        imageType: 'needs_contextual_generation'
       };
     }
   });
