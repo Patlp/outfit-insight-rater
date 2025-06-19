@@ -5,6 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 type ImageProvider = 'openai' | 'thenewblack';
 
+// Type guard to check if Json is an array of clothing items
+const isClothingItemsArray = (data: any): data is any[] => {
+  return Array.isArray(data);
+};
+
 export const triggerAIImageGeneration = async (
   wardrobeItemId: string, 
   provider: ImageProvider = 'thenewblack'
@@ -24,13 +29,20 @@ export const triggerAIImageGeneration = async (
       return;
     }
 
-    if (!wardrobeItem?.extracted_clothing_items || !Array.isArray(wardrobeItem.extracted_clothing_items)) {
+    if (!wardrobeItem?.extracted_clothing_items) {
       console.log('⚠️ No extracted clothing items found for AI generation');
       return;
     }
 
+    // Type guard and cast the Json type to array
+    const extractedItems = wardrobeItem.extracted_clothing_items;
+    if (!isClothingItemsArray(extractedItems)) {
+      console.log('⚠️ Extracted clothing items is not an array');
+      return;
+    }
+
     // Filter out items that already have render images
-    const itemsNeedingImages = wardrobeItem.extracted_clothing_items.filter(
+    const itemsNeedingImages = extractedItems.filter(
       (item: any, index: number) => !item?.renderImageUrl
     );
 
@@ -46,7 +58,7 @@ export const triggerAIImageGeneration = async (
       // Use TheNewBlack Ghost Mannequin API with enhanced context
       generateTheNewBlackImagesForClothingItems(
         wardrobeItemId, 
-        wardrobeItem.extracted_clothing_items,
+        extractedItems,
         wardrobeItem.image_url,
         wardrobeItem.cropped_images
       ).catch(error => {
@@ -54,7 +66,7 @@ export const triggerAIImageGeneration = async (
       });
     } else {
       // Fallback to OpenAI DALL-E
-      generateImagesForClothingItems(wardrobeItemId, wardrobeItem.extracted_clothing_items)
+      generateImagesForClothingItems(wardrobeItemId, extractedItems)
         .catch(error => {
           console.error('❌ Background OpenAI image generation failed:', error);
         });
