@@ -155,3 +155,61 @@ export const pollWardrobeItemUpdates = async (wardrobeItemId: string): Promise<a
     return null;
   }
 };
+
+// Enhanced batch processing function for multiple wardrobe items
+export const batchProcessWardrobeItems = async (
+  wardrobeItemIds: string[],
+  provider: ImageProvider = 'thenewblack'
+): Promise<{ success: number; failed: number }> => {
+  console.log(`🚀 Starting batch processing for ${wardrobeItemIds.length} wardrobe items`);
+  
+  let success = 0;
+  let failed = 0;
+
+  // Process items sequentially to avoid overwhelming the APIs
+  for (const itemId of wardrobeItemIds) {
+    try {
+      await triggerAIImageGeneration(itemId, provider);
+      success++;
+      // Small delay between items
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(`❌ Failed to process wardrobe item ${itemId}:`, error);
+      failed++;
+    }
+  }
+
+  console.log(`✅ Batch processing completed: ${success} success, ${failed} failed`);
+  return { success, failed };
+};
+
+// Function to check generation status across multiple items
+export const checkGenerationProgress = async (wardrobeItemId: string): Promise<{
+  total: number;
+  completed: number;
+  inProgress: number;
+  failed: number;
+}> => {
+  try {
+    const { data: wardrobeItem, error } = await supabase
+      .from('wardrobe_items')
+      .select('extracted_clothing_items')
+      .eq('id', wardrobeItemId)
+      .single();
+
+    if (error || !wardrobeItem?.extracted_clothing_items) {
+      return { total: 0, completed: 0, inProgress: 0, failed: 0 };
+    }
+
+    const items = wardrobeItem.extracted_clothing_items as any[];
+    const total = items.length;
+    const completed = items.filter(item => item?.renderImageUrl).length;
+    const failed = items.filter(item => item?.renderImageError).length;
+    const inProgress = total - completed - failed;
+
+    return { total, completed, inProgress, failed };
+  } catch (error) {
+    console.error('❌ Error checking generation progress:', error);
+    return { total: 0, completed: 0, inProgress: 0, failed: 0 };
+  }
+};
