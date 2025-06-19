@@ -42,7 +42,6 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
   const hasClothingItems = clothingItems.length > 0;
   const aiGeneratedCount = clothingItems.filter(item => item?.renderImageUrl).length;
   const enhancedCount = clothingItems.filter(item => 
-    item?.renderImageProvider === 'thenewblack_enhanced' || 
     item?.renderImageProvider === 'openai_enhanced'
   ).length;
   const totalItems = clothingItems.length;
@@ -53,7 +52,7 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
       <div className="flex items-start gap-2 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-3">
         <Star size={16} className="text-blue-600 mt-0.5 shrink-0" />
         <div className="text-sm text-blue-800">
-          <span className="font-medium">Enhanced AI Generation System:</span> Now featuring professional studio-quality image generation with clothing-specific prompts, TheNewBlack ghost mannequin technology, and DALL-E 3 fallback for ultra-realistic product photography.
+          <span className="font-medium">Enhanced OpenAI Generation System:</span> Now featuring professional studio-quality image generation with clothing-specific prompts and DALL-E 3 for ultra-realistic product photography.
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 import { enhancedClothingImageGenerator } from '@/services/clothing/enhancedAIImageGeneration';
 import { supabase } from '@/integrations/supabase/client';
 
-type ImageProvider = 'enhanced_thenewblack' | 'enhanced_openai' | 'thenewblack' | 'openai';
+type ImageProvider = 'enhanced_openai' | 'openai';
 
 // Type guard to check if Json is an array of clothing items
 const isClothingItemsArray = (data: any): data is any[] => {
@@ -25,7 +25,7 @@ const isNewlyCreatedItem = (createdAt: string): boolean => {
 
 export const triggerEnhancedAIImageGeneration = async (
   wardrobeItemId: string, 
-  provider: ImageProvider = 'enhanced_thenewblack'
+  provider: ImageProvider = 'enhanced_openai'
 ): Promise<void> => {
   try {
     console.log(`🚀 Starting ENHANCED AI generation for wardrobe item: ${wardrobeItemId} with professional quality`);
@@ -83,7 +83,7 @@ export const triggerEnhancedAIImageGeneration = async (
 
     console.log(`🎨 Generating ENHANCED professional images for ${itemsNeedingImages.length} items`);
 
-    // Use enhanced generation system
+    // Use enhanced generation system with OpenAI only
     const config = {
       resolution: '1024x1024',
       quality: 'high' as const,
@@ -91,7 +91,7 @@ export const triggerEnhancedAIImageGeneration = async (
       background: 'white' as const,
       variants: 1,
       temperature: 0.3,
-      provider: provider.includes('thenewblack') ? 'thenewblack' as const : 'openai' as const
+      provider: 'openai' as const
     };
 
     enhancedClothingImageGenerator.batchGenerateImages(
@@ -115,7 +115,7 @@ export const triggerEnhancedAIImageGeneration = async (
 // Legacy compatibility - now uses enhanced system
 export const triggerAIImageGeneration = async (
   wardrobeItemId: string, 
-  provider: ImageProvider = 'enhanced_thenewblack'
+  provider: ImageProvider = 'enhanced_openai'
 ): Promise<void> => {
   return triggerEnhancedAIImageGeneration(wardrobeItemId, provider);
 };
@@ -194,7 +194,7 @@ export const pollWardrobeItemUpdates = async (wardrobeItemId: string): Promise<a
 
 export const batchProcessWardrobeItems = async (
   wardrobeItemIds: string[],
-  provider: ImageProvider = 'enhanced_thenewblack'
+  provider: ImageProvider = 'enhanced_openai'
 ): Promise<{ success: number; failed: number; skipped: number }> => {
   console.log(`🚀 Starting enhanced batch processing for ${wardrobeItemIds.length} wardrobe items`);
   

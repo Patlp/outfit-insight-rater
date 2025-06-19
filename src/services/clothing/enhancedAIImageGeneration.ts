@@ -18,7 +18,7 @@ interface GenerationConfig {
   background: 'white' | 'neutral' | 'transparent';
   variants: number;
   temperature: number;
-  provider: 'thenewblack' | 'openai';
+  provider: 'openai';
 }
 
 interface EnhancedGenerationResult {
@@ -29,7 +29,6 @@ interface EnhancedGenerationResult {
   processingTime: number;
   metadata?: any;
   error?: string;
-  fallbackUsed?: boolean;
 }
 
 // Clothing-specific prompt templates for professional product photography
@@ -102,7 +101,7 @@ export class EnhancedClothingImageGenerator {
     background: 'white',
     variants: 1,
     temperature: 0.3,
-    provider: 'thenewblack'
+    provider: 'openai'
   };
 
   async generateClothingImage(
@@ -115,7 +114,7 @@ export class EnhancedClothingImageGenerator {
     const startTime = Date.now();
     const finalConfig = { ...this.defaultConfig, ...config };
     
-    console.log(`🎨 Enhanced AI generation starting for "${itemName}" with config:`, finalConfig);
+    console.log(`🎨 Enhanced AI generation starting for "${itemName}" with OpenAI`);
 
     // Extract clothing details for enhanced prompting
     const clothingDetails = this.extractClothingDetails(itemName);
@@ -123,39 +122,20 @@ export class EnhancedClothingImageGenerator {
     
     console.log(`📝 Generated enhanced prompt: ${prompt}`);
 
-    // Try primary provider first
-    let result = await this.tryProvider(
-      finalConfig.provider,
+    // Use OpenAI for generation
+    const result = await this.generateWithOpenAI(
       itemName,
       wardrobeItemId,
       arrayIndex,
       prompt,
-      finalConfig,
-      originalImageUrl
+      finalConfig
     );
-
-    // If primary fails, try fallback
-    if (!result.success && finalConfig.provider === 'thenewblack') {
-      console.log(`🔄 Primary provider failed, falling back to OpenAI...`);
-      toast.info(`TheNewBlack unavailable, using OpenAI for ${itemName}...`);
-      
-      result = await this.tryProvider(
-        'openai',
-        itemName,
-        wardrobeItemId,
-        arrayIndex,
-        prompt,
-        { ...finalConfig, provider: 'openai' },
-        originalImageUrl
-      );
-      result.fallbackUsed = true;
-    }
 
     result.processingTime = Date.now() - startTime;
     
     if (result.success) {
       console.log(`✅ Enhanced AI generation completed in ${result.processingTime}ms`);
-      toast.success(`Generated professional image for ${itemName} (${result.provider})`);
+      toast.success(`Generated professional image for ${itemName} (OpenAI)`);
     } else {
       console.error(`❌ Enhanced AI generation failed: ${result.error}`);
       toast.error(`Failed to generate image for ${itemName}`);
@@ -254,66 +234,6 @@ export class EnhancedClothingImageGenerator {
     return specs.join(', ');
   }
 
-  private async tryProvider(
-    provider: 'thenewblack' | 'openai',
-    itemName: string,
-    wardrobeItemId: string,
-    arrayIndex: number,
-    prompt: string,
-    config: GenerationConfig,
-    originalImageUrl?: string
-  ): Promise<EnhancedGenerationResult> {
-    try {
-      if (provider === 'thenewblack') {
-        return await this.generateWithTheNewBlack(itemName, wardrobeItemId, arrayIndex, prompt, originalImageUrl);
-      } else {
-        return await this.generateWithOpenAI(itemName, wardrobeItemId, arrayIndex, prompt, config);
-      }
-    } catch (error) {
-      console.error(`❌ ${provider} generation failed:`, error);
-      return {
-        success: false,
-        provider,
-        quality: config.quality,
-        processingTime: 0,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  private async generateWithTheNewBlack(
-    itemName: string,
-    wardrobeItemId: string,
-    arrayIndex: number,
-    prompt: string,
-    originalImageUrl?: string
-  ): Promise<EnhancedGenerationResult> {
-    const { data, error } = await supabase.functions.invoke('generate-enhanced-thenewblack-image', {
-      body: {
-        itemName,
-        wardrobeItemId,
-        arrayIndex,
-        enhancedPrompt: prompt,
-        originalImageUrl,
-        style: 'ghost_mannequin',
-        quality: 'professional'
-      }
-    });
-
-    if (error || !data?.success) {
-      throw new Error(data?.error || error?.message || 'TheNewBlack generation failed');
-    }
-
-    return {
-      success: true,
-      imageUrl: data.imageUrl,
-      provider: 'thenewblack',
-      quality: 'high',
-      processingTime: 0,
-      metadata: data.metadata
-    };
-  }
-
   private async generateWithOpenAI(
     itemName: string,
     wardrobeItemId: string,
@@ -321,31 +241,42 @@ export class EnhancedClothingImageGenerator {
     prompt: string,
     config: GenerationConfig
   ): Promise<EnhancedGenerationResult> {
-    const { data, error } = await supabase.functions.invoke('generate-enhanced-clothing-image', {
-      body: {
-        itemName,
-        wardrobeItemId,
-        arrayIndex,
-        enhancedPrompt: prompt,
-        model: 'dall-e-3',
-        size: config.resolution,
-        quality: 'hd',
-        style: 'natural'
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-enhanced-clothing-image', {
+        body: {
+          itemName,
+          wardrobeItemId,
+          arrayIndex,
+          enhancedPrompt: prompt,
+          model: 'dall-e-3',
+          size: config.resolution,
+          quality: 'hd',
+          style: 'natural'
+        }
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || 'OpenAI generation failed');
       }
-    });
 
-    if (error || !data?.success) {
-      throw new Error(data?.error || error?.message || 'OpenAI generation failed');
+      return {
+        success: true,
+        imageUrl: data.imageUrl,
+        provider: 'openai_enhanced',
+        quality: config.quality,
+        processingTime: 0,
+        metadata: data.metadata
+      };
+    } catch (error) {
+      console.error(`❌ OpenAI generation failed:`, error);
+      return {
+        success: false,
+        provider: 'openai',
+        quality: config.quality,
+        processingTime: 0,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
-
-    return {
-      success: true,
-      imageUrl: data.imageUrl,
-      provider: 'openai',
-      quality: config.quality,
-      processingTime: 0,
-      metadata: data.metadata
-    };
   }
 
   async batchGenerateImages(
@@ -398,7 +329,7 @@ export class EnhancedClothingImageGenerator {
         failed++;
         results.push({
           success: false,
-          provider: 'unknown',
+          provider: 'openai',
           quality: 'unknown',
           processingTime: 0,
           error: error instanceof Error ? error.message : 'Unknown error'
@@ -445,8 +376,7 @@ export class EnhancedClothingImageGenerator {
         renderImageQuality: result.quality,
         renderImageProcessingTime: result.processingTime,
         renderImageMetadata: result.metadata,
-        imageType: 'ai_enhanced',
-        fallbackUsed: result.fallbackUsed || false
+        imageType: 'ai_enhanced'
       };
 
       // Update database

@@ -101,14 +101,14 @@ const processOutfitWithEnhancedAIPipeline = async (
         
         await updateWardrobeItemWithEnhancedClothingItems(wardrobeItemId, enhancedClothingItems);
         
-        // Step 4: ENHANCED Professional AI Generation
-        console.log('🎨 Step 4: Triggering ENHANCED professional AI generation...');
-        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_thenewblack');
+        // Step 4: ENHANCED Professional AI Generation with OpenAI only
+        console.log('🎨 Step 4: Triggering ENHANCED professional AI generation with OpenAI...');
+        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_openai');
         
         console.log('🎯 ENHANCED AI processing pipeline completed successfully');
       } else {
         console.warn('⚠️ No items cropped, using enhanced generation with original image');
-        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_thenewblack');
+        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_openai');
       }
       
     } else {
