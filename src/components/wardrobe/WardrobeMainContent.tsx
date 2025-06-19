@@ -66,8 +66,7 @@ const WardrobeMainContent: React.FC<WardrobeMainContentProps> = ({
         filterCategory={filterCategory}
         onFilterChange={setFilterCategory}
         categories={categories}
-        onAddItem={handleAddItem}
-        onBulkUploadComplete={handleBulkUploadComplete}
+        onClearFilters={handleClearFilters}
       />
 
       {/* Main Content */}
@@ -89,8 +88,8 @@ const WardrobeMainContent: React.FC<WardrobeMainContentProps> = ({
       ) : (
         <WardrobeItemsGrid
           items={filteredAndSortedItems}
-          onUpdate={handleItemUpdate}
-          onDelete={handleItemDelete}
+          onItemUpdate={handleItemUpdate}
+          onItemDelete={handleItemDelete}
           onClearFilters={handleClearFilters}
         />
       )}
