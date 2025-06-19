@@ -14,17 +14,28 @@ export const generateTheNewBlackImage = async (
   itemName: string,
   wardrobeItemId: string,
   arrayIndex: number,
-  originalImageUrl?: string
+  originalImageUrl?: string,
+  croppedImageUrl?: string
 ): Promise<TheNewBlackGenerationResult> => {
   try {
     console.log(`🎨 Starting Enhanced TheNewBlack generation for: "${itemName}" [${wardrobeItemId}:${arrayIndex}]`);
+
+    // Use cropped image if available, otherwise fall back to original
+    const imageToProcess = croppedImageUrl || originalImageUrl;
+    
+    if (croppedImageUrl) {
+      console.log(`📸 Using cropped image for "${itemName}": ${croppedImageUrl}`);
+    } else if (originalImageUrl) {
+      console.log(`🖼️ Using original image for "${itemName}": ${originalImageUrl}`);
+    }
 
     const { data, error } = await supabase.functions.invoke('generate-thenewblack-image', {
       body: {
         itemName,
         wardrobeItemId,
         arrayIndex,
-        originalImageUrl
+        originalImageUrl: imageToProcess,
+        useCroppedImage: !!croppedImageUrl
       }
     });
 
@@ -78,11 +89,13 @@ export const generateTheNewBlackImage = async (
       console.log('🔍 Success debug info:', {
         authEndpointsAttempted: data.debugInfo.authEndpointsAttempted,
         generationEndpointsAttempted: data.debugInfo.generationEndpointsAttempted,
-        networkConnectivity: data.debugInfo.networkConnectivity
+        networkConnectivity: data.debugInfo.networkConnectivity,
+        usedCroppedImage: !!croppedImageUrl
       });
     }
     
-    toast.success(`Generated professional image for ${itemName} using TheNewBlack Ghost Mannequin`);
+    const imageType = croppedImageUrl ? 'cropped image' : 'original image';
+    toast.success(`Generated professional image for ${itemName} using TheNewBlack Ghost Mannequin (${imageType})`);
     return { success: true, imageUrl: data.imageUrl, debugInfo: data.debugInfo };
 
   } catch (error) {
@@ -110,7 +123,8 @@ export const generateTheNewBlackImage = async (
 export const generateTheNewBlackImagesForClothingItems = async (
   wardrobeItemId: string,
   clothingItems: any[],
-  originalImageUrl?: string
+  originalImageUrl?: string,
+  croppedImages?: any[]
 ): Promise<void> => {
   if (!clothingItems || clothingItems.length === 0) {
     console.log('⚠️ No clothing items to process for TheNewBlack generation');
@@ -118,6 +132,7 @@ export const generateTheNewBlackImagesForClothingItems = async (
   }
 
   console.log(`🔄 Starting TheNewBlack generation for ${clothingItems.length} clothing items`);
+  console.log(`📸 Available cropped images: ${croppedImages?.length || 0}`);
   toast.info(`Generating professional images for ${clothingItems.length} items using AI...`);
 
   let successCount = 0;
@@ -141,16 +156,31 @@ export const generateTheNewBlackImagesForClothingItems = async (
 
       console.log(`🎨 Processing ${i + 1}/${clothingItems.length}: "${item.name}"`);
 
+      // Find matching cropped image for this item
+      const matchingCroppedImage = croppedImages?.find(croppedImg => {
+        const itemName = item.name?.toLowerCase() || '';
+        const croppedName = croppedImg.item_name?.toLowerCase() || '';
+        
+        return itemName.includes(croppedName) || croppedName.includes(itemName) ||
+               itemName.split(' ').some(word => croppedName.includes(word));
+      });
+
+      const croppedImageUrl = matchingCroppedImage?.cropped_image_url;
+      if (croppedImageUrl) {
+        console.log(`📸 Found cropped image for "${item.name}": ${croppedImageUrl}`);
+      }
+
       const result = await generateTheNewBlackImage(
         item.name, 
         wardrobeItemId, 
         i, 
-        originalImageUrl
+        originalImageUrl,
+        croppedImageUrl
       );
       
       if (result.success && result.imageUrl) {
         // Update the wardrobe item with the new render image
-        const updateResult = await updateWardrobeItemWithRenderImage(wardrobeItemId, i, result.imageUrl);
+        const updateResult = await updateWardrobeItemWithRenderImage(wardrobeItemId, i, result.imageUrl, !!croppedImageUrl);
         
         if (updateResult.success) {
           console.log(`✅ Successfully generated and saved AI image for "${item.name}"`);
@@ -192,7 +222,8 @@ export const generateTheNewBlackImagesForClothingItems = async (
 const updateWardrobeItemWithRenderImage = async (
   wardrobeItemId: string,
   arrayIndex: number,
-  renderImageUrl: string
+  renderImageUrl: string,
+  usedCroppedImage: boolean = false
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     console.log(`💾 Updating wardrobe item ${wardrobeItemId}[${arrayIndex}] with AI render image`);
@@ -221,7 +252,9 @@ const updateWardrobeItemWithRenderImage = async (
         ...(updatedItems[arrayIndex] as Record<string, any>),
         renderImageUrl,
         renderImageGeneratedAt: new Date().toISOString(),
-        renderImageProvider: 'ai-generated'
+        renderImageProvider: 'thenewblack',
+        renderImageSourceType: usedCroppedImage ? 'cropped_image' : 'original_image',
+        imageType: 'ai_generated'
       };
 
       // Update the database

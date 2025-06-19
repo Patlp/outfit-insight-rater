@@ -15,7 +15,7 @@ export const triggerAIImageGeneration = async (
     // Get the wardrobe item with its extracted clothing items and original image
     const { data: wardrobeItem, error } = await supabase
       .from('wardrobe_items')
-      .select('extracted_clothing_items, image_url')
+      .select('extracted_clothing_items, image_url, cropped_images')
       .eq('id', wardrobeItemId)
       .single();
 
@@ -43,11 +43,12 @@ export const triggerAIImageGeneration = async (
 
     // Choose the appropriate generation method based on provider
     if (provider === 'thenewblack') {
-      // Use TheNewBlack Ghost Mannequin API with original image
+      // Use TheNewBlack Ghost Mannequin API with enhanced context
       generateTheNewBlackImagesForClothingItems(
         wardrobeItemId, 
         wardrobeItem.extracted_clothing_items,
-        wardrobeItem.image_url
+        wardrobeItem.image_url,
+        wardrobeItem.cropped_images
       ).catch(error => {
         console.error('❌ Background TheNewBlack image generation failed:', error);
       });
@@ -71,14 +72,46 @@ export const itemNeedsRenderImage = (item: any): boolean => {
   return !item?.renderImageUrl && item?.name;
 };
 
-// Helper function to get the render image URL or fallback
+// Enhanced function to get the best available image URL
 export const getRenderImageUrl = (item: any, originalImageUrl?: string): string | undefined => {
+  // Priority order: AI render image > cropped image > original image
   if (item?.renderImageUrl) {
     return item.renderImageUrl;
   }
   
-  // Fallback to original image or placeholder
+  if (item?.croppedImageUrl) {
+    return item.croppedImageUrl;
+  }
+  
+  // Fallback to original image
   return originalImageUrl;
+};
+
+// Enhanced function to get image type metadata
+export const getImageTypeMetadata = (item: any): {
+  type: 'ai_generated' | 'cropped_original' | 'original' | 'placeholder';
+  provider?: string;
+  confidence?: number;
+} => {
+  if (item?.renderImageUrl) {
+    return {
+      type: 'ai_generated',
+      provider: item?.renderImageProvider || 'unknown'
+    };
+  }
+  
+  if (item?.croppedImageUrl) {
+    return {
+      type: 'cropped_original',
+      confidence: item?.croppingConfidence
+    };
+  }
+  
+  if (item?.originalImageUrl) {
+    return { type: 'original' };
+  }
+  
+  return { type: 'placeholder' };
 };
 
 // Polling function to check for updates instead of real-time subscriptions
@@ -86,7 +119,7 @@ export const pollWardrobeItemUpdates = async (wardrobeItemId: string): Promise<a
   try {
     const { data: wardrobeItem, error } = await supabase
       .from('wardrobe_items')
-      .select('extracted_clothing_items')
+      .select('extracted_clothing_items, cropped_images')
       .eq('id', wardrobeItemId)
       .single();
 
