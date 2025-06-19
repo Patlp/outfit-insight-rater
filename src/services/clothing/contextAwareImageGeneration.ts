@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getPrimaryTaxonomy } from '@/services/primaryTaxonomyService';
@@ -92,7 +91,7 @@ export class ContextAwareClothingImageGenerator {
     
     try {
       // Step 1: Enhance item with contextual data
-      const enhancedItem = await this.enhanceItemWithContext(itemName, wardrobeItemId, originalImageUrl, finalConfig);
+      const enhancedItem = await this.enhanceItemWithContext(itemName, wardrobeItemId, finalConfig, originalImageUrl);
       
       // Step 2: Generate contextual prompt
       const contextualPrompt = this.generateContextualPrompt(enhancedItem, finalConfig);
@@ -141,8 +140,8 @@ export class ContextAwareClothingImageGenerator {
   private async enhanceItemWithContext(
     itemName: string,
     wardrobeItemId: string,
-    originalImageUrl?: string,
-    config: ContextAwareGenerationConfig
+    config: ContextAwareGenerationConfig,
+    originalImageUrl?: string
   ): Promise<ContextualClothingItem> {
     const enhancedItem: ContextualClothingItem = {
       name: itemName,
