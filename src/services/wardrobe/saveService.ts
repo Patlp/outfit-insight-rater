@@ -1,10 +1,9 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
 import { processImageCropping } from '@/services/clothing/croppingService';
 import { SaveOutfitResult } from './types';
-import { triggerAIImageGeneration } from './aiImageIntegration';
+import { triggerEnhancedAIImageGeneration } from './aiImageIntegration';
 
 export const saveOutfitToWardrobe = async (
   userId: string,
@@ -18,7 +17,7 @@ export const saveOutfitToWardrobe = async (
   imageFile?: File
 ): Promise<SaveOutfitResult> => {
   try {
-    console.log('💾 Starting enhanced outfit save process with TheNewBlack integration...');
+    console.log('💾 Starting ENHANCED outfit save process with professional AI generation...');
 
     // Save the outfit to wardrobe
     const { data: wardrobeItem, error } = await supabase
@@ -43,11 +42,11 @@ export const saveOutfitToWardrobe = async (
 
     console.log('✅ Outfit saved with ID:', wardrobeItem.id);
 
-    // Start comprehensive AI-powered processing pipeline in background
+    // Start ENHANCED AI-powered processing pipeline
     if (imageFile && wardrobeItem.id) {
-      console.log('🚀 Starting comprehensive AI processing pipeline with TheNewBlack integration...');
+      console.log('🚀 Starting ENHANCED AI processing pipeline with professional-grade generation...');
       
-      // Process in background - don't await to avoid blocking the response
+      // Process in background with enhanced quality
       processOutfitWithEnhancedAIPipeline(wardrobeItem.id, imageFile, feedback, suggestions, imageUrl)
         .catch(error => {
           console.error('❌ Enhanced AI processing pipeline failed:', error);
@@ -62,7 +61,7 @@ export const saveOutfitToWardrobe = async (
   }
 };
 
-// Enhanced AI processing pipeline with TheNewBlack integration and cropping
+// Enhanced AI processing pipeline with professional-grade generation
 const processOutfitWithEnhancedAIPipeline = async (
   wardrobeItemId: string, 
   imageFile: File, 
@@ -71,10 +70,10 @@ const processOutfitWithEnhancedAIPipeline = async (
   originalImageUrl: string
 ): Promise<void> => {
   try {
-    console.log('🚀 Starting enhanced AI processing pipeline for wardrobe item:', wardrobeItemId);
+    console.log('🚀 Starting ENHANCED AI processing pipeline for wardrobe item:', wardrobeItemId);
 
-    // Step 1: AI-Powered Clothing Extraction
-    console.log('🔍 Step 1: Running AI-powered clothing extraction...');
+    // Step 1: Enhanced Clothing Extraction
+    console.log('🔍 Step 1: Running enhanced clothing extraction...');
     const extractionResult = await extractClothingFromImage(
       imageFile, 
       wardrobeItemId, 
@@ -83,84 +82,84 @@ const processOutfitWithEnhancedAIPipeline = async (
     );
     
     if (extractionResult.success && extractionResult.clothingItems && extractionResult.clothingItems.length > 0) {
-      console.log(`✅ Clothing extraction successful using method: ${extractionResult.method}`);
-      console.log(`📝 Extracted ${extractionResult.clothingItems.length} clothing items`);
+      console.log(`✅ Enhanced clothing extraction successful: ${extractionResult.clothingItems.length} items`);
       
-      // Step 2: Process Image Cropping for individual items
-      console.log('✂️ Step 2: Processing image cropping for individual items...');
+      // Step 2: Professional Image Cropping
+      console.log('✂️ Step 2: Processing professional image cropping...');
       const croppedImages = await processImageCropping(imageFile, wardrobeItemId);
       
       if (croppedImages.length > 0) {
-        console.log(`📸 Successfully cropped ${croppedImages.length} individual clothing items`);
+        console.log(`📸 Successfully cropped ${croppedImages.length} items for enhanced generation`);
         
-        // Update wardrobe item with cropped images
         await updateWardrobeItemWithCroppedImages(wardrobeItemId, croppedImages);
         
-        // Step 3: Enhanced clothing items with cropped image URLs
-        const enhancedClothingItems = await enhanceClothingItemsWithCroppedImages(
+        // Step 3: Enhanced clothing items with professional metadata
+        const enhancedClothingItems = await enhanceClothingItemsWithProfessionalData(
           extractionResult.clothingItems,
           croppedImages
         );
         
-        // Update the wardrobe item with enhanced clothing items
         await updateWardrobeItemWithEnhancedClothingItems(wardrobeItemId, enhancedClothingItems);
         
-        // Step 4: Trigger TheNewBlack Ghost Mannequin generation
-        console.log('🎨 Step 4: Triggering TheNewBlack Ghost Mannequin generation...');
-        await triggerAIImageGeneration(wardrobeItemId, 'thenewblack');
+        // Step 4: ENHANCED Professional AI Generation
+        console.log('🎨 Step 4: Triggering ENHANCED professional AI generation...');
+        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_thenewblack');
         
-        console.log('🎯 Enhanced AI processing pipeline completed successfully');
+        console.log('🎯 ENHANCED AI processing pipeline completed successfully');
       } else {
-        console.warn('⚠️ No items were successfully cropped, proceeding with basic extraction');
-        
-        // Still trigger TheNewBlack with original image as fallback
-        console.log('🎨 Triggering TheNewBlack with original image as fallback...');
-        await triggerAIImageGeneration(wardrobeItemId, 'thenewblack');
+        console.warn('⚠️ No items cropped, using enhanced generation with original image');
+        await triggerEnhancedAIImageGeneration(wardrobeItemId, 'enhanced_thenewblack');
       }
       
     } else {
-      console.warn('⚠️ Clothing extraction failed:', extractionResult.error);
-      await logProcessingFailure(wardrobeItemId, 'clothing_extraction', extractionResult.error);
+      console.warn('⚠️ Enhanced clothing extraction failed:', extractionResult.error);
+      await logProcessingFailure(wardrobeItemId, 'enhanced_extraction', extractionResult.error);
     }
 
   } catch (error) {
     console.error('❌ Enhanced AI processing pipeline error:', error);
-    await logProcessingFailure(wardrobeItemId, 'pipeline_error', error instanceof Error ? error.message : 'Unknown error');
+    await logProcessingFailure(wardrobeItemId, 'enhanced_pipeline_error', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
-// Enhanced function to match clothing items with cropped images
-const enhanceClothingItemsWithCroppedImages = async (
+// Enhanced function to add professional metadata to clothing items
+const enhanceClothingItemsWithProfessionalData = async (
   clothingItems: any[],
   croppedImages: any[]
 ): Promise<any[]> => {
-  console.log('🔗 Enhancing clothing items with cropped image URLs...');
+  console.log('🔗 Enhancing clothing items with professional metadata...');
   
   return clothingItems.map((item, index) => {
-    // Try to find matching cropped image by name similarity
+    // Advanced matching algorithm for cropped images
     const matchingCroppedImage = croppedImages.find(croppedImg => {
       const itemName = item.name?.toLowerCase() || '';
       const croppedName = croppedImg.item_name?.toLowerCase() || '';
       
-      // Simple matching logic - can be enhanced with better algorithms
-      return itemName.includes(croppedName) || croppedName.includes(itemName) ||
-             itemName.split(' ').some(word => croppedName.includes(word));
+      // Multi-level matching: exact, contains, word overlap
+      return itemName === croppedName || 
+             itemName.includes(croppedName) || 
+             croppedName.includes(itemName) ||
+             itemName.split(' ').some(word => croppedName.split(' ').includes(word));
     });
     
     if (matchingCroppedImage) {
-      console.log(`✅ Matched "${item.name}" with cropped image: ${matchingCroppedImage.cropped_image_url}`);
+      console.log(`✅ Professional match: "${item.name}" → cropped image`);
       return {
         ...item,
         croppedImageUrl: matchingCroppedImage.cropped_image_url,
         boundingBox: matchingCroppedImage.bounding_box,
         croppingConfidence: matchingCroppedImage.confidence,
-        imageType: 'cropped_original'
+        imageType: 'cropped_professional',
+        enhancedProcessing: true,
+        qualityLevel: 'professional'
       };
     } else {
-      console.log(`⚠️ No cropped image match found for "${item.name}"`);
+      console.log(`⚠️ No professional match for "${item.name}" - will use enhanced generation`);
       return {
         ...item,
-        imageType: 'needs_generation'
+        imageType: 'needs_enhanced_generation',
+        enhancedProcessing: true,
+        qualityLevel: 'professional'
       };
     }
   });
