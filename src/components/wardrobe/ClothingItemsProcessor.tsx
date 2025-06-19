@@ -44,12 +44,12 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
 
     setIsGenerating(true);
     try {
-      console.log('🔄 Manually triggering AI image generation for newly uploaded content...');
-      await triggerAIImageGeneration(wardrobeItemId, 'thenewblack');
-      toast.success('AI image generation started! Note: Only applies to newly uploaded content.');
+      console.log('🔄 Manually triggering enhanced AI image generation for newly uploaded content...');
+      await triggerAIImageGeneration(wardrobeItemId, 'enhanced_openai');
+      toast.success('Enhanced AI image generation started! Note: Only applies to newly uploaded content.');
     } catch (error) {
-      console.error('❌ Error triggering AI generation:', error);
-      toast.error('Failed to start AI image generation');
+      console.error('❌ Error triggering enhanced AI generation:', error);
+      toast.error('Failed to start enhanced AI image generation');
     } finally {
       setIsGenerating(false);
     }
@@ -165,7 +165,7 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
       {/* Summary */}
       {hasAnyRenderImages && (
         <div className="text-center text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
-          Professional images powered by TheNewBlack Ghost Mannequin AI (applied to newly uploaded content only)
+          Professional images powered by Enhanced OpenAI DALL-E 3 (applied to newly uploaded content only)
         </div>
       )}
     </div>
