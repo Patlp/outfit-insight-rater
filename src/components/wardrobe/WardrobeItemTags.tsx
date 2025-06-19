@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Shirt, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Shirt, Sparkles, Eye, EyeOff, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ClothingItemsProcessor, { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import GenerationProgressIndicator from './GenerationProgressIndicator';
@@ -46,6 +46,14 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* AI Generation Policy Notice */}
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <Info size={16} className="text-amber-600 mt-0.5 shrink-0" />
+        <div className="text-sm text-amber-800">
+          <span className="font-medium">AI Enhancement Policy:</span> AI image generation only applies to newly uploaded outfits and clothing items. Existing wardrobe items will not be regenerated.
+        </div>
+      </div>
+
       {/* Generation Progress Indicator */}
       <GenerationProgressIndicator 
         wardrobeItemId={itemId}

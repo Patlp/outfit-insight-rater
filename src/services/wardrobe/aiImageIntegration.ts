@@ -15,17 +15,26 @@ const isCroppedImagesArray = (data: any): data is any[] => {
   return Array.isArray(data);
 };
 
+// Check if wardrobe item is newly created (within last 5 minutes)
+const isNewlyCreatedItem = (createdAt: string): boolean => {
+  const creationTime = new Date(createdAt).getTime();
+  const now = new Date().getTime();
+  const fiveMinutesAgo = now - (5 * 60 * 1000); // 5 minutes in milliseconds
+  
+  return creationTime > fiveMinutesAgo;
+};
+
 export const triggerAIImageGeneration = async (
   wardrobeItemId: string, 
   provider: ImageProvider = 'thenewblack'
 ): Promise<void> => {
   try {
-    console.log(`🚀 Triggering AI image generation for wardrobe item: ${wardrobeItemId} using ${provider}`);
+    console.log(`🚀 Checking if AI image generation should proceed for wardrobe item: ${wardrobeItemId}`);
 
-    // Get the wardrobe item with its extracted clothing items and original image
+    // Get the wardrobe item with its extracted clothing items, original image, and creation timestamp
     const { data: wardrobeItem, error } = await supabase
       .from('wardrobe_items')
-      .select('extracted_clothing_items, image_url, cropped_images')
+      .select('extracted_clothing_items, image_url, cropped_images, created_at')
       .eq('id', wardrobeItemId)
       .single();
 
@@ -33,6 +42,15 @@ export const triggerAIImageGeneration = async (
       console.error('❌ Error fetching wardrobe item for AI generation:', error);
       return;
     }
+
+    // PROTECTION: Only allow AI generation for newly created wardrobe items
+    if (!isNewlyCreatedItem(wardrobeItem.created_at)) {
+      console.log(`🚫 Skipping AI generation for existing wardrobe item ${wardrobeItemId} (created: ${wardrobeItem.created_at})`);
+      console.log('✅ AI image generation is only applied to newly uploaded outfits');
+      return;
+    }
+
+    console.log(`✅ Wardrobe item ${wardrobeItemId} is newly created, proceeding with AI generation`);
 
     if (!wardrobeItem?.extracted_clothing_items) {
       console.log('⚠️ No extracted clothing items found for AI generation');
@@ -50,17 +68,23 @@ export const triggerAIImageGeneration = async (
     const croppedImages = wardrobeItem.cropped_images;
     const croppedImagesArray = isCroppedImagesArray(croppedImages) ? croppedImages : [];
 
-    // Filter out items that already have render images
+    // ADDITIONAL PROTECTION: Filter out items that already have render images
     const itemsNeedingImages = extractedItems.filter(
-      (item: any, index: number) => !item?.renderImageUrl
+      (item: any, index: number) => {
+        if (item?.renderImageUrl) {
+          console.log(`⏭️ Skipping item "${item.name}" - already has AI render image`);
+          return false;
+        }
+        return true;
+      }
     );
 
     if (itemsNeedingImages.length === 0) {
-      console.log('✅ All clothing items already have render images');
+      console.log('✅ All clothing items already have render images, no generation needed');
       return;
     }
 
-    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using ${provider}`);
+    console.log(`🎨 Generating AI images for ${itemsNeedingImages.length} items using ${provider} (newly uploaded content only)`);
 
     // Choose the appropriate generation method based on provider
     if (provider === 'thenewblack') {
@@ -81,7 +105,7 @@ export const triggerAIImageGeneration = async (
         });
     }
 
-    console.log(`🔄 AI image generation started in background using ${provider}`);
+    console.log(`🔄 AI image generation started in background using ${provider} for newly uploaded content`);
 
   } catch (error) {
     console.error('❌ Error triggering AI image generation:', error);
@@ -156,19 +180,33 @@ export const pollWardrobeItemUpdates = async (wardrobeItemId: string): Promise<a
   }
 };
 
-// Enhanced batch processing function for multiple wardrobe items
+// Enhanced batch processing function for multiple wardrobe items - ONLY for newly created items
 export const batchProcessWardrobeItems = async (
   wardrobeItemIds: string[],
   provider: ImageProvider = 'thenewblack'
-): Promise<{ success: number; failed: number }> => {
-  console.log(`🚀 Starting batch processing for ${wardrobeItemIds.length} wardrobe items`);
+): Promise<{ success: number; failed: number; skipped: number }> => {
+  console.log(`🚀 Starting batch processing for ${wardrobeItemIds.length} wardrobe items (new uploads only)`);
   
   let success = 0;
   let failed = 0;
+  let skipped = 0;
 
   // Process items sequentially to avoid overwhelming the APIs
   for (const itemId of wardrobeItemIds) {
     try {
+      // Check if this is a newly created item before processing
+      const { data: wardrobeItem, error } = await supabase
+        .from('wardrobe_items')
+        .select('created_at')
+        .eq('id', itemId)
+        .single();
+
+      if (error || !isNewlyCreatedItem(wardrobeItem.created_at)) {
+        console.log(`🚫 Skipping existing wardrobe item ${itemId} from batch processing`);
+        skipped++;
+        continue;
+      }
+
       await triggerAIImageGeneration(itemId, provider);
       success++;
       // Small delay between items
@@ -179,8 +217,8 @@ export const batchProcessWardrobeItems = async (
     }
   }
 
-  console.log(`✅ Batch processing completed: ${success} success, ${failed} failed`);
-  return { success, failed };
+  console.log(`✅ Batch processing completed: ${success} success, ${failed} failed, ${skipped} skipped (existing items)`);
+  return { success, failed, skipped };
 };
 
 // Function to check generation status across multiple items

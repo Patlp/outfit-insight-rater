@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, RefreshCw, Image as ImageIcon, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { triggerAIImageGeneration } from '@/services/wardrobe/aiImageIntegration';
 import ItemImageDisplay from './ItemImageDisplay';
@@ -44,9 +44,9 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
 
     setIsGenerating(true);
     try {
-      console.log('🔄 Manually triggering AI image generation...');
+      console.log('🔄 Manually triggering AI image generation for newly uploaded content...');
       await triggerAIImageGeneration(wardrobeItemId, 'thenewblack');
-      toast.success('AI image generation started! This may take a few minutes.');
+      toast.success('AI image generation started! Note: Only applies to newly uploaded content.');
     } catch (error) {
       console.error('❌ Error triggering AI generation:', error);
       toast.error('Failed to start AI image generation');
@@ -69,12 +69,16 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Action Bar */}
+      {/* Action Bar - Only show for newly uploaded content */}
       {itemsWithoutImages > 0 && (
         <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
           <div className="flex items-center gap-2 text-sm text-blue-700">
             <Sparkles size={16} />
             <span>{itemsWithoutImages} items can be enhanced with AI</span>
+            <div className="flex items-center gap-1 text-xs text-blue-600">
+              <Clock size={12} />
+              <span>Only for newly uploaded content</span>
+            </div>
           </div>
           <Button
             onClick={handleRegenerateImages}
@@ -161,7 +165,7 @@ const ClothingItemsProcessor: React.FC<ClothingItemsProcessorProps> = ({
       {/* Summary */}
       {hasAnyRenderImages && (
         <div className="text-center text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
-          Professional images powered by TheNewBlack Ghost Mannequin AI
+          Professional images powered by TheNewBlack Ghost Mannequin AI (applied to newly uploaded content only)
         </div>
       )}
     </div>
