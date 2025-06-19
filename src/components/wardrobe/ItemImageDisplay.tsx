@@ -47,6 +47,10 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
     showOriginalThumbnail
   });
 
+  // Ensure boolean values for Toggle components
+  const isShowingAI = Boolean(!showOriginalThumbnail);
+  const isShowingOriginal = Boolean(showOriginalThumbnail);
+
   return (
     <div className="relative h-48 bg-gray-100">
       {displayImageUrl ? (
@@ -70,7 +74,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
             <div className="absolute top-2 left-2">
               <div className="flex bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-md">
                 <Toggle
-                  pressed={!showOriginalThumbnail}
+                  pressed={isShowingAI}
                   onPressedChange={(pressed: boolean) => onToggleImageView(!pressed)}
                   className="h-8 px-2 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700"
                   size="sm"
@@ -79,7 +83,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
                   <Image size={14} />
                 </Toggle>
                 <Toggle
-                  pressed={showOriginalThumbnail}
+                  pressed={isShowingOriginal}
                   onPressedChange={(pressed: boolean) => onToggleImageView(pressed)}
                   className="h-8 px-2 data-[state=on]:bg-gray-100 data-[state=on]:text-gray-700"
                   size="sm"
