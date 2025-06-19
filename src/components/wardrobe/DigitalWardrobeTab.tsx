@@ -108,6 +108,7 @@ const DigitalWardrobeTab: React.FC<DigitalWardrobeTabProps> = ({
                 items={filteredAndSortedItems}
                 onItemUpdate={handleItemUpdate}
                 onItemDelete={handleItemDelete}
+                onClearFilters={handleClearFilters}
               />
             </>
           )}

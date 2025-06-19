@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { extractClothingFromImage } from '@/services/clothing/extraction/clothingExtractionService';
@@ -19,7 +20,7 @@ export const saveOutfitToWardrobe = async (
   try {
     console.log('💾 Starting CONTEXT-AWARE outfit save process with maximum accuracy AI generation...');
 
-    // Save the outfit to wardrobe
+    // Save the outfit to wardrobe with the original image URL preserved
     const { data: wardrobeItem, error } = await supabase
       .from('wardrobe_items')
       .insert({
@@ -30,7 +31,8 @@ export const saveOutfitToWardrobe = async (
         suggestions,
         gender,
         occasion_context: occasionContext,
-        feedback_mode: feedbackMode || 'normal'
+        feedback_mode: feedbackMode || 'normal',
+        original_image_url: imageUrl // Preserve the original image URL for the toggle
       })
       .select()
       .single();
@@ -40,7 +42,7 @@ export const saveOutfitToWardrobe = async (
       return { error: error.message };
     }
 
-    console.log('✅ Outfit saved with ID:', wardrobeItem.id);
+    console.log('✅ Outfit saved with ID:', wardrobeItem.id, 'with original image URL preserved');
 
     // Start CONTEXT-AWARE AI-powered processing pipeline
     if (imageFile && wardrobeItem.id) {
@@ -93,10 +95,11 @@ const processOutfitWithContextAwareAIPipeline = async (
         
         await updateWardrobeItemWithCroppedImages(wardrobeItemId, croppedImages);
         
-        // Step 3: Enhanced clothing items with contextual metadata
+        // Step 3: Enhanced clothing items with contextual metadata and original image URL
         const contextualClothingItems = await enhanceClothingItemsWithContextualData(
           extractionResult.clothingItems,
-          croppedImages
+          croppedImages,
+          originalImageUrl // Pass the original image URL to be preserved in each clothing item
         );
         
         await updateWardrobeItemWithContextualClothingItems(wardrobeItemId, contextualClothingItems);
@@ -108,6 +111,14 @@ const processOutfitWithContextAwareAIPipeline = async (
         console.log('🎯 CONTEXT-AWARE AI processing pipeline completed successfully');
       } else {
         console.warn('⚠️ No items cropped, using context-aware generation with original image');
+        // Still enhance the clothing items with the original image URL even if cropping failed
+        const contextualClothingItems = await enhanceClothingItemsWithContextualData(
+          extractionResult.clothingItems,
+          [],
+          originalImageUrl
+        );
+        
+        await updateWardrobeItemWithContextualClothingItems(wardrobeItemId, contextualClothingItems);
         await triggerContextAwareAIImageGeneration(wardrobeItemId, 'context_aware_openai');
       }
       
@@ -122,10 +133,11 @@ const processOutfitWithContextAwareAIPipeline = async (
   }
 };
 
-// Enhanced function to add contextual metadata to clothing items
+// Enhanced function to add contextual metadata to clothing items with original image URL
 const enhanceClothingItemsWithContextualData = async (
   clothingItems: any[],
-  croppedImages: any[]
+  croppedImages: any[],
+  originalImageUrl?: string
 ): Promise<any[]> => {
   console.log('🔗 Enhancing clothing items with contextual metadata for accurate generation...');
   
@@ -151,7 +163,8 @@ const enhanceClothingItemsWithContextualData = async (
         croppingConfidence: matchingCroppedImage.confidence,
         imageType: 'cropped_contextual',
         contextualProcessing: true,
-        accuracyLevel: 'maximum'
+        accuracyLevel: 'maximum',
+        originalImageUrl: originalImageUrl // Preserve the original image URL for the toggle
       };
     } else {
       console.log(`⚠️ No contextual match for "${item.name}" - will use context-aware generation`);
@@ -159,7 +172,8 @@ const enhanceClothingItemsWithContextualData = async (
         ...item,
         imageType: 'needs_contextual_generation',
         contextualProcessing: true,
-        accuracyLevel: 'maximum'
+        accuracyLevel: 'maximum',
+        originalImageUrl: originalImageUrl // Preserve the original image URL for the toggle
       };
     }
   });
@@ -193,7 +207,6 @@ const updateWardrobeItemWithCroppedImages = async (
   }
 };
 
-// Update wardrobe item with contextual clothing items
 const updateWardrobeItemWithContextualClothingItems = async (
   wardrobeItemId: string,
   contextualClothingItems: any[]
@@ -221,7 +234,6 @@ const updateWardrobeItemWithContextualClothingItems = async (
   }
 };
 
-// Helper function to log processing failures for debugging
 const logProcessingFailure = async (wardrobeItemId: string, failureType: string, errorMessage?: string): Promise<void> => {
   try {
     const { error } = await supabase

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -81,13 +82,13 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete, o
         // Compress the image
         const compressedFile = await compressImage(item.file, () => {});
         
-        // Create a temporary URL for the compressed file
-        const imageUrl = URL.createObjectURL(compressedFile);
+        // Create a blob URL for the compressed file to preserve the original image
+        const originalImageUrl = URL.createObjectURL(compressedFile);
         
-        // Save to wardrobe with vision tagging
+        // Save to wardrobe with vision tagging and preserve the original image URL
         const result = await saveOutfitToWardrobe(
           user.id,
-          imageUrl,
+          originalImageUrl,
           0, // No rating for bulk uploads
           '', // No feedback for bulk uploads
           [], // No suggestions for bulk uploads
@@ -108,8 +109,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete, o
             : prevItem
         ));
 
-        // Clean up the temporary URL
-        URL.revokeObjectURL(imageUrl);
+        console.log(`✅ Successfully uploaded "${item.file.name}" with original image preserved`);
 
       } catch (error) {
         console.error(`Error processing ${item.file.name}:`, error);
