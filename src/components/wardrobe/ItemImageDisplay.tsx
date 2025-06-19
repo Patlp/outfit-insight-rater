@@ -71,7 +71,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
               <div className="flex bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-md">
                 <Toggle
                   pressed={!showOriginalThumbnail}
-                  onPressedChange={(pressed) => onToggleImageView(!pressed)}
+                  onPressedChange={(pressed: boolean) => onToggleImageView(!pressed)}
                   className="h-8 px-2 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700"
                   size="sm"
                   title="Show AI Generated Image"
@@ -80,7 +80,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
                 </Toggle>
                 <Toggle
                   pressed={showOriginalThumbnail}
-                  onPressedChange={(pressed) => onToggleImageView(pressed)}
+                  onPressedChange={(pressed: boolean) => onToggleImageView(pressed)}
                   className="h-8 px-2 data-[state=on]:bg-gray-100 data-[state=on]:text-gray-700"
                   size="sm"
                   title="Show Original Photo"
