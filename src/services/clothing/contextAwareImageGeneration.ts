@@ -82,8 +82,8 @@ export class ContextAwareClothingImageGenerator {
     itemName: string,
     wardrobeItemId: string,
     arrayIndex: number,
-    originalImageUrl?: string,
-    config: Partial<ContextAwareGenerationConfig> = {}
+    config: Partial<ContextAwareGenerationConfig> = {},
+    originalImageUrl?: string
   ): Promise<{ success: boolean; imageUrl?: string; error?: string; metadata?: any }> {
     const startTime = Date.now();
     const finalConfig = { ...this.defaultConfig, ...config };
@@ -410,8 +410,8 @@ export class ContextAwareClothingImageGenerator {
           item.name,
           wardrobeItemId,
           i,
-          originalImageUrl,
-          config
+          config,
+          originalImageUrl
         );
         
         results.push(result);
@@ -508,6 +508,7 @@ export const generateContextualClothingImage = (
   itemName,
   wardrobeItemId,
   arrayIndex,
+  {},
   originalImageUrl
 );
 
