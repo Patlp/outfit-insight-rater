@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { validateFile, compressImage } from '@/utils/imageProcessing';
 
 interface BulkUploadDialogProps {
   onUploadComplete: () => void;
+  children?: React.ReactNode;
 }
 
 interface UploadItem {
@@ -20,7 +22,7 @@ interface UploadItem {
   error?: string;
 }
 
-const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete }) => {
+const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete, children }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
@@ -180,10 +182,12 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete })
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Upload size={16} />
-          Bulk Upload
-        </Button>
+        {children || (
+          <Button className="flex items-center gap-2">
+            <Upload size={16} />
+            Bulk Upload
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>

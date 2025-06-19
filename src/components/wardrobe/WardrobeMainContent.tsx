@@ -72,7 +72,10 @@ const WardrobeMainContent: React.FC<WardrobeMainContentProps> = ({
 
       {/* Main Content */}
       {allClothingItems.length === 0 ? (
-        <EmptyWardrobeState />
+        <EmptyWardrobeState 
+          onAddItem={handleAddItem}
+          onBulkUploadComplete={handleBulkUploadComplete}
+        />
       ) : filteredAndSortedItems.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">No items match your current filters.</p>

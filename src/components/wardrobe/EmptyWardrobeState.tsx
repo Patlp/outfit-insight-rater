@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import BulkUploadDialog from './BulkUploadDialog';
 
 interface EmptyWardrobeStateProps {
-  onAddItem: () => void;
-  onBulkUploadComplete: () => void;
+  onAddItem?: () => void;
+  onBulkUploadComplete?: () => void;
 }
 
 const EmptyWardrobeState: React.FC<EmptyWardrobeStateProps> = ({
-  onAddItem,
-  onBulkUploadComplete
+  onAddItem = () => {},
+  onBulkUploadComplete = () => {}
 }) => {
   return (
     <div className="text-center py-12">
@@ -29,7 +29,12 @@ const EmptyWardrobeState: React.FC<EmptyWardrobeStateProps> = ({
           <Plus size={16} />
           Add Custom Item
         </Button>
-        <BulkUploadDialog onUploadComplete={onBulkUploadComplete} />
+        <BulkUploadDialog onUploadComplete={onBulkUploadComplete}>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Plus size={16} />
+            Bulk Upload
+          </Button>
+        </BulkUploadDialog>
       </div>
     </div>
   );

@@ -18,16 +18,28 @@ export interface WardrobeItem {
 export interface ClothingItem {
   id: string;
   name: string;
-  category: string;
-  confidence: number;
-  source: string;
+  category?: string;
+  descriptors?: string[];
+  confidence?: number;
+  renderImageUrl?: string;
+  renderImageProvider?: string;
+  renderImageGeneratedAt?: string;
+  croppedImageUrl?: string;
+  originalImageUrl?: string;
   outfitId: string;
+  outfitImageUrl?: string;
+  outfitRating?: number;
+  outfitFeedback?: string;
+  createdAt: string;
+  imageType?: string;
+  contextualProcessing?: boolean;
+  accuracyLevel?: string;
+  source: string;
   outfitDate: string;
   outfitScore: number;
-  originalImageUrl?: string;
-  renderImageUrl?: string;
   arrayIndex: number;
   description?: string;
+  [key: string]: any;
 }
 
 export interface SaveOutfitResult {

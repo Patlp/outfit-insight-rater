@@ -21,6 +21,11 @@ export interface ClothingItem {
   imageType?: string;
   contextualProcessing?: boolean;
   accuracyLevel?: string;
+  source: string;
+  outfitDate: string;
+  outfitScore: number;
+  arrayIndex: number;
+  description?: string;
   [key: string]: any;
 }
 
@@ -68,6 +73,11 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
         imageType: clothingItem.imageType || 'original',
         contextualProcessing: clothingItem.contextualProcessing || false,
         accuracyLevel: clothingItem.accuracyLevel || 'standard',
+        source: 'wardrobe',
+        outfitDate: wardrobeItem.created_at || new Date().toISOString(),
+        outfitScore: wardrobeItem.rating_score || 0,
+        arrayIndex: index,
+        description: clothingItem.description,
         // Copy any additional properties
         ...clothingItem
       };

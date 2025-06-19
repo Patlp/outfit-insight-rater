@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ClothingItem } from '@/services/wardrobe';
+import { ClothingItem } from './ClothingItemsProcessor';
 import { toast } from 'sonner';
 import ItemImageDisplay from './ItemImageDisplay';
 import ItemEditForm from './ItemEditForm';
@@ -21,7 +21,7 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(item.name);
-  const [category, setCategory] = useState(item.category);
+  const [category, setCategory] = useState(item.category || '');
   const [description, setDescription] = useState(item.description || '');
   const [showOriginalThumbnail, setShowOriginalThumbnail] = useState(false);
   const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(item.renderImageUrl);
@@ -51,14 +51,14 @@ const EditableClothingItem: React.FC<EditableClothingItemProps> = ({
   const handleEdit = () => {
     setIsEditing(true);
     setName(item.name);
-    setCategory(item.category);
+    setCategory(item.category || '');
     setDescription(item.description || '');
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setName(item.name);
-    setCategory(item.category);
+    setCategory(item.category || '');
     setDescription(item.description || '');
     setCustomImageUrl(item.renderImageUrl);
   };
