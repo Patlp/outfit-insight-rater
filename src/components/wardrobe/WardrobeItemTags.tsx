@@ -105,27 +105,6 @@ const WardrobeItemTags: React.FC<WardrobeItemTagsProps> = ({
           )}
         </div>
       )}
-
-      {/* Feedback Tags (if no clothing items detected) */}
-      {!hasClothingItems && feedback && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Style Notes</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {feedback.split(' ').slice(0, 8).map((word, index) => {
-              const cleanWord = word.replace(/[^\w\s]/gi, '').toLowerCase();
-              if (cleanWord.length < 3) return null;
-              
-              return (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {cleanWord}
-                </Badge>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
