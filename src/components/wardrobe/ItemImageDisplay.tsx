@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { ExtractedClothingItem } from './ClothingItemsProcessor.tsx';
 import { Toggle } from '@/components/ui/toggle';
 import { Image, Camera, Shirt } from 'lucide-react';
-import { getRenderImageUrl, itemNeedsRenderImage } from '@/services/wardrobe/aiImageIntegration';
+import { getBestImageUrl, hasAIGeneratedImage, isAIImagePersisted } from './ClothingItemsProcessor';
 import AIGenerationStatus from './AIGenerationStatus';
 
 interface ItemImageDisplayProps {
@@ -20,15 +19,32 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
   onToggleImageView
 }) => {
   const getDisplayImageUrl = () => {
+    // If user wants to see original, show that
     if (showOriginalThumbnail && originalImageUrl) {
+      console.log(`📷 Displaying original image for "${item.name}": ${originalImageUrl}`);
       return originalImageUrl;
     }
-    return item.renderImageUrl || getRenderImageUrl(item, originalImageUrl);
+    
+    // Otherwise, use the best available image (prioritizing persisted AI images)
+    const bestUrl = getBestImageUrl(item as any);
+    console.log(`🖼️ Displaying best image for "${item.name}": ${bestUrl}`);
+    return bestUrl;
   };
 
   const displayImageUrl = getDisplayImageUrl();
-  const needsRenderImage = itemNeedsRenderImage(item);
-  const isGenerating = needsRenderImage && !item.renderImageUrl;
+  const hasPersistedAI = hasAIGeneratedImage(item as any);
+  const isPersisted = isAIImagePersisted(item as any);
+  const needsGeneration = !hasPersistedAI && item.name;
+
+  // Log the image status for debugging
+  console.log(`🔍 Image status for "${item.name}":`, {
+    hasPersistedAI,
+    isPersisted,
+    needsGeneration,
+    renderImageUrl: item.renderImageUrl,
+    displayImageUrl,
+    showOriginalThumbnail
+  });
 
   return (
     <div className="relative h-48 bg-gray-100">
@@ -48,8 +64,8 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
             }}
           />
           
-          {/* Image Toggle Controls */}
-          {originalImageUrl && (
+          {/* Image Toggle Controls - only show if we have both AI and original */}
+          {originalImageUrl && hasPersistedAI && (
             <div className="absolute top-2 left-2">
               <div className="flex bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-md">
                 <Toggle
@@ -57,6 +73,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
                   onPressedChange={(pressed) => onToggleImageView(!pressed)}
                   className="h-8 px-2 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700"
                   size="sm"
+                  title="Show AI Generated Image"
                 >
                   <Image size={14} />
                 </Toggle>
@@ -65,6 +82,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
                   onPressedChange={(pressed) => onToggleImageView(pressed)}
                   className="h-8 px-2 data-[state=on]:bg-gray-100 data-[state=on]:text-gray-700"
                   size="sm"
+                  title="Show Original Photo"
                 >
                   <Camera size={14} />
                 </Toggle>
@@ -75,18 +93,33 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
           {/* AI Generation Status */}
           <div className="absolute top-2 right-2">
             <AIGenerationStatus
-              isGenerating={isGenerating}
-              hasRenderImage={!!item.renderImageUrl}
+              isGenerating={needsGeneration}
+              hasRenderImage={hasPersistedAI}
               itemName={item.name}
             />
           </div>
 
-          {/* Original Image Badge */}
-          {showOriginalThumbnail && originalImageUrl && (
-            <div className="absolute bottom-2 right-2">
+          {/* Image Type Badge */}
+          <div className="absolute bottom-2 right-2">
+            {showOriginalThumbnail && originalImageUrl ? (
               <div className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
                 <span className="text-xs">📷</span>
                 Original
+              </div>
+            ) : hasPersistedAI ? (
+              <div className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <span className="text-xs">🎨</span>
+                AI Generated
+              </div>
+            ) : null}
+          </div>
+
+          {/* Persisted Status Indicator */}
+          {hasPersistedAI && isPersisted && !showOriginalThumbnail && (
+            <div className="absolute bottom-2 left-2">
+              <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <span className="text-xs">💾</span>
+                Saved
               </div>
             </div>
           )}
@@ -98,8 +131,8 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
             <p className="text-sm text-gray-500">No image available</p>
             <div className="mt-2">
               <AIGenerationStatus
-                isGenerating={isGenerating}
-                hasRenderImage={!!item.renderImageUrl}
+                isGenerating={needsGeneration}
+                hasRenderImage={hasPersistedAI}
                 itemName={item.name}
               />
             </div>

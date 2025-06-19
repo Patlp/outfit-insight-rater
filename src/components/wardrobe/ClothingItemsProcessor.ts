@@ -84,7 +84,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
         renderImageProvider: clothingItem.renderImageProvider,
         renderImageGeneratedAt: clothingItem.renderImageGeneratedAt,
         croppedImageUrl: clothingItem.croppedImageUrl,
-        originalImageUrl: wardrobeItem.image_url, // ✅ NOW PROPERLY MAPPING THE ORIGINAL IMAGE URL
+        originalImageUrl: wardrobeItem.image_url,
         outfitId: wardrobeItem.id,
         outfitImageUrl: wardrobeItem.image_url,
         outfitRating: wardrobeItem.rating_score,
@@ -102,12 +102,25 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
         ...clothingItem
       };
 
+      // Log whether this item already has a persisted AI image
+      if (processedItem.renderImageUrl) {
+        console.log(`✅ Item "${processedItem.name}" has existing AI image: ${processedItem.renderImageUrl}`);
+      } else {
+        console.log(`⚠️ Item "${processedItem.name}" needs AI image generation`);
+      }
+
       console.log(`✅ Processed clothing item: "${processedItem.name}" (${processedItem.id}) with original image: ${processedItem.originalImageUrl}`);
       allClothingItems.push(processedItem);
     });
   });
 
   console.log(`📊 Total processed clothing items: ${allClothingItems.length}`);
+  
+  // Log summary of AI image status
+  const itemsWithAI = allClothingItems.filter(item => item.renderImageUrl).length;
+  const itemsNeedingAI = allClothingItems.length - itemsWithAI;
+  console.log(`🎨 AI Image Status: ${itemsWithAI} items have existing AI images, ${itemsNeedingAI} items need generation`);
+  
   return allClothingItems;
 };
 
@@ -177,21 +190,29 @@ export const filterAndSortItems = (
 
 // Helper function to get the best available image URL for display
 export const getBestImageUrl = (item: ClothingItem): string | undefined => {
-  // Priority: Context-aware AI > Enhanced AI > Regular AI > Cropped > Original
+  // Priority: AI-generated > Cropped > Original
   if (item.renderImageUrl) {
+    console.log(`🎨 Using AI-generated image for "${item.name}": ${item.renderImageUrl}`);
     return item.renderImageUrl;
   }
   
   if (item.croppedImageUrl) {
+    console.log(`✂️ Using cropped image for "${item.name}": ${item.croppedImageUrl}`);
     return item.croppedImageUrl;
   }
   
+  console.log(`📷 Using original image for "${item.name}": ${item.originalImageUrl}`);
   return item.originalImageUrl;
 };
 
 // Helper function to determine if an item has AI-generated images
 export const hasAIGeneratedImage = (item: ClothingItem): boolean => {
   return !!item.renderImageUrl;
+};
+
+// Helper function to check if item needs AI generation (doesn't already have one)
+export const needsAIGeneration = (item: ClothingItem): boolean => {
+  return !item.renderImageUrl && !!item.name;
 };
 
 // Helper function to get image generation status
@@ -201,6 +222,7 @@ export const getImageGenerationStatus = (item: ClothingItem): {
   isContextAware: boolean;
   provider?: string;
   accuracy?: string;
+  generatedAt?: string;
 } => {
   const hasImage = !!item.renderImageUrl;
   const isAIGenerated = hasImage;
@@ -211,6 +233,30 @@ export const getImageGenerationStatus = (item: ClothingItem): {
     isAIGenerated,
     isContextAware,
     provider: item.renderImageProvider,
-    accuracy: item.accuracyLevel
+    accuracy: item.accuracyLevel,
+    generatedAt: item.renderImageGeneratedAt
   };
+};
+
+// Helper function to check if AI image is persisted and still valid
+export const isAIImagePersisted = (item: ClothingItem): boolean => {
+  if (!item.renderImageUrl || !item.renderImageGeneratedAt) {
+    return false;
+  }
+  
+  // Check if the image was generated recently enough to be considered valid
+  const generatedAt = new Date(item.renderImageGeneratedAt);
+  const now = new Date();
+  const daysDiff = (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60 * 24);
+  
+  // Consider images valid for 30 days
+  const isValid = daysDiff <= 30;
+  
+  if (isValid) {
+    console.log(`✅ AI image for "${item.name}" is persisted and valid (generated ${daysDiff.toFixed(1)} days ago)`);
+  } else {
+    console.log(`⚠️ AI image for "${item.name}" is expired (generated ${daysDiff.toFixed(1)} days ago)`);
+  }
+  
+  return isValid;
 };
