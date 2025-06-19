@@ -93,6 +93,7 @@ export const processWardrobeItems = (wardrobeItems: WardrobeItem[]): ClothingIte
           description: extractedItem.description,
           tags: extractedItem.tags || [],
           renderImageUrl: extractedItem.renderImageUrl,
+          // Enhanced fallback logic for original image URL
           originalImageUrl: extractedItem.originalImageUrl || originalImageUrl,
           croppedImageUrl: extractedItem.croppedImageUrl,
           boundingBox: extractedItem.boundingBox,

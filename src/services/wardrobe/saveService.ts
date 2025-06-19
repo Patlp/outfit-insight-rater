@@ -160,7 +160,7 @@ const enhanceClothingItemsWithContextualData = async (
       ...item,
       contextualProcessing: true,
       accuracyLevel: 'maximum',
-      originalImageUrl: originalImageUrl // Ensure this is set for all items
+      originalImageUrl: originalImageUrl || item.originalImageUrl // Ensure this is set for all items
     };
     
     if (matchingCroppedImage) {

@@ -34,18 +34,23 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
   const displayImageUrl = getDisplayImageUrl();
   const hasPersistedAI = hasAIGeneratedImage(item as any);
 
-  // Log the image status for debugging
+  // Enhanced debugging for toggle functionality
   console.log(`🔍 Image status for "${item.name}":`, {
     hasPersistedAI,
     renderImageUrl: item.renderImageUrl,
     displayImageUrl,
     showOriginalThumbnail,
-    originalImageUrl
+    originalImageUrl,
+    itemOriginalImageUrl: item.originalImageUrl,
+    fallbackWorking: !!(originalImageUrl || item.originalImageUrl)
   });
 
   // Ensure boolean values for Toggle components
   const isShowingAI = Boolean(!showOriginalThumbnail);
   const isShowingOriginal = Boolean(showOriginalThumbnail);
+
+  // Enhanced original image URL detection
+  const effectiveOriginalImageUrl = originalImageUrl || item.originalImageUrl;
 
   return (
     <div className="relative h-48 bg-gray-100">
@@ -66,7 +71,7 @@ const ItemImageDisplay: React.FC<ItemImageDisplayProps> = ({
           />
           
           {/* Image Toggle Controls - only show if we have both AI and original */}
-          {originalImageUrl && hasPersistedAI && (
+          {effectiveOriginalImageUrl && hasPersistedAI && (
             <div className="absolute top-2 left-2">
               <div className="flex bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-md">
                 <Toggle

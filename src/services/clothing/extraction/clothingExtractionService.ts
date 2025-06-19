@@ -21,6 +21,16 @@ export const extractClothingFromImage = async (
   try {
     console.log('🔍 Starting AI-powered clothing extraction for wardrobe item:', wardrobeItemId);
 
+    // Get the original image URL from the wardrobe item
+    const { data: wardrobeItem } = await supabase
+      .from('wardrobe_items')
+      .select('original_image_url, image_url')
+      .eq('id', wardrobeItemId)
+      .single();
+
+    const originalImageUrl = wardrobeItem?.original_image_url || wardrobeItem?.image_url;
+    console.log('📸 Using original image URL for extracted items:', originalImageUrl);
+
     // Step 1: Try OpenAI Vision Analysis (Primary Method)
     console.log('🎯 Step 1: Attempting OpenAI Vision Analysis...');
     try {
@@ -30,13 +40,14 @@ export const extractClothingFromImage = async (
       if (visionResult.success && visionResult.tags && visionResult.tags.length > 0) {
         console.log('✅ OpenAI Vision Analysis successful:', visionResult.tags.length, 'tags found');
         
-        // Format vision tags as clothing items
+        // Format vision tags as clothing items with original image URL
         const visionClothingItems = visionResult.tags.map(tag => ({
           name: tag,
           descriptors: [],
           category: categorizeTag(tag),
           confidence: 0.92,
-          source: 'openai-vision'
+          source: 'openai-vision',
+          originalImageUrl: originalImageUrl // Ensure original image URL is set
         }));
 
         await updateWardrobeItemWithClothing(wardrobeItemId, visionClothingItems);
@@ -67,9 +78,17 @@ export const extractClothingFromImage = async (
       if (googleVisionResult.success && googleVisionResult.items && googleVisionResult.items.length > 0) {
         console.log('✅ Google Vision Analysis successful:', googleVisionResult.items.length, 'items found');
         
+        // Ensure all items have original image URL
+        const enhancedItems = googleVisionResult.items.map(item => ({
+          ...item,
+          originalImageUrl: originalImageUrl
+        }));
+
+        await updateWardrobeItemWithClothing(wardrobeItemId, enhancedItems);
+        
         return {
           success: true,
-          clothingItems: googleVisionResult.items,
+          clothingItems: enhancedItems,
           method: googleVisionResult.method
         };
       }
@@ -86,9 +105,17 @@ export const extractClothingFromImage = async (
         if (hybridResult.success && hybridResult.result && hybridResult.result.items.length > 0) {
           console.log('✅ Hybrid Text-Based Extraction successful:', hybridResult.result.items.length, 'items found');
           
+          // Ensure all items have original image URL
+          const enhancedItems = hybridResult.result.items.map(item => ({
+            ...item,
+            originalImageUrl: originalImageUrl
+          }));
+
+          await updateWardrobeItemWithClothing(wardrobeItemId, enhancedItems);
+          
           return {
             success: true,
-            clothingItems: hybridResult.result.items,
+            clothingItems: enhancedItems,
             method: hybridResult.result.method
           };
         }
@@ -106,9 +133,17 @@ export const extractClothingFromImage = async (
         if (aiResult.success && aiResult.extractedItems && aiResult.extractedItems.length > 0) {
           console.log('✅ Final AI Extraction successful:', aiResult.extractedItems.length, 'items found');
           
+          // Ensure all items have original image URL
+          const enhancedItems = aiResult.extractedItems.map(item => ({
+            ...item,
+            originalImageUrl: originalImageUrl
+          }));
+
+          await updateWardrobeItemWithClothing(wardrobeItemId, enhancedItems);
+          
           return {
             success: true,
-            clothingItems: aiResult.extractedItems,
+            clothingItems: enhancedItems,
             method: 'ai-fallback'
           };
         }
