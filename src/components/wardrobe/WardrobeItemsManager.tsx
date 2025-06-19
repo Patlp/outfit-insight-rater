@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { WardrobeItem } from '@/services/wardrobe';
 import { toast } from 'sonner';
@@ -39,7 +38,7 @@ export const WardrobeItemsManager: React.FC<WardrobeItemsManagerProps> = ({
   children
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<string>('name');
+  const [sortBy, setSortBy] = useState<string>('date');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [localWardrobeItems, setLocalWardrobeItems] = useState<WardrobeItem[]>(wardrobeItems);
 
