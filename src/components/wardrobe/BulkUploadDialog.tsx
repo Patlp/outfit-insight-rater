@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { validateFile, compressImage } from '@/utils/imageProcessing';
 
 interface BulkUploadDialogProps {
   onUploadComplete: () => void;
+  onNavigateToClothing?: () => void;
   children?: React.ReactNode;
 }
 
@@ -22,7 +22,7 @@ interface UploadItem {
   error?: string;
 }
 
-const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete, children }) => {
+const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete, onNavigateToClothing, children }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
@@ -141,11 +141,14 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ onUploadComplete, c
       toast.error(`Failed to process ${errorCount} photo${errorCount !== 1 ? 's' : ''}`);
     }
 
-    // Auto-close dialog after successful completion
+    // Auto-close dialog and navigate to My Clothing tab after successful completion
     if (errorCount === 0 && completedCount > 0) {
       setTimeout(() => {
         handleClose();
-      }, 2000);
+        if (onNavigateToClothing) {
+          onNavigateToClothing();
+        }
+      }, 1000);
     }
   };
 
