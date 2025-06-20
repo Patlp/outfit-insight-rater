@@ -16,19 +16,27 @@ interface WardrobeItemCardProps {
 }
 
 const WardrobeItemCard: React.FC<WardrobeItemCardProps> = ({ item, onDeleted }) => {
-  console.log('📝 Rendering WardrobeItemCard for item:', {
+  console.log('📝 WardrobeItemCard - Rendering item:', {
     id: item.id,
     imageUrl: item.image_url,
+    originalImageUrl: item.original_image_url,
     rating: item.rating_score,
     feedback: item.feedback?.slice(0, 50) + '...',
     hasClothingItems: !!item.extracted_clothing_items
   });
 
+  // Use original_image_url as fallback if image_url is not available
+  const displayImageUrl = item.image_url || item.original_image_url;
+  
+  if (!displayImageUrl) {
+    console.warn('⚠️ No image URL found for wardrobe item:', item.id);
+  }
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 bg-white">
       {/* Original Outfit Image */}
       <WardrobeItemImage 
-        imageUrl={item.image_url}
+        imageUrl={displayImageUrl || ''}
         score={item.rating_score || 0}
       />
       

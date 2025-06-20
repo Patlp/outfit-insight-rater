@@ -24,16 +24,26 @@ const WardrobeContent: React.FC = () => {
         throw new Error('User not authenticated');
       }
       
-      console.log('🔄 Fetching wardrobe items for user:', user.id);
+      console.log('🔄 WardrobeContent - Fetching wardrobe items for user:', user.id);
       const result = await getWardrobeItems(user.id);
       if (result.error) {
-        console.error('❌ Error fetching wardrobe items:', result.error);
+        console.error('❌ WardrobeContent - Error fetching wardrobe items:', result.error);
         toast.error('Failed to load wardrobe items');
         throw new Error(result.error);
       }
       
-      console.log('✅ Successfully fetched wardrobe items:', result.items?.length || 0);
-      console.log('📋 Wardrobe items data:', result.items);
+      console.log('✅ WardrobeContent - Successfully fetched wardrobe items:', result.items?.length || 0);
+      
+      // Enhanced debugging for image URLs
+      result.items?.forEach((item, index) => {
+        console.log(`📷 Item ${index + 1} (${item.id}):`, {
+          image_url: item.image_url,
+          original_image_url: item.original_image_url,
+          rating_score: item.rating_score,
+          created_at: item.created_at
+        });
+      });
+      
       return result.items || [];
     },
     enabled: !!user?.id,
@@ -42,7 +52,7 @@ const WardrobeContent: React.FC = () => {
   const filteredItems = React.useMemo(() => {
     if (!wardrobeItems) return [];
 
-    console.log('🔍 Filtering wardrobe items:', wardrobeItems.length);
+    console.log('🔍 WardrobeContent - Filtering wardrobe items:', wardrobeItems.length);
     let filtered = wardrobeItems;
 
     // Filter by search term (searches in suggestions and feedback)
@@ -71,12 +81,12 @@ const WardrobeContent: React.FC = () => {
       }
     }
 
-    console.log('📊 Filtered items count:', filtered.length);
+    console.log('📊 WardrobeContent - Filtered items count:', filtered.length);
     return filtered;
   }, [wardrobeItems, searchTerm, selectedFilter]);
 
   if (error) {
-    console.error('❌ Error in WardrobeContent:', error);
+    console.error('❌ WardrobeContent - Error state:', error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
