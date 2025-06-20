@@ -12,6 +12,110 @@ interface ExtractionResult {
   method?: string;
 }
 
+interface ColorExtractionResult {
+  primaryColor: string;
+  colorConfidence: number;
+  itemName: string;
+}
+
+// Enhanced color extraction function
+const extractColorFromItemName = (itemName: string): ColorExtractionResult => {
+  const name = itemName.toLowerCase();
+  
+  // Define comprehensive color mapping with fashion-specific terms
+  const colorPatterns = {
+    // Blacks
+    'black': ['black', 'jet black', 'midnight black'],
+    'charcoal': ['charcoal', 'dark gray', 'anthracite'],
+    
+    // Whites
+    'white': ['white', 'pure white'],
+    'cream': ['cream', 'ivory', 'off-white', 'pearl white', 'eggshell'],
+    
+    // Blues
+    'navy blue': ['navy', 'navy blue', 'dark blue'],
+    'royal blue': ['royal blue', 'cobalt blue'],
+    'sky blue': ['sky blue', 'light blue', 'powder blue'],
+    'denim blue': ['denim', 'denim blue', 'jean blue'],
+    
+    // Reds
+    'burgundy': ['burgundy', 'wine red', 'maroon'],
+    'crimson': ['crimson', 'cherry red', 'bright red'],
+    'brick red': ['brick red', 'rust red'],
+    
+    // Greens
+    'forest green': ['forest green', 'dark green'],
+    'olive green': ['olive', 'olive green', 'military green'],
+    'emerald green': ['emerald', 'emerald green'],
+    'sage green': ['sage', 'sage green', 'mint green'],
+    
+    // Browns
+    'chocolate brown': ['chocolate', 'chocolate brown', 'dark brown'],
+    'tan': ['tan', 'beige', 'sand', 'khaki'],
+    'camel': ['camel', 'cognac', 'cognac brown'],
+    
+    // Grays
+    'light gray': ['light gray', 'light grey', 'heather gray'],
+    'stone gray': ['stone gray', 'stone grey', 'slate gray'],
+    
+    // Pinks
+    'blush pink': ['blush', 'blush pink', 'dusty pink'],
+    'hot pink': ['hot pink', 'bright pink', 'fuchsia'],
+    'rose pink': ['rose', 'rose pink', 'dusty rose'],
+    
+    // Purples
+    'deep purple': ['purple', 'deep purple', 'plum'],
+    'lavender': ['lavender', 'light purple', 'violet'],
+    
+    // Yellows
+    'mustard yellow': ['mustard', 'mustard yellow'],
+    'golden yellow': ['golden', 'golden yellow', 'gold'],
+    'pale yellow': ['pale yellow', 'cream yellow'],
+    
+    // Oranges
+    'burnt orange': ['burnt orange', 'rust orange'],
+    'coral': ['coral', 'peach', 'salmon'],
+  };
+
+  // Find the best color match
+  let bestMatch = '';
+  let bestConfidence = 0;
+  let cleanItemName = itemName;
+
+  for (const [standardColor, variations] of Object.entries(colorPatterns)) {
+    for (const variation of variations) {
+      if (name.includes(variation)) {
+        const confidence = variation.length / name.length; // Longer matches = higher confidence
+        if (confidence > bestConfidence) {
+          bestMatch = standardColor;
+          bestConfidence = confidence;
+          // Remove the color part from the item name
+          cleanItemName = itemName.replace(new RegExp(variation, 'gi'), '').trim();
+        }
+      }
+    }
+  }
+
+  // If no specific color found, try to extract basic colors
+  if (!bestMatch) {
+    const basicColors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'gray', 'grey'];
+    for (const color of basicColors) {
+      if (name.includes(color)) {
+        bestMatch = color;
+        bestConfidence = 0.5; // Lower confidence for basic colors
+        cleanItemName = itemName.replace(new RegExp(color, 'gi'), '').trim();
+        break;
+      }
+    }
+  }
+
+  return {
+    primaryColor: bestMatch || 'unknown',
+    colorConfidence: bestConfidence,
+    itemName: cleanItemName || itemName
+  };
+};
+
 export const extractClothingFromImage = async (
   imageFile: File,
   wardrobeItemId: string,
@@ -19,7 +123,7 @@ export const extractClothingFromImage = async (
   suggestions: string[] = []
 ): Promise<ExtractionResult> => {
   try {
-    console.log('🔍 Starting AI-powered clothing extraction for wardrobe item:', wardrobeItemId);
+    console.log('🔍 Starting enhanced AI-powered clothing extraction with color analysis for wardrobe item:', wardrobeItemId);
 
     // Get the original image URL from the wardrobe item
     const { data: wardrobeItem } = await supabase
@@ -31,39 +135,48 @@ export const extractClothingFromImage = async (
     const originalImageUrl = wardrobeItem?.original_image_url || wardrobeItem?.image_url;
     console.log('📸 Using original image URL for extracted items:', originalImageUrl);
 
-    // Step 1: Try OpenAI Vision Analysis (Primary Method)
-    console.log('🎯 Step 1: Attempting OpenAI Vision Analysis...');
+    // Step 1: Try Enhanced OpenAI Vision Analysis with Color Detection (Primary Method)
+    console.log('🎯 Step 1: Attempting Enhanced OpenAI Vision Analysis with Color Detection...');
     try {
       const imageBase64 = await fileToBase64(imageFile);
       const visionResult = await extractFashionTagsWithVision(imageBase64, wardrobeItemId);
       
       if (visionResult.success && visionResult.tags && visionResult.tags.length > 0) {
-        console.log('✅ OpenAI Vision Analysis successful:', visionResult.tags.length, 'tags found');
+        console.log('✅ Enhanced OpenAI Vision Analysis successful:', visionResult.tags.length, 'color-aware tags found');
         
-        // Format vision tags as clothing items with original image URL
-        const visionClothingItems = visionResult.tags.map(tag => ({
-          name: tag,
-          descriptors: [],
-          category: categorizeTag(tag),
-          confidence: 0.92,
-          source: 'openai-vision',
-          originalImageUrl: originalImageUrl // Ensure original image URL is set
-        }));
+        // Format vision tags as clothing items with enhanced color extraction
+        const enhancedClothingItems = visionResult.tags.map(tag => {
+          const colorExtraction = extractColorFromItemName(tag);
+          
+          return {
+            name: colorExtraction.itemName,
+            primaryColor: colorExtraction.primaryColor,
+            colorConfidence: colorExtraction.colorConfidence,
+            fullDescription: tag, // Keep original for reference
+            descriptors: [colorExtraction.primaryColor].filter(Boolean),
+            category: categorizeTag(colorExtraction.itemName),
+            confidence: 0.92,
+            source: 'openai-vision-enhanced',
+            originalImageUrl: originalImageUrl,
+            colorExtracted: true,
+            extractionTimestamp: new Date().toISOString()
+          };
+        });
 
-        await updateWardrobeItemWithClothing(wardrobeItemId, visionClothingItems);
+        await updateWardrobeItemWithClothing(wardrobeItemId, enhancedClothingItems);
         
         return {
           success: true,
-          clothingItems: visionClothingItems,
-          method: 'openai-vision'
+          clothingItems: enhancedClothingItems,
+          method: 'openai-vision-color-enhanced'
         };
       }
     } catch (visionError) {
-      console.warn('⚠️ OpenAI Vision Analysis failed:', visionError);
+      console.warn('⚠️ Enhanced OpenAI Vision Analysis failed:', visionError);
     }
 
-    // Step 2: Try Google Vision API (Secondary Method)
-    console.log('🎯 Step 2: Attempting Google Vision Analysis...');
+    // Step 2: Try Google Vision API with Color Enhancement (Secondary Method)
+    console.log('🎯 Step 2: Attempting Google Vision Analysis with Color Enhancement...');
     try {
       // First upload image to get a URL for Google Vision
       const imageUrl = await uploadImageForAnalysis(imageFile, wardrobeItemId);
@@ -76,47 +189,65 @@ export const extractClothingFromImage = async (
       );
       
       if (googleVisionResult.success && googleVisionResult.items && googleVisionResult.items.length > 0) {
-        console.log('✅ Google Vision Analysis successful:', googleVisionResult.items.length, 'items found');
+        console.log('✅ Google Vision Analysis with color enhancement successful:', googleVisionResult.items.length, 'items found');
         
-        // Ensure all items have original image URL
-        const enhancedItems = googleVisionResult.items.map(item => ({
-          ...item,
-          originalImageUrl: originalImageUrl
-        }));
+        // Enhance Google Vision results with color extraction
+        const colorEnhancedItems = googleVisionResult.items.map(item => {
+          const colorExtraction = extractColorFromItemName(item.name);
+          
+          return {
+            ...item,
+            name: colorExtraction.itemName,
+            primaryColor: colorExtraction.primaryColor,
+            colorConfidence: colorExtraction.colorConfidence,
+            originalImageUrl: originalImageUrl,
+            colorExtracted: true,
+            descriptors: [...(item.descriptors || []), colorExtraction.primaryColor].filter(Boolean)
+          };
+        });
 
-        await updateWardrobeItemWithClothing(wardrobeItemId, enhancedItems);
+        await updateWardrobeItemWithClothing(wardrobeItemId, colorEnhancedItems);
         
         return {
           success: true,
-          clothingItems: enhancedItems,
-          method: googleVisionResult.method
+          clothingItems: colorEnhancedItems,
+          method: googleVisionResult.method + '-color-enhanced'
         };
       }
     } catch (googleError) {
       console.warn('⚠️ Google Vision Analysis failed:', googleError);
     }
 
-    // Step 3: Try Hybrid Text-Based Extraction (Tertiary Method)
+    // Step 3: Try Hybrid Text-Based Extraction with Color Enhancement (Tertiary Method)
     if (feedback) {
-      console.log('🎯 Step 3: Attempting Hybrid Text-Based Extraction...');
+      console.log('🎯 Step 3: Attempting Hybrid Text-Based Extraction with Color Enhancement...');
       try {
         const hybridResult = await extractClothingPhrasesHybrid(feedback, suggestions, wardrobeItemId);
         
         if (hybridResult.success && hybridResult.result && hybridResult.result.items.length > 0) {
-          console.log('✅ Hybrid Text-Based Extraction successful:', hybridResult.result.items.length, 'items found');
+          console.log('✅ Hybrid Text-Based Extraction with color enhancement successful:', hybridResult.result.items.length, 'items found');
           
-          // Ensure all items have original image URL
-          const enhancedItems = hybridResult.result.items.map(item => ({
-            ...item,
-            originalImageUrl: originalImageUrl
-          }));
+          // Enhance hybrid results with color extraction
+          const colorEnhancedItems = hybridResult.result.items.map(item => {
+            const colorExtraction = extractColorFromItemName(item.name);
+            
+            return {
+              ...item,
+              name: colorExtraction.itemName,
+              primaryColor: colorExtraction.primaryColor,
+              colorConfidence: colorExtraction.colorConfidence,
+              originalImageUrl: originalImageUrl,
+              colorExtracted: true,
+              descriptors: [...(item.descriptors || []), colorExtraction.primaryColor].filter(Boolean)
+            };
+          });
 
-          await updateWardrobeItemWithClothing(wardrobeItemId, enhancedItems);
+          await updateWardrobeItemWithClothing(wardrobeItemId, colorEnhancedItems);
           
           return {
             success: true,
-            clothingItems: enhancedItems,
-            method: hybridResult.result.method
+            clothingItems: colorEnhancedItems,
+            method: hybridResult.result.method + '-color-enhanced'
           };
         }
       } catch (hybridError) {
@@ -124,27 +255,36 @@ export const extractClothingFromImage = async (
       }
     }
 
-    // Step 4: Final AI Extraction Fallback
+    // Step 4: Final AI Extraction Fallback with Color Enhancement
     if (feedback) {
-      console.log('🎯 Step 4: Attempting Final AI Extraction Fallback...');
+      console.log('🎯 Step 4: Attempting Final AI Extraction Fallback with Color Enhancement...');
       try {
         const aiResult = await extractClothingPhrasesAI(feedback, suggestions, wardrobeItemId);
         
         if (aiResult.success && aiResult.extractedItems && aiResult.extractedItems.length > 0) {
-          console.log('✅ Final AI Extraction successful:', aiResult.extractedItems.length, 'items found');
+          console.log('✅ Final AI Extraction with color enhancement successful:', aiResult.extractedItems.length, 'items found');
           
-          // Ensure all items have original image URL
-          const enhancedItems = aiResult.extractedItems.map(item => ({
-            ...item,
-            originalImageUrl: originalImageUrl
-          }));
+          // Enhance AI results with color extraction
+          const colorEnhancedItems = aiResult.extractedItems.map(item => {
+            const colorExtraction = extractColorFromItemName(item.name);
+            
+            return {
+              ...item,
+              name: colorExtraction.itemName,
+              primaryColor: colorExtraction.primaryColor,
+              colorConfidence: colorExtraction.colorConfidence,
+              originalImageUrl: originalImageUrl,
+              colorExtracted: true,
+              descriptors: [...(item.descriptors || []), colorExtraction.primaryColor].filter(Boolean)
+            };
+          });
 
-          await updateWardrobeItemWithClothing(wardrobeItemId, enhancedItems);
+          await updateWardrobeItemWithClothing(wardrobeItemId, colorEnhancedItems);
           
           return {
             success: true,
-            clothingItems: enhancedItems,
-            method: 'ai-fallback'
+            clothingItems: colorEnhancedItems,
+            method: 'ai-fallback-color-enhanced'
           };
         }
       } catch (aiError) {
@@ -153,7 +293,7 @@ export const extractClothingFromImage = async (
     }
 
     // All methods failed
-    console.error('❌ All extraction methods failed');
+    console.error('❌ All enhanced color extraction methods failed');
     return {
       success: false,
       error: 'All clothing extraction methods failed',
@@ -161,7 +301,7 @@ export const extractClothingFromImage = async (
     };
 
   } catch (error) {
-    console.error('❌ Critical error in clothing extraction:', error);
+    console.error('❌ Critical error in enhanced clothing extraction:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown extraction error',
@@ -245,4 +385,41 @@ const categorizeTag = (tag: string): string => {
   }
   
   return 'other';
+};
+
+// Helper function to upload image for analysis services that need URLs
+const uploadImageForAnalysis = async (imageFile: File, wardrobeItemId: string): Promise<string> => {
+  const fileName = `analysis_${wardrobeItemId}_${Date.now()}.${imageFile.name.split('.').pop()}`;
+  
+  const { data, error } = await supabase.storage
+    .from('outfit-images')
+    .upload(fileName, imageFile, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload image for analysis: ${error.message}`);
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('outfit-images')
+    .getPublicUrl(data.path);
+
+  return publicUrl;
+};
+
+// Helper function to update wardrobe item with extracted clothing
+const updateWardrobeItemWithClothing = async (wardrobeItemId: string, clothingItems: any[]): Promise<void> => {
+  const { error } = await supabase
+    .from('wardrobe_items')
+    .update({
+      extracted_clothing_items: clothingItems,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', wardrobeItemId);
+
+  if (error) {
+    throw new Error(`Failed to update wardrobe item: ${error.message}`);
+  }
 };

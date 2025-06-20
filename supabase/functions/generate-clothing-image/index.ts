@@ -8,16 +8,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface GenerateImageRequest {
+interface ColorAwareRequest {
   itemName: string;
   wardrobeItemId: string;
   arrayIndex: number;
+  colorPrompt?: string;
+  colorData?: {
+    primaryColor?: string;
+    colorConfidence?: number;
+    category?: string;
+    fullDescription?: string;
+  };
 }
 
-interface GenerateImageResponse {
+interface ColorAwareResponse {
   success: boolean;
   imageUrl?: string;
   error?: string;
+  metadata?: {
+    processingTime: number;
+    colorEnhanced: boolean;
+    primaryColor?: string;
+    generationMethod: string;
+  };
 }
 
 serve(async (req) => {
@@ -26,214 +39,179 @@ serve(async (req) => {
   }
 
   const requestId = crypto.randomUUID().slice(0, 8);
-  console.log(`[${requestId}] 🎨 Starting AI image generation request`);
+  const startTime = Date.now();
+  
+  console.log(`[${requestId}] 🚀 Color-aware OpenAI image generation starting`);
 
   try {
-    const { itemName, wardrobeItemId, arrayIndex }: GenerateImageRequest = await req.json();
+    const { 
+      itemName, 
+      wardrobeItemId, 
+      arrayIndex, 
+      colorPrompt,
+      colorData
+    }: ColorAwareRequest = await req.json();
 
     if (!itemName || !wardrobeItemId || arrayIndex === undefined) {
-      console.error(`[${requestId}] ❌ Missing required parameters:`, { itemName, wardrobeItemId, arrayIndex });
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Missing required parameters' 
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
 
-    console.log(`[${requestId}] 🎯 Processing: "${itemName}" for wardrobe ${wardrobeItemId}[${arrayIndex}]`);
+    console.log(`[${requestId}] 🎯 Color-aware processing: "${itemName}"`);
+    console.log(`[${requestId}] 🎨 Color data:`, colorData);
 
-    // Get API keys from environment with detailed logging
+    // Get API keys
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!openaiApiKey) {
-      console.error(`[${requestId}] ❌ OpenAI API key not configured`);
-      return new Response(
-        JSON.stringify({ success: false, error: 'OpenAI API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!openaiApiKey || !supabaseUrl || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'API configuration missing' 
+      }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error(`[${requestId}] ❌ Supabase configuration missing`);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Supabase configuration missing' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Use color-aware prompt if provided, otherwise generate basic prompt
+    let finalPrompt = colorPrompt;
+    
+    if (!finalPrompt) {
+      // Fallback to basic color-aware prompt generation
+      const primaryColor = colorData?.primaryColor || 'neutral colored';
+      const category = colorData?.category || 'garment';
+      
+      finalPrompt = `Professional product photography of a single ${primaryColor} ${itemName}, floating with invisible support on pure white seamless background, professional studio lighting with accurate color representation, clean isolated presentation with no shadows, high resolution catalog style`;
     }
 
-    // Create enhanced prompt for clean product photography
-    const prompt = `Professional product photography of a single ${itemName} only. Clean, isolated item floating in invisible support with perfect lighting. Pure white background, no shadows, no mannequin, no model, no additional clothing items, no accessories, no logos, no text, no artistic effects. Focus solely on the ${itemName} with realistic fabric texture and natural lighting. Single item presentation, professionally centered, high resolution catalog style.
+    console.log(`[${requestId}] 📝 Using prompt: ${finalPrompt.slice(0, 100)}...`);
 
-NEGATIVE PROMPT: no mannequin, no model, no person, no background elements, no additional clothing, no accessories, no logos, no text, no artistic effects, no shadows, no environmental elements, no creative styling, no brand elements.`;
+    // Enhanced OpenAI generation with color accuracy focus
+    console.log(`[${requestId}] 🤖 Calling color-aware OpenAI DALL-E API...`);
+    
+    const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: finalPrompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'hd',
+        style: 'natural', // Use natural style for better color accuracy
+        response_format: 'url'
+      }),
+    });
 
-    console.log(`[${requestId}] 📝 Using clean product photography prompt for: ${itemName}`);
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json();
+      console.error(`[${requestId}] ❌ Color-aware OpenAI API error:`, errorData);
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `OpenAI API error: ${errorData.error?.message || 'Unknown error'}` 
+      }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
 
-    // Generate image using OpenAI DALL-E with timeout handling
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const openaiData = await openaiResponse.json();
+    const generatedImageUrl = openaiData.data[0].url;
 
+    console.log(`[${requestId}] ✅ Color-aware image generated from OpenAI`);
+
+    // Download the color-aware generated image
+    console.log(`[${requestId}] 📥 Downloading color-aware generated image...`);
+    
+    const imageResponse = await fetch(generatedImageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download image: ${imageResponse.status}`);
+    }
+
+    const imageBlob = await imageResponse.blob();
+    console.log(`[${requestId}] 📁 Color-aware image downloaded: ${imageBlob.size} bytes`);
+    
+    // Create optimized filename with color metadata
+    const sanitizedItemName = itemName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+    const colorPrefix = colorData?.primaryColor ? `${colorData.primaryColor.replace(/\s+/g, '_').toLowerCase()}_` : '';
+    const fileName = `color_aware/${wardrobeItemId}/${arrayIndex}_${colorPrefix}${sanitizedItemName}_${Date.now()}.png`;
+    
+    console.log(`[${requestId}] 💾 Uploading color-aware image: ${fileName}`);
+    
+    // Upload to Supabase storage
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('clothing-renders')
+      .upload(fileName, imageBlob, {
+        contentType: 'image/png',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error(`[${requestId}] ❌ Color-aware upload failed:`, uploadError);
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('clothing-renders')
+      .getPublicUrl(fileName);
+
+    // Verify URL accessibility
     try {
-      console.log(`[${requestId}] 🤖 Calling OpenAI DALL-E API...`);
-      
-      const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt: prompt,
-          n: 1,
-          size: '1024x1024',
-          quality: 'hd',
-          style: 'natural'
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!openaiResponse.ok) {
-        const errorData = await openaiResponse.json();
-        console.error(`[${requestId}] ❌ OpenAI API error:`, {
-          status: openaiResponse.status,
-          statusText: openaiResponse.statusText,
-          error: errorData
-        });
-        
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: `OpenAI API error: ${openaiResponse.status} - ${errorData.error?.message || 'Unknown error'}` 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      const verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
+      if (verifyResponse.ok) {
+        console.log(`[${requestId}] ✅ Color-aware URL verified`);
+      } else {
+        console.warn(`[${requestId}] ⚠️ Color-aware URL verification failed: ${verifyResponse.status}`);
       }
-
-      const openaiData = await openaiResponse.json();
-      const generatedImageUrl = openaiData.data[0].url;
-
-      console.log(`[${requestId}] ✅ Image generated successfully from OpenAI`);
-
-      // Download the generated image with timeout
-      console.log(`[${requestId}] 📥 Downloading generated image...`);
-      
-      const downloadController = new AbortController();
-      const downloadTimeoutId = setTimeout(() => downloadController.abort(), 15000); // 15 second timeout
-
-      const imageResponse = await fetch(generatedImageUrl, {
-        signal: downloadController.signal
-      });
-      
-      clearTimeout(downloadTimeoutId);
-
-      if (!imageResponse.ok) {
-        console.error(`[${requestId}] ❌ Failed to download generated image:`, imageResponse.status);
-        throw new Error(`Failed to download generated image: ${imageResponse.status}`);
-      }
-
-      const imageBlob = await imageResponse.blob();
-      console.log(`[${requestId}] 📁 Downloaded image blob: ${imageBlob.size} bytes`);
-      
-      // Create optimized filename for storage
-      const sanitizedItemName = itemName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-      const fileName = `${wardrobeItemId}/${arrayIndex}_${sanitizedItemName}_${Date.now()}.png`;
-      
-      console.log(`[${requestId}] 💾 Uploading to storage: ${fileName}`);
-      
-      // Initialize Supabase client
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-      // Upload to Supabase storage with retry logic
-      let uploadAttempt = 0;
-      const maxRetries = 3;
-      let uploadData, uploadError;
-
-      while (uploadAttempt < maxRetries) {
-        uploadAttempt++;
-        console.log(`[${requestId}] 📤 Upload attempt ${uploadAttempt}/${maxRetries}`);
-
-        const uploadResult = await supabase.storage
-          .from('clothing-renders')
-          .upload(fileName, imageBlob, {
-            contentType: 'image/png',
-            upsert: false
-          });
-
-        uploadData = uploadResult.data;
-        uploadError = uploadResult.error;
-
-        if (!uploadError) {
-          console.log(`[${requestId}] ✅ Upload successful on attempt ${uploadAttempt}`);
-          break;
-        }
-
-        console.warn(`[${requestId}] ⚠️ Upload attempt ${uploadAttempt} failed:`, uploadError);
-        
-        if (uploadAttempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * uploadAttempt)); // Exponential backoff
-        }
-      }
-
-      if (uploadError) {
-        console.error(`[${requestId}] ❌ All upload attempts failed:`, uploadError);
-        throw new Error(`Upload failed after ${maxRetries} attempts: ${uploadError.message}`);
-      }
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('clothing-renders')
-        .getPublicUrl(fileName);
-
-      console.log(`[${requestId}] 🌐 Generated public URL: ${publicUrl}`);
-
-      // Verify the URL is accessible
-      try {
-        const verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
-        if (verifyResponse.ok) {
-          console.log(`[${requestId}] ✅ URL verification successful`);
-        } else {
-          console.warn(`[${requestId}] ⚠️ URL verification failed: ${verifyResponse.status}`);
-        }
-      } catch (verifyError) {
-        console.warn(`[${requestId}] ⚠️ URL verification error:`, verifyError);
-      }
-
-      const response: GenerateImageResponse = {
-        success: true,
-        imageUrl: publicUrl
-      };
-
-      console.log(`[${requestId}] 🎉 AI image generation completed successfully`);
-
-      return new Response(JSON.stringify(response), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      
-      if (fetchError.name === 'AbortError') {
-        console.error(`[${requestId}] ❌ Request timeout during OpenAI API call`);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Request timeout - please try again' }),
-          { status: 408, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      throw fetchError;
+    } catch (verifyError) {
+      console.warn(`[${requestId}] ⚠️ URL verification error:`, verifyError);
     }
+
+    const processingTime = Date.now() - startTime;
+
+    const response: ColorAwareResponse = {
+      success: true,
+      imageUrl: publicUrl,
+      metadata: {
+        processingTime,
+        colorEnhanced: !!colorData?.primaryColor,
+        primaryColor: colorData?.primaryColor,
+        generationMethod: 'openai_color_aware'
+      }
+    };
+
+    console.log(`[${requestId}] 🎉 Color-aware OpenAI generation completed in ${processingTime}ms`);
+    if (colorData?.primaryColor) {
+      console.log(`[${requestId}] 🎨 Generated with primary color: ${colorData.primaryColor}`);
+    }
+
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
-    console.error(`[${requestId}] ❌ Generate clothing image error:`, error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error during image generation' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const processingTime = Date.now() - startTime;
+    console.error(`[${requestId}] ❌ Color-aware OpenAI error (${processingTime}ms):`, error);
+    
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
   }
 });

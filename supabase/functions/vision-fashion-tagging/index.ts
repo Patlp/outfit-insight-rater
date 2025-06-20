@@ -33,7 +33,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing vision tagging for wardrobe item: ${wardrobeItemId}`);
+    console.log(`Processing enhanced color-aware vision tagging for wardrobe item: ${wardrobeItemId}`);
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
@@ -46,25 +46,43 @@ serve(async (req) => {
     // Format the image for OpenAI Vision API
     const imageUrl = `data:image/jpeg;base64,${imageBase64}`;
 
-    const visionPrompt = `You are a fashion tagging assistant. Analyze this outfit photo and return a list of specific clothing items and accessories that are clearly visible.
+    const enhancedColorVisionPrompt = `You are a fashion color analysis assistant. Analyze this outfit photo and identify each clothing item with its EXACT primary color.
 
-For each item, use this format: [Color] [Item Type]
+For each item, use this EXACT format: [Primary Color] [Item Type]
 
-Rules:
-- Only list items you can clearly see in the photo
+COLOR DETECTION RULES:
+- Be VERY specific about colors (navy blue, burgundy, cream, charcoal, emerald, etc.)
+- Use common fashion color names (not generic colors like "blue" - use "navy blue", "royal blue", "sky blue")
+- For patterns, identify the dominant/background color first
+- For multi-colored items, pick the most prominent color
+- Use these specific color categories when possible:
+  * Blacks: black, charcoal, jet black, midnight black
+  * Whites: white, cream, ivory, off-white, pearl white
+  * Grays: light gray, dark gray, heather gray, stone gray
+  * Blues: navy blue, royal blue, sky blue, powder blue, denim blue
+  * Reds: burgundy, crimson, cherry red, wine red, brick red
+  * Greens: forest green, olive green, emerald green, sage green
+  * Browns: chocolate brown, tan, beige, camel, cognac brown
+  * Pinks: blush pink, hot pink, dusty pink, rose pink
+  * Purples: deep purple, lavender, plum, violet
+  * Yellows: mustard yellow, golden yellow, pale yellow
+  * Oranges: burnt orange, coral, peach, rust orange
+
+ITEM DETECTION RULES:
+- Only list items you can clearly see
 - Use specific clothing terms (blazer, hoodie, jeans, boots, etc.)
-- Include the main color of each item
 - Maximum 6 items
 - One item per line
 - No bullet points or extra formatting
 
 Examples:
-Black blazer
-White shirt
-Blue jeans
-Brown boots
+Navy blue blazer
+Cream silk blouse
+Dark wash denim jeans
+Cognac brown leather boots
+Burgundy wool sweater
 
-Now analyze the image:`;
+Now analyze the image with precise color identification:`;
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -80,7 +98,7 @@ Now analyze the image:`;
             content: [
               {
                 type: 'text',
-                text: visionPrompt
+                text: enhancedColorVisionPrompt
               },
               {
                 type: 'image_url',
@@ -92,7 +110,7 @@ Now analyze the image:`;
           }
         ],
         max_tokens: 300,
-        temperature: 0.2
+        temperature: 0.1
       })
     });
 
@@ -108,14 +126,14 @@ Now analyze the image:`;
     const openaiData = await openaiResponse.json();
     const rawContent = openaiData.choices[0].message.content;
 
-    // Parse the response to extract individual tags
+    // Parse the response to extract individual tags with enhanced color information
     const tags = rawContent
       .split('\n')
       .map((line: string) => line.replace(/^[-•*]\s*/, '').trim()) // Remove bullet points
       .filter((tag: string) => tag.length > 0 && !tag.toLowerCase().includes('analyze'))
       .slice(0, 6); // Limit to 6 tags max
 
-    console.log(`Extracted ${tags.length} fashion tags:`, tags);
+    console.log(`Extracted ${tags.length} color-enhanced fashion tags:`, tags);
 
     const response: VisionTaggingResponse = {
       success: true,
@@ -127,7 +145,7 @@ Now analyze the image:`;
     });
 
   } catch (error) {
-    console.error('Vision tagging error:', error);
+    console.error('Enhanced color vision tagging error:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
