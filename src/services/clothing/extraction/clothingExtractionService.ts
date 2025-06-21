@@ -116,6 +116,83 @@ const extractColorFromItemName = (itemName: string): ColorExtractionResult => {
   };
 };
 
+// Helper function to upload image for analysis services that need URLs
+const uploadImageForAnalysis = async (imageFile: File, wardrobeItemId: string): Promise<string> => {
+  const fileName = `analysis_${wardrobeItemId}_${Date.now()}.${imageFile.name.split('.').pop()}`;
+  
+  const { data, error } = await supabase.storage
+    .from('outfit-images')
+    .upload(fileName, imageFile, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload image for analysis: ${error.message}`);
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('outfit-images')
+    .getPublicUrl(data.path);
+
+  return publicUrl;
+};
+
+// Helper function to update wardrobe item with extracted clothing
+const updateWardrobeItemWithClothing = async (wardrobeItemId: string, clothingItems: any[]): Promise<void> => {
+  const { error } = await supabase
+    .from('wardrobe_items')
+    .update({
+      extracted_clothing_items: clothingItems,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', wardrobeItemId);
+
+  if (error) {
+    throw new Error(`Failed to update wardrobe item: ${error.message}`);
+  }
+};
+
+// Helper function to categorize tags based on clothing type
+const categorizeTag = (tag: string): string => {
+  const lowerTag = tag.toLowerCase();
+  
+  if (lowerTag.includes('shirt') || lowerTag.includes('blouse') || lowerTag.includes('top') || 
+      lowerTag.includes('tee') || lowerTag.includes('sweater') || lowerTag.includes('cardigan') || 
+      lowerTag.includes('hoodie') || lowerTag.includes('tank') || lowerTag.includes('polo')) {
+    return 'tops';
+  }
+  
+  if (lowerTag.includes('pants') || lowerTag.includes('jeans') || lowerTag.includes('trousers') || 
+      lowerTag.includes('shorts') || lowerTag.includes('skirt') || lowerTag.includes('leggings')) {
+    return 'bottoms';
+  }
+  
+  if (lowerTag.includes('dress') || lowerTag.includes('gown')) {
+    return 'dresses';
+  }
+  
+  if (lowerTag.includes('jacket') || lowerTag.includes('blazer') || lowerTag.includes('coat') || 
+      lowerTag.includes('vest') || lowerTag.includes('cardigan')) {
+    return 'outerwear';
+  }
+  
+  if (lowerTag.includes('shoes') || lowerTag.includes('sneakers') || lowerTag.includes('heels') || 
+      lowerTag.includes('boots') || lowerTag.includes('sandals') || lowerTag.includes('flats') ||
+      lowerTag.includes('loafers')) {
+    return 'footwear';
+  }
+  
+  if (lowerTag.includes('belt') || lowerTag.includes('bag') || lowerTag.includes('hat') || 
+      lowerTag.includes('scarf') || lowerTag.includes('necklace') || lowerTag.includes('bracelet') || 
+      lowerTag.includes('watch') || lowerTag.includes('earrings') || lowerTag.includes('sunglasses') ||
+      lowerTag.includes('beanie') || lowerTag.includes('cap') || lowerTag.includes('clips')) {
+    return 'accessories';
+  }
+  
+  return 'other';
+};
+
 export const extractClothingFromImage = async (
   imageFile: File,
   wardrobeItemId: string,
@@ -307,119 +384,5 @@ export const extractClothingFromImage = async (
       error: error instanceof Error ? error.message : 'Unknown extraction error',
       method: 'error'
     };
-  }
-};
-
-// Helper function to upload image for analysis services that need URLs
-const uploadImageForAnalysis = async (imageFile: File, wardrobeItemId: string): Promise<string> => {
-  const fileName = `analysis_${wardrobeItemId}_${Date.now()}.${imageFile.name.split('.').pop()}`;
-  
-  const { data, error } = await supabase.storage
-    .from('outfit-images')
-    .upload(fileName, imageFile, {
-      cacheControl: '3600',
-      upsert: false
-    });
-
-  if (error) {
-    throw new Error(`Failed to upload image for analysis: ${error.message}`);
-  }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('outfit-images')
-    .getPublicUrl(data.path);
-
-  return publicUrl;
-};
-
-// Helper function to update wardrobe item with extracted clothing
-const updateWardrobeItemWithClothing = async (wardrobeItemId: string, clothingItems: any[]): Promise<void> => {
-  const { error } = await supabase
-    .from('wardrobe_items')
-    .update({
-      extracted_clothing_items: clothingItems,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', wardrobeItemId);
-
-  if (error) {
-    throw new Error(`Failed to update wardrobe item: ${error.message}`);
-  }
-};
-
-// Helper function to categorize tags based on clothing type
-const categorizeTag = (tag: string): string => {
-  const lowerTag = tag.toLowerCase();
-  
-  if (lowerTag.includes('shirt') || lowerTag.includes('blouse') || lowerTag.includes('top') || 
-      lowerTag.includes('tee') || lowerTag.includes('sweater') || lowerTag.includes('cardigan') || 
-      lowerTag.includes('hoodie') || lowerTag.includes('tank') || lowerTag.includes('polo')) {
-    return 'tops';
-  }
-  
-  if (lowerTag.includes('pants') || lowerTag.includes('jeans') || lowerTag.includes('trousers') || 
-      lowerTag.includes('shorts') || lowerTag.includes('skirt') || lowerTag.includes('leggings')) {
-    return 'bottoms';
-  }
-  
-  if (lowerTag.includes('dress') || lowerTag.includes('gown')) {
-    return 'dresses';
-  }
-  
-  if (lowerTag.includes('jacket') || lowerTag.includes('blazer') || lowerTag.includes('coat') || 
-      lowerTag.includes('vest') || lowerTag.includes('cardigan')) {
-    return 'outerwear';
-  }
-  
-  if (lowerTag.includes('shoes') || lowerTag.includes('sneakers') || lowerTag.includes('heels') || 
-      lowerTag.includes('boots') || lowerTag.includes('sandals') || lowerTag.includes('flats') ||
-      lowerTag.includes('loafers')) {
-    return 'footwear';
-  }
-  
-  if (lowerTag.includes('belt') || lowerTag.includes('bag') || lowerTag.includes('hat') || 
-      lowerTag.includes('scarf') || lowerTag.includes('necklace') || lowerTag.includes('bracelet') || 
-      lowerTag.includes('watch') || lowerTag.includes('earrings') || lowerTag.includes('sunglasses') ||
-      lowerTag.includes('beanie') || lowerTag.includes('cap') || lowerTag.includes('clips')) {
-    return 'accessories';
-  }
-  
-  return 'other';
-};
-
-// Helper function to upload image for analysis services that need URLs
-const uploadImageForAnalysis = async (imageFile: File, wardrobeItemId: string): Promise<string> => {
-  const fileName = `analysis_${wardrobeItemId}_${Date.now()}.${imageFile.name.split('.').pop()}`;
-  
-  const { data, error } = await supabase.storage
-    .from('outfit-images')
-    .upload(fileName, imageFile, {
-      cacheControl: '3600',
-      upsert: false
-    });
-
-  if (error) {
-    throw new Error(`Failed to upload image for analysis: ${error.message}`);
-  }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('outfit-images')
-    .getPublicUrl(data.path);
-
-  return publicUrl;
-};
-
-// Helper function to update wardrobe item with extracted clothing
-const updateWardrobeItemWithClothing = async (wardrobeItemId: string, clothingItems: any[]): Promise<void> => {
-  const { error } = await supabase
-    .from('wardrobe_items')
-    .update({
-      extracted_clothing_items: clothingItems,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', wardrobeItemId);
-
-  if (error) {
-    throw new Error(`Failed to update wardrobe item: ${error.message}`);
   }
 };
