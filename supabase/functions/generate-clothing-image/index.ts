@@ -8,26 +8,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ColorAwareRequest {
+interface ContextAwareRequest {
   itemName: string;
   wardrobeItemId: string;
   arrayIndex: number;
-  colorPrompt?: string;
-  colorData?: {
+  contextAwarePrompt?: string;
+  contextData?: {
     primaryColor?: string;
     colorConfidence?: number;
     category?: string;
     fullDescription?: string;
+    originalImageUrl?: string;
+    preservedContext?: boolean;
   };
+  // Legacy support
+  colorPrompt?: string;
+  colorData?: any;
 }
 
-interface ColorAwareResponse {
+interface ContextAwareResponse {
   success: boolean;
   imageUrl?: string;
   error?: string;
   metadata?: {
     processingTime: number;
-    colorEnhanced: boolean;
+    contextAware: boolean;
+    colorPreserved: boolean;
     primaryColor?: string;
     generationMethod: string;
   };
@@ -41,16 +47,19 @@ serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
   
-  console.log(`[${requestId}] 🚀 Color-aware OpenAI image generation starting`);
+  console.log(`[${requestId}] 🚀 Context-aware OpenAI image generation starting`);
 
   try {
     const { 
       itemName, 
       wardrobeItemId, 
       arrayIndex, 
+      contextAwarePrompt,
+      contextData,
+      // Legacy support
       colorPrompt,
       colorData
-    }: ColorAwareRequest = await req.json();
+    }: ContextAwareRequest = await req.json();
 
     if (!itemName || !wardrobeItemId || arrayIndex === undefined) {
       return new Response(JSON.stringify({ 
@@ -62,8 +71,8 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[${requestId}] 🎯 Color-aware processing: "${itemName}"`);
-    console.log(`[${requestId}] 🎨 Color data:`, colorData);
+    console.log(`[${requestId}] 🎯 Context-aware processing: "${itemName}"`);
+    console.log(`[${requestId}] 🎨 Context data:`, contextData);
 
     // Get API keys
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -80,21 +89,24 @@ serve(async (req) => {
       });
     }
 
-    // Use color-aware prompt if provided, otherwise generate basic prompt
-    let finalPrompt = colorPrompt;
+    // Use context-aware prompt if provided, otherwise fallback to legacy or basic
+    let finalPrompt = contextAwarePrompt || colorPrompt;
     
     if (!finalPrompt) {
-      // Fallback to basic color-aware prompt generation
-      const primaryColor = colorData?.primaryColor || 'neutral colored';
-      const category = colorData?.category || 'garment';
+      // Generate basic context-aware prompt
+      const primaryColor = contextData?.primaryColor || colorData?.primaryColor || 'neutral colored';
+      const category = contextData?.category || 'garment';
       
-      finalPrompt = `Professional product photography of a single ${primaryColor} ${itemName}, floating with invisible support on pure white seamless background, professional studio lighting with accurate color representation, clean isolated presentation with no shadows, high resolution catalog style`;
+      finalPrompt = `Professional product photography of a "${itemName}", emphasizing accurate ${primaryColor} color representation, floating with invisible support on pure white seamless background, professional studio lighting with exact color fidelity, high resolution catalog style, clean isolated presentation with no shadows`;
+      
+      // Add negative prompt
+      finalPrompt += `\n\nNEGATIVE PROMPT: no mannequin, no model, no person, no background elements, no additional clothing, no accessories, no shadows, no logos, no color distortion, maintain exact ${primaryColor} color tone`;
     }
 
-    console.log(`[${requestId}] 📝 Using prompt: ${finalPrompt.slice(0, 100)}...`);
+    console.log(`[${requestId}] 📝 Using context-aware prompt: ${finalPrompt.slice(0, 100)}...`);
 
-    // Enhanced OpenAI generation with color accuracy focus
-    console.log(`[${requestId}] 🤖 Calling color-aware OpenAI DALL-E API...`);
+    // Enhanced OpenAI generation with context and color accuracy focus
+    console.log(`[${requestId}] 🤖 Calling context-aware OpenAI DALL-E API...`);
     
     const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -108,14 +120,14 @@ serve(async (req) => {
         n: 1,
         size: '1024x1024',
         quality: 'hd',
-        style: 'natural', // Use natural style for better color accuracy
+        style: 'natural', // Use natural style for better accuracy
         response_format: 'url'
       }),
     });
 
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.json();
-      console.error(`[${requestId}] ❌ Color-aware OpenAI API error:`, errorData);
+      console.error(`[${requestId}] ❌ Context-aware OpenAI API error:`, errorData);
       
       return new Response(JSON.stringify({ 
         success: false, 
@@ -129,10 +141,10 @@ serve(async (req) => {
     const openaiData = await openaiResponse.json();
     const generatedImageUrl = openaiData.data[0].url;
 
-    console.log(`[${requestId}] ✅ Color-aware image generated from OpenAI`);
+    console.log(`[${requestId}] ✅ Context-aware image generated from OpenAI`);
 
-    // Download the color-aware generated image
-    console.log(`[${requestId}] 📥 Downloading color-aware generated image...`);
+    // Download the context-aware generated image
+    console.log(`[${requestId}] 📥 Downloading context-aware generated image...`);
     
     const imageResponse = await fetch(generatedImageUrl);
     if (!imageResponse.ok) {
@@ -140,14 +152,15 @@ serve(async (req) => {
     }
 
     const imageBlob = await imageResponse.blob();
-    console.log(`[${requestId}] 📁 Color-aware image downloaded: ${imageBlob.size} bytes`);
+    console.log(`[${requestId}] 📁 Context-aware image downloaded: ${imageBlob.size} bytes`);
     
-    // Create optimized filename with color metadata
+    // Create optimized filename with context metadata
     const sanitizedItemName = itemName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-    const colorPrefix = colorData?.primaryColor ? `${colorData.primaryColor.replace(/\s+/g, '_').toLowerCase()}_` : '';
-    const fileName = `color_aware/${wardrobeItemId}/${arrayIndex}_${colorPrefix}${sanitizedItemName}_${Date.now()}.png`;
+    const contextPrefix = contextData?.preservedContext ? 'context_aware' : 'color_aware';
+    const colorPrefix = contextData?.primaryColor ? `${contextData.primaryColor.replace(/\s+/g, '_').toLowerCase()}_` : '';
+    const fileName = `${contextPrefix}/${wardrobeItemId}/${arrayIndex}_${colorPrefix}${sanitizedItemName}_${Date.now()}.png`;
     
-    console.log(`[${requestId}] 💾 Uploading color-aware image: ${fileName}`);
+    console.log(`[${requestId}] 💾 Uploading context-aware image: ${fileName}`);
     
     // Upload to Supabase storage
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -160,7 +173,7 @@ serve(async (req) => {
       });
 
     if (uploadError) {
-      console.error(`[${requestId}] ❌ Color-aware upload failed:`, uploadError);
+      console.error(`[${requestId}] ❌ Context-aware upload failed:`, uploadError);
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
@@ -172,9 +185,9 @@ serve(async (req) => {
     try {
       const verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
       if (verifyResponse.ok) {
-        console.log(`[${requestId}] ✅ Color-aware URL verified`);
+        console.log(`[${requestId}] ✅ Context-aware URL verified`);
       } else {
-        console.warn(`[${requestId}] ⚠️ Color-aware URL verification failed: ${verifyResponse.status}`);
+        console.warn(`[${requestId}] ⚠️ Context-aware URL verification failed: ${verifyResponse.status}`);
       }
     } catch (verifyError) {
       console.warn(`[${requestId}] ⚠️ URL verification error:`, verifyError);
@@ -182,20 +195,24 @@ serve(async (req) => {
 
     const processingTime = Date.now() - startTime;
 
-    const response: ColorAwareResponse = {
+    const response: ContextAwareResponse = {
       success: true,
       imageUrl: publicUrl,
       metadata: {
         processingTime,
-        colorEnhanced: !!colorData?.primaryColor,
-        primaryColor: colorData?.primaryColor,
-        generationMethod: 'openai_color_aware'
+        contextAware: !!contextAwarePrompt,
+        colorPreserved: contextData?.preservedContext || false,
+        primaryColor: contextData?.primaryColor,
+        generationMethod: 'openai_context_aware'
       }
     };
 
-    console.log(`[${requestId}] 🎉 Color-aware OpenAI generation completed in ${processingTime}ms`);
-    if (colorData?.primaryColor) {
-      console.log(`[${requestId}] 🎨 Generated with primary color: ${colorData.primaryColor}`);
+    console.log(`[${requestId}] 🎉 Context-aware OpenAI generation completed in ${processingTime}ms`);
+    if (contextData?.primaryColor) {
+      console.log(`[${requestId}] 🎨 Generated with preserved color context: ${contextData.primaryColor}`);
+    }
+    if (contextAwarePrompt) {
+      console.log(`[${requestId}] 📝 Used context-aware prompting for maximum accuracy`);
     }
 
     return new Response(JSON.stringify(response), {
@@ -204,7 +221,7 @@ serve(async (req) => {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error(`[${requestId}] ❌ Color-aware OpenAI error (${processingTime}ms):`, error);
+    console.error(`[${requestId}] ❌ Context-aware OpenAI error (${processingTime}ms):`, error);
     
     return new Response(JSON.stringify({ 
       success: false, 
