@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 export interface PinterestAuthConfig {
   clientId: string;
   redirectUri: string;
-  scope: string[];
+  scopes: string[];
 }
 
 export interface PinterestConnection {
@@ -31,26 +31,25 @@ export interface PinterestConnection {
 
 // Pinterest OAuth configuration
 const PINTEREST_CONFIG: PinterestAuthConfig = {
-  clientId: 'demo_client_id', // This will be replaced with real credentials via Supabase Edge Functions
+  clientId: '1507458', // Pinterest App ID
   redirectUri: `${window.location.origin}/wardrobe?pinterest_callback=true`,
-  scope: ['boards:read', 'pins:read', 'user_accounts:read']
+  scopes: ['boards:read', 'pins:read', 'user_accounts:read']
 };
 
 export const initiatePinterestAuth = async () => {
   try {
     console.log('🔗 Initiating Pinterest OAuth...');
     
-    // For demo purposes, we'll simulate the OAuth flow
-    // In a real implementation, you would redirect to Pinterest's OAuth URL
-    const authUrl = buildPinterestAuthUrl();
+    const state = generateState();
+    const authUrl = buildPinterestAuthUrl(state);
     
-    console.log('Pinterest OAuth URL:', authUrl);
-    toast.info('Pinterest OAuth would open in a new window');
+    console.log('📌 Redirecting to Pinterest OAuth URL');
     
-    // Simulate successful OAuth callback for demo
-    setTimeout(() => {
-      handlePinterestCallback('demo_access_token', 'demo_user_123');
-    }, 2000);
+    // Store state for validation
+    sessionStorage.setItem('pinterest_oauth_state', state);
+    
+    // Redirect to Pinterest OAuth
+    window.location.href = authUrl;
     
   } catch (error) {
     console.error('❌ Pinterest auth error:', error);
@@ -58,13 +57,13 @@ export const initiatePinterestAuth = async () => {
   }
 };
 
-const buildPinterestAuthUrl = (): string => {
+const buildPinterestAuthUrl = (state: string): string => {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: PINTEREST_CONFIG.clientId,
     redirect_uri: PINTEREST_CONFIG.redirectUri,
-    scope: PINTEREST_CONFIG.scope.join(','),
-    state: generateState()
+    scope: PINTEREST_CONFIG.scopes.join(','),
+    state: state
   });
   
   return `https://www.pinterest.com/oauth/?${params.toString()}`;
@@ -75,67 +74,53 @@ const generateState = (): string => {
          Math.random().toString(36).substring(2, 15);
 };
 
-export const handlePinterestCallback = async (accessToken: string, pinterestUserId: string) => {
+export const handlePinterestCallback = async (code: string, state: string) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    console.log('🔄 Processing Pinterest callback...');
+    // Validate state
+    const storedState = sessionStorage.getItem('pinterest_oauth_state');
+    if (state !== storedState) {
+      throw new Error('Invalid OAuth state');
+    }
 
-    // Get user profile from Pinterest API (simulated)
-    const pinterestProfile = await fetchPinterestProfile(accessToken);
-    
-    // Save connection to database
-    const { data: connection, error } = await supabase
-      .from('pinterest_connections')
-      .upsert({
-        user_id: user.id,
-        pinterest_user_id: pinterestUserId,
-        access_token: accessToken,
-        username: pinterestProfile.username,
-        display_name: pinterestProfile.display_name,
-        profile_image_url: pinterestProfile.profile_image_url,
-        board_count: pinterestProfile.board_count,
-        pin_count: pinterestProfile.pin_count,
-        follower_count: pinterestProfile.follower_count,
-        is_active: true,
-        sync_enabled: true,
-        sync_frequency: 'daily'
-      }, {
-        onConflict: 'user_id,pinterest_user_id'
-      })
-      .select()
-      .single();
+    console.log('🔄 Processing Pinterest OAuth callback...');
+
+    // Exchange code for access token via Edge Function
+    const { data, error } = await supabase.functions.invoke('pinterest-oauth', {
+      body: {
+        action: 'exchange_code',
+        code: code,
+        state: state,
+        userId: user.id
+      }
+    });
 
     if (error) {
       throw error;
     }
 
-    console.log('✅ Pinterest connection saved:', connection);
+    if (!data.success) {
+      throw new Error(data.error || 'OAuth exchange failed');
+    }
+
+    console.log('✅ Pinterest connection established successfully');
     toast.success('Pinterest account connected successfully!');
     
-    return connection;
+    // Clean up state
+    sessionStorage.removeItem('pinterest_oauth_state');
+    
+    return data.connection;
 
   } catch (error) {
     console.error('❌ Pinterest callback error:', error);
     toast.error('Failed to connect Pinterest account');
+    sessionStorage.removeItem('pinterest_oauth_state');
     throw error;
   }
-};
-
-const fetchPinterestProfile = async (accessToken: string) => {
-  // In a real implementation, this would call the Pinterest API
-  // For demo purposes, we'll return mock data
-  return {
-    username: 'demo_user',
-    display_name: 'Demo Pinterest User',
-    profile_image_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-    board_count: 15,
-    pin_count: 234,
-    follower_count: 1250
-  };
 };
 
 export const getPinterestConnections = async (): Promise<PinterestConnection[]> => {
@@ -177,5 +162,31 @@ export const disconnectPinterest = async (connectionId: string) => {
   } catch (error) {
     console.error('❌ Error disconnecting Pinterest:', error);
     toast.error('Failed to disconnect Pinterest account');
+  }
+};
+
+// Check for Pinterest OAuth callback on page load
+export const checkPinterestCallback = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+  const error = urlParams.get('error');
+  
+  if (error) {
+    console.error('❌ Pinterest OAuth error:', error);
+    toast.error('Pinterest connection was cancelled or failed');
+    return;
+  }
+  
+  if (code && state && urlParams.get('pinterest_callback') === 'true') {
+    console.log('📌 Pinterest OAuth callback detected');
+    handlePinterestCallback(code, state);
+    
+    // Clean up URL
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('code');
+    newUrl.searchParams.delete('state');
+    newUrl.searchParams.delete('pinterest_callback');
+    window.history.replaceState({}, '', newUrl.toString());
   }
 };

@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ExternalLink, Calendar, Users, Image, Settings } from 'lucide-react';
+import { ExternalLink, Calendar, Users, Image, Settings, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   initiatePinterestAuth, 
   getPinterestConnections, 
   disconnectPinterest,
+  checkPinterestCallback,
   type PinterestConnection 
 } from '@/services/pinterest/auth';
 
@@ -33,16 +34,18 @@ const PinterestConnectionDialog: React.FC<PinterestConnectionDialogProps> = ({
     enabled: open,
   });
 
+  // Check for Pinterest OAuth callback when dialog opens
+  useEffect(() => {
+    if (open) {
+      checkPinterestCallback();
+    }
+  }, [open]);
+
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
       await initiatePinterestAuth();
-      // In a real implementation, this would be handled by the OAuth callback
-      setTimeout(() => {
-        refetch();
-        setIsConnecting(false);
-        onConnectionSuccess?.();
-      }, 3000);
+      // User will be redirected to Pinterest, so we don't need to do anything else here
     } catch (error) {
       setIsConnecting(false);
     }
@@ -58,6 +61,12 @@ const PinterestConnectionDialog: React.FC<PinterestConnectionDialogProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -67,7 +76,7 @@ const PinterestConnectionDialog: React.FC<PinterestConnectionDialogProps> = ({
             Pinterest Connections
           </DialogTitle>
           <DialogDescription>
-            Connect your Pinterest account to import boards and pins automatically
+            Connect your Pinterest account to automatically import boards and pins
           </DialogDescription>
         </DialogHeader>
 
@@ -116,15 +125,15 @@ const PinterestConnectionDialog: React.FC<PinterestConnectionDialogProps> = ({
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Image className="w-4 h-4 text-gray-500" />
-                        <span>{connection.board_count} boards</span>
+                        <span>{formatNumber(connection.board_count)} boards</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <ExternalLink className="w-4 h-4 text-gray-500" />
-                        <span>{connection.pin_count} pins</span>
+                        <span>{formatNumber(connection.pin_count)} pins</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-gray-500" />
-                        <span>{connection.follower_count} followers</span>
+                        <span>{formatNumber(connection.follower_count)} followers</span>
                       </div>
                     </div>
                     <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
@@ -133,6 +142,12 @@ const PinterestConnectionDialog: React.FC<PinterestConnectionDialogProps> = ({
                       <span>•</span>
                       <span>Sync frequency: {connection.sync_frequency}</span>
                     </div>
+                    {connection.token_expires_at && new Date(connection.token_expires_at) < new Date() && (
+                      <div className="mt-2 flex items-center gap-2 text-xs text-amber-600">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Access token expired - reconnection required</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -182,13 +197,19 @@ const PinterestConnectionDialog: React.FC<PinterestConnectionDialogProps> = ({
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                Two-way sync to keep inspirations up-to-date
+                Automatic outfit inspiration categorization
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                 Color palette and style analysis
               </li>
             </ul>
+          </div>
+
+          {/* Privacy Notice */}
+          <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+            <p className="font-medium mb-1">Privacy & Security</p>
+            <p>We only access your public Pinterest boards and pins. Your private content remains private. You can disconnect at any time.</p>
           </div>
         </div>
       </DialogContent>

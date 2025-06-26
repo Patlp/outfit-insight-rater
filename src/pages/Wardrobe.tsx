@@ -1,12 +1,18 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import WardrobeContent from '@/components/wardrobe/WardrobeContent';
 import { Toaster } from '@/components/ui/sonner';
+import { checkPinterestCallback } from '@/services/pinterest/auth';
 
 const Wardrobe: React.FC = () => {
   const { user, loading } = useAuth();
+
+  // Check for Pinterest OAuth callback on page load
+  useEffect(() => {
+    checkPinterestCallback();
+  }, []);
 
   if (loading) {
     return (
