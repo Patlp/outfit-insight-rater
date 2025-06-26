@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, Upload, Star, TrendingUp, Users, Sparkles, ExternalLink, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,15 @@ const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pinterestLoading, setPinterestLoading] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Index component rendered');
+    console.log('👤 User state:', user ? 'authenticated' : 'not authenticated');
+    console.log('⏳ Loading state:', loading);
+  }, [user, loading]);
+
   const handlePinterestLogin = async () => {
+    console.log('🔗 Pinterest login initiated');
     setPinterestLoading(true);
     try {
       const { error } = await signInWithPinterest();
@@ -38,6 +46,7 @@ const Index = () => {
   };
 
   const handleSignOut = async () => {
+    console.log('🚪 Sign out initiated');
     try {
       await signOut();
       toast.success('Signed out successfully');
@@ -49,12 +58,15 @@ const Index = () => {
 
   // Show loading state
   if (loading) {
+    console.log('⏳ Showing loading state');
     return (
       <div className="min-h-screen bg-warm-cream flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fashion-500"></div>
       </div>
     );
   }
+
+  console.log('🎨 Rendering main Index component');
 
   return (
     <div className="min-h-screen bg-warm-cream">
@@ -76,7 +88,10 @@ const Index = () => {
               </div>
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={() => navigate('/wardrobe')}
+                  onClick={() => {
+                    console.log('🗂️ Navigating to wardrobe');
+                    navigate('/wardrobe');
+                  }}
                   variant="ghost"
                   className="text-fashion-600 hover:text-fashion-700"
                 >

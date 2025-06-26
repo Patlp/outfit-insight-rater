@@ -15,7 +15,10 @@ const WardrobeHeader: React.FC<WardrobeHeaderProps> = ({ itemCount, isLoading })
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
+  console.log('🗂️ WardrobeHeader rendered with itemCount:', itemCount);
+
   const handleSignOut = async () => {
+    console.log('🚪 Sign out initiated from wardrobe');
     try {
       await signOut();
       toast.success('Signed out successfully');
@@ -26,12 +29,17 @@ const WardrobeHeader: React.FC<WardrobeHeaderProps> = ({ itemCount, isLoading })
     }
   };
 
+  const handleBackToHome = () => {
+    console.log('🏠 Navigating back to home');
+    navigate('/');
+  };
+
   return (
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
-          onClick={() => navigate('/')}
+          onClick={handleBackToHome}
           className="flex items-center gap-2"
         >
           <Home size={20} />
