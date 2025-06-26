@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithPinterest: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -31,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('🔐 Auth state changed:', event, session?.user?.email || session?.user?.user_metadata?.user_name);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔍 Checking existing session:', session?.user?.email || session?.user?.user_metadata?.user_name);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -68,6 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const signInWithPinterest = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'pinterest',
+      options: {
+        redirectTo: `${window.location.origin}/wardrobe`,
+        scopes: 'user_accounts:read,boards:read,pins:read'
+      }
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -78,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signUp,
     signIn,
+    signInWithPinterest,
     signOut,
   };
 
