@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shirt } from 'lucide-react';
+import { ArrowLeft, Shirt, Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface WardrobeHeaderProps {
   itemCount: number;
@@ -11,6 +13,18 @@ interface WardrobeHeaderProps {
 
 const WardrobeHeader: React.FC<WardrobeHeaderProps> = ({ itemCount, isLoading }) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Signed out successfully');
+      navigate('/');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error('Failed to sign out');
+    }
+  };
 
   return (
     <div className="flex items-center justify-between mb-8">
@@ -20,7 +34,7 @@ const WardrobeHeader: React.FC<WardrobeHeaderProps> = ({ itemCount, isLoading })
           onClick={() => navigate('/')}
           className="flex items-center gap-2"
         >
-          <ArrowLeft size={20} />
+          <Home size={20} />
           Back to Home
         </Button>
         <div className="flex items-center gap-3">
@@ -32,6 +46,18 @@ const WardrobeHeader: React.FC<WardrobeHeaderProps> = ({ itemCount, isLoading })
             </p>
           </div>
         </div>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={handleSignOut}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <LogOut size={16} />
+          Sign Out
+        </Button>
       </div>
     </div>
   );

@@ -10,7 +10,6 @@ import Wardrobe from "./pages/Wardrobe";
 import Admin from "./pages/Admin";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
-import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +31,6 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
-            <Footer />
           </div>
         </BrowserRouter>
       </TooltipProvider>
