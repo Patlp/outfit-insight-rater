@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { initiatePinterestAuth } from '@/services/pinterest/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -72,14 +73,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithPinterest = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'pinterest',
-      options: {
-        redirectTo: `${window.location.origin}/wardrobe`,
-        scopes: 'user_accounts:read,boards:read,pins:read'
-      }
-    });
-    return { error };
+    try {
+      await initiatePinterestAuth();
+      return { error: null };
+    } catch (error) {
+      console.error('Pinterest auth error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {

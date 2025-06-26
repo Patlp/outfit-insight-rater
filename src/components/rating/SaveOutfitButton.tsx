@@ -129,9 +129,8 @@ const SaveOutfitButton: React.FC<SaveOutfitButtonProps> = ({ imageUrl }) => {
       )}
 
       <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
       />
     </div>
   );
