@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Camera, Upload, Star, TrendingUp, Users, Sparkles, ExternalLink, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,15 +29,17 @@ const Index = () => {
     console.log('🔗 Pinterest login initiated');
     setPinterestLoading(true);
     try {
+      console.log('📌 Calling signInWithPinterest...');
       const { error } = await signInWithPinterest();
       if (error) {
-        console.error('Pinterest OAuth error:', error);
+        console.error('❌ Pinterest OAuth error:', error);
         toast.error('Failed to connect with Pinterest. Please try again.');
       } else {
+        console.log('✅ Pinterest OAuth initiated successfully');
         toast.info('Redirecting to Pinterest...');
       }
     } catch (error) {
-      console.error('Pinterest login error:', error);
+      console.error('❌ Pinterest login error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setPinterestLoading(false);
