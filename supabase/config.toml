@@ -4,30 +4,17 @@ project_id = "frfvrgarcwmpviimsenu"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
-[auth]
-enabled = true
-port = 54324
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-refresh_token_rotation_enabled = true
-security_update_password_require_reauthentication = true
-
-[auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = false
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
+shadow_port = 54320
+major_version = 15
 
 [studio]
 enabled = true
 port = 54323
+api_url = "http://localhost"
 
 [inbucket]
 enabled = true
@@ -37,51 +24,12 @@ port = 54324
 enabled = true
 port = 54325
 
-[edge_runtime]
-enabled = true
-port = 54326
-
-[analytics]
-enabled = false
-
+[functions]
 [functions.analyze-outfit]
-verify_jwt = false
-
-[functions.detect-clothing-objects]
-verify_jwt = false
-
-[functions.extract-clothing-phrases]
-verify_jwt = false
-
-[functions.generate-clothing-image]
-verify_jwt = false
-
-[functions.generate-enhanced-clothing-image]
-verify_jwt = false
-
-[functions.generate-enhanced-thenewblack-image]
-verify_jwt = false
-
-[functions.generate-recommendations]
-verify_jwt = false
-
-[functions.generate-thenewblack-image]
-verify_jwt = false
-
-[functions.import-kaggle-data]
 verify_jwt = false
 
 [functions.send-invites]
 verify_jwt = false
 
 [functions.send-rating-email]
-verify_jwt = false
-
-[functions.vision-fashion-tagging]
-verify_jwt = false
-
-[functions.pinterest-oauth]
-verify_jwt = false
-
-[functions.pinterest-api]
 verify_jwt = false

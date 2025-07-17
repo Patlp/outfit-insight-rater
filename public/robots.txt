@@ -1,4 +1,3 @@
-
 User-agent: Googlebot
 Allow: /
 
@@ -11,11 +10,5 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: Pinterestbot
-Allow: /
-Allow: /privacy-policy
-
 User-agent: *
 Allow: /
-
-Sitemap: https://ratemyfit.app/sitemap.xml

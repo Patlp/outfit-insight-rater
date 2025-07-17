@@ -16,7 +16,6 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
     isAnalyzing,
     setIsAnalyzing,
     setRatingResult,
-    setUploadedImage,
     occasionContext
   } = useRating();
 
@@ -32,8 +31,6 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         occasionContext
       );
       setRatingResult(result);
-      // Set the uploaded image URL so SaveOutfitButton can access it
-      setUploadedImage(imageSrc);
       toast.success('Analysis complete!');
     } catch (error) {
       console.error('Analysis error:', error);

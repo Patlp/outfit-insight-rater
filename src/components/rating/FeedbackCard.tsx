@@ -28,22 +28,15 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({ title, content, icon: Icon,
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      {title && (
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <Icon className="w-5 h-5 text-gray-600" />
-            </div>
-            <h4 className="font-semibold text-gray-900">{title}</h4>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <Icon className="w-5 h-5 text-gray-600" />
           </div>
-          {getSentimentBadge(sentiment)}
+          <h4 className="font-semibold text-gray-900">{title}</h4>
         </div>
-      )}
-      {!title && (
-        <div className="flex justify-end mb-3">
-          {getSentimentBadge(sentiment)}
-        </div>
-      )}
+        {getSentimentBadge(sentiment)}
+      </div>
       <div className="text-gray-700 leading-relaxed">
         <p dangerouslySetInnerHTML={{ __html: content }} />
       </div>
