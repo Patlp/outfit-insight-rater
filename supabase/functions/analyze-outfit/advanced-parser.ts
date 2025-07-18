@@ -47,6 +47,24 @@ export class AdvancedResponseParser {
     let score = 7;
     let feedback = aiResponse;
     let suggestions: string[] = [];
+    let styleAnalysis = undefined;
+
+    // First try to parse JSON if it contains styleAnalysis
+    try {
+      const jsonMatch = aiResponse.match(/\{[\s\S]*"styleAnalysis"[\s\S]*\}/);
+      if (jsonMatch) {
+        const jsonData = JSON.parse(jsonMatch[0]);
+        if (jsonData.styleAnalysis) {
+          score = jsonData.score || score;
+          feedback = jsonData.feedback || feedback;
+          suggestions = jsonData.suggestions || suggestions;
+          styleAnalysis = jsonData.styleAnalysis;
+          return { score, feedback, suggestions, styleAnalysis };
+        }
+      }
+    } catch (e) {
+      console.log('Failed to parse JSON response, falling back to text parsing');
+    }
 
     // Extract score with multiple patterns
     const scorePatterns = [
@@ -102,7 +120,7 @@ export class AdvancedResponseParser {
       suggestions = fallback.suggestions;
     }
 
-    return { score, feedback, suggestions };
+    return { score, feedback, suggestions, styleAnalysis };
   }
   
   private static attemptEnhancedParsing(aiResponse: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {

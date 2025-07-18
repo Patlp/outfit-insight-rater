@@ -7,10 +7,46 @@ export interface AnalyzeOutfitRequest {
   isNeutral?: boolean;
 }
 
+export interface ColorAnalysis {
+  seasonalType: string;
+  undertone: {
+    value: number;
+    description: string;
+  };
+  intensity: {
+    value: number;
+    description: string;
+  };
+  lightness: {
+    value: number;
+    description: string;
+  };
+  explanation: string;
+}
+
+export interface ColorPalette {
+  colors: string[][];
+  explanation: string;
+}
+
+export interface BodyType {
+  type: string;
+  description: string;
+  visualShape: string;
+  stylingRecommendations: string[];
+}
+
+export interface StyleAnalysis {
+  colorAnalysis: ColorAnalysis;
+  colorPalette: ColorPalette;
+  bodyType?: BodyType;
+}
+
 export interface AnalyzeOutfitResponse {
   score: number;
   feedback: string;
   suggestions: string[];
+  styleAnalysis?: StyleAnalysis;
 }
 
 export interface OpenAIMessage {

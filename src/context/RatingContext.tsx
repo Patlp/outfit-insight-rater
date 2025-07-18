@@ -10,11 +10,47 @@ export interface OccasionContext {
   isNeutral: boolean;
 }
 
+export interface ColorAnalysis {
+  seasonalType: string;
+  undertone: {
+    value: number; // 0-100 (0 = cool, 100 = warm)
+    description: string;
+  };
+  intensity: {
+    value: number; // 0-100 (0 = muted, 100 = bright)
+    description: string;
+  };
+  lightness: {
+    value: number; // 0-100 (0 = dark, 100 = light)
+    description: string;
+  };
+  explanation: string;
+}
+
+export interface ColorPalette {
+  colors: string[][]; // 6x8 grid of hex colors
+  explanation: string;
+}
+
+export interface BodyType {
+  type: string;
+  description: string;
+  visualShape: string;
+  stylingRecommendations: string[];
+}
+
+export interface StyleAnalysis {
+  colorAnalysis: ColorAnalysis;
+  colorPalette: ColorPalette;
+  bodyType?: BodyType; // Optional, only if full body visible
+}
+
 export interface RatingResult {
   score: number;
   feedback: string;
   suggestions: string[];
   recommendations?: Product[];
+  styleAnalysis?: StyleAnalysis;
 }
 
 interface RatingContextType {
