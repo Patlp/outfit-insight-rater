@@ -10,27 +10,27 @@ export function createOpenAIRequest(
   isNeutral?: boolean,
   feedbackMode?: string
 ): OpenAIRequest {
-  console.log('🤖 Making OpenAI API call with enhanced configuration...');
+  console.log('🤖 Making OpenAI API call with enhanced fashion research configuration...');
   
-  // Enhanced model and parameter configuration
-  const model = 'gpt-4.1-2025-04-14'; // Use latest model for better compliance
-  const maxTokens = feedbackMode === 'roast' ? 800 : 1200; // More tokens for comprehensive analysis
-  const temperature = feedbackMode === 'roast' ? 0.9 : 0.7; // Higher creativity for roast mode
+  // Enhanced model and parameter configuration for fashion research
+  const model = 'gpt-4.1-2025-04-14';
+  const maxTokens = feedbackMode === 'roast' ? 800 : 1200;
+  const temperature = feedbackMode === 'roast' ? 0.9 : 0.7;
   
-  console.log(`🤖 Model: ${model}`);
+  console.log(`🤖 Fashion Research Model: ${model}`);
   console.log(`🤖 Max tokens: ${maxTokens}`);
   console.log(`🤖 Temperature: ${temperature}`);
   
   if (feedbackMode === 'roast') {
-    console.log('🔥 ROAST MODE: Using high creativity settings for maximum brutality');
+    console.log('🔥 ROAST RESEARCH MODE: Fashion elements brutality analysis');
   } else {
-    console.log('🤖 NORMAL MODE: Using optimized settings for complete analysis');
+    console.log('🎨 ACADEMIC RESEARCH MODE: Comprehensive clothing coordination study');
   }
 
-  // Enhanced user message with clearer research context
+  // Enhanced user message with explicit fashion research framing
   const userMessage = eventContext && !isNeutral 
-    ? `Please analyze this outfit for "${eventContext}" using fashion research principles. Focus on clothing items, styling choices, color coordination, and garment fit. Provide comprehensive analysis following the JSON structure specified.`
-    : `Please analyze this outfit using fashion research principles. Focus on clothing items, styling choices, color coordination, and garment fit. Provide comprehensive analysis following the JSON structure specified.`;
+    ? `Please conduct a comprehensive fashion research study of the clothing items and styling choices visible in this image for "${eventContext}" contexts. Focus exclusively on garments, color coordination between clothing pieces, styling decisions, and fashion elements. Analyze the clothing coordination principles demonstrated and provide detailed fashion research findings following the specified JSON structure.`
+    : `Please conduct a comprehensive fashion research study of the clothing items and styling choices visible in this image. Focus exclusively on garments, fabric coordination, color relationships between clothing pieces, styling decisions, and fashion elements. Analyze the clothing coordination principles and provide detailed fashion research findings following the specified JSON structure.`;
 
   const messages: OpenAIMessage[] = [
     {
@@ -67,7 +67,7 @@ export async function callOpenAI(request: OpenAIRequest): Promise<string> {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('🤖 Calling OpenAI API with enhanced compliance settings...');
+  console.log('🤖 Calling OpenAI API for fashion research analysis...');
   
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -96,7 +96,8 @@ export async function callOpenAI(request: OpenAIRequest): Promise<string> {
   }
 
   const content = data.choices[0].message.content;
-  console.log('🤖 OpenAI response received, length:', content.length);
+  console.log('🤖 Fashion research response received, length:', content.length);
+  console.log('🤖 Response preview:', content.substring(0, 200) + '...');
   
   return content;
 }

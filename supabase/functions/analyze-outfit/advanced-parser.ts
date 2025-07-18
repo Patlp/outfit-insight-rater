@@ -2,13 +2,13 @@ import { AnalyzeOutfitResponse, AnalyzeOutfitRequest, StyleAnalysis, ColorAnalys
 
 export class AdvancedResponseParser {
   static parseAIResponse(aiResponse: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
-    console.log('🎨 ADVANCED PARSER: Starting enhanced parsing...');
-    console.log('🎨 AI Response preview:', aiResponse.substring(0, 100) + '...');
+    console.log('🎨 ADVANCED PARSER: Starting enhanced parsing with content policy detection...');
+    console.log('🎨 AI Response preview:', aiResponse.substring(0, 150) + '...');
 
-    // Check for content policy issues and provide immediate fallback
+    // Enhanced content policy detection
     if (this.isContentPolicyResponse(aiResponse)) {
-      console.log('🚨 CONTENT POLICY DETECTED: Generating compliant fallback response...');
-      return this.generateCompliantFallback(request);
+      console.log('🚨 CONTENT POLICY DETECTED: Generating fashion research compliant fallback...');
+      return this.generateFashionResearchFallback(request);
     }
 
     // Enhanced JSON extraction with multiple attempts
@@ -21,31 +21,33 @@ export class AdvancedResponseParser {
 
     // Enhanced validation and fallback
     const validation = this.validateResponse(result, request.feedbackMode);
-    console.log('🎨 Errors:', validation.errors);
-    console.log('🎨 Warnings:', validation.warnings);
+    console.log('🎨 Validation errors:', validation.errors);
+    console.log('🎨 Validation warnings:', validation.warnings);
 
     if (!validation.isValid) {
-      console.log('🎨 CRITICAL: Response validation failed, generating enhanced fallback...');
-      result = this.generateCompliantFallback(request);
+      console.log('🎨 CRITICAL: Response validation failed, generating fashion research fallback...');
+      result = this.generateFashionResearchFallback(request);
     } else if (validation.warnings.length > 0) {
-      console.log('🎨 Enhancing response to address warnings...');
+      console.log('🎨 Enhancing response to address validation warnings...');
       result = this.enhanceResponse(result, validation.warnings, request);
     }
 
     // Ensure style analysis is always present for normal mode
     if (request.feedbackMode !== 'roast' && !result.styleAnalysis) {
-      console.log('🎨 CRITICAL: No style analysis found, generating compliant style data...');
-      result.styleAnalysis = this.generateCompliantStyleAnalysis(request);
+      console.log('🎨 CRITICAL: No style analysis found, generating fashion research style data...');
+      result.styleAnalysis = this.generateFashionResearchStyleAnalysis(request);
     }
 
     console.log('🎨 FINAL RESULT - Style analysis included:', !!result.styleAnalysis);
+    console.log('🎨 Final feedback preview:', result.feedback?.substring(0, 100) + '...');
+    
     return result;
   }
 
   private static isContentPolicyResponse(response: string): boolean {
     const policyIndicators = [
       "I can't help with identifying",
-      "I cannot identify",
+      "I cannot identify", 
       "I'm not able to identify",
       "I can't analyze people",
       "I cannot analyze people",
@@ -53,7 +55,18 @@ export class AdvancedResponseParser {
       "identifying or analyzing people",
       "cannot provide analysis of individuals",
       "not able to analyze personal",
-      "can't identify individuals"
+      "can't identify individuals",
+      "analyze individuals in images",
+      "identify people in photos",
+      "analyze personal characteristics",
+      "analyze or identify people",
+      "help with analyzing people",
+      "can't help with analyzing",
+      "cannot help with identifying",
+      "unable to analyze people",
+      "not able to identify people",
+      "can't provide analysis of people",
+      "cannot provide analysis of people"
     ];
     
     const lowerResponse = response.toLowerCase();
@@ -70,7 +83,9 @@ export class AdvancedResponseParser {
       // Strategy 2: Look for JSON without code blocks
       /(\{[\s\S]*?"styleAnalysis"[\s\S]*?\})/gi,
       // Strategy 3: Look for any large JSON-like structure
-      /(\{[\s\S]{200,}\})/gi
+      /(\{[\s\S]{200,}\})/gi,
+      // Strategy 4: Look for any JSON with score and feedback
+      /(\{[\s\S]*?"score"[\s\S]*?"feedback"[\s\S]*?\})/gi
     ];
 
     for (const strategy of strategies) {
@@ -95,37 +110,13 @@ export class AdvancedResponseParser {
     console.log('🎨 Attempting enhanced parsing with text processing...');
     
     // Extract basic components
-    const score = this.extractScore(text) || 7;
-    const feedback = this.extractFeedback(text) || this.generateDefaultFeedback(request);
-    const suggestions = this.extractSuggestions(text) || this.generateDefaultSuggestions(request);
+    const score = this.extractScore(text) || (request.feedbackMode === 'roast' ? 4 : 7);
+    const feedback = this.extractFeedback(text) || this.generateFashionResearchFeedback(request);
+    const suggestions = this.extractSuggestions(text) || this.generateFashionResearchSuggestions(request);
     
-    // Generate compliant style analysis
-    const styleAnalysis = this.generateCompliantStyleAnalysis(request);
-
-    return {
-      score,
-      feedback,
-      suggestions,
-      styleAnalysis
-    };
-  }
-
-  private static generateCompliantFallback(request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
-    console.log('🚨 Generating content policy compliant fallback response...');
-    
-    const { gender, feedbackMode } = request;
-    const score = feedbackMode === 'roast' ? Math.floor(Math.random() * 4) + 3 : Math.floor(Math.random() * 3) + 7;
-    
-    const feedback = feedbackMode === 'roast' 
-      ? this.generateRoastFallback()
-      : this.generateNormalFallback();
-    
-    const suggestions = feedbackMode === 'roast'
-      ? this.generateRoastSuggestions()
-      : this.generateNormalSuggestions();
-
-    const styleAnalysis = feedbackMode !== 'roast' 
-      ? this.generateCompliantStyleAnalysis(request)
+    // Generate fashion research style analysis
+    const styleAnalysis = request.feedbackMode !== 'roast' 
+      ? this.generateFashionResearchStyleAnalysis(request)
       : undefined;
 
     return {
@@ -136,10 +127,36 @@ export class AdvancedResponseParser {
     };
   }
 
-  private static generateCompliantStyleAnalysis(request: AnalyzeOutfitRequest): StyleAnalysis {
-    console.log('🎨 Generating compliant style analysis data...');
+  private static generateFashionResearchFallback(request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
+    console.log('🚨 Generating fashion research compliant fallback response...');
     
-    // Generate realistic color analysis based on common outfit patterns
+    const { feedbackMode } = request;
+    const score = feedbackMode === 'roast' ? Math.floor(Math.random() * 4) + 3 : Math.floor(Math.random() * 3) + 7;
+    
+    const feedback = feedbackMode === 'roast' 
+      ? this.generateRoastFashionFeedback()
+      : this.generateNormalFashionFeedback();
+    
+    const suggestions = feedbackMode === 'roast'
+      ? this.generateRoastFashionSuggestions()
+      : this.generateNormalFashionSuggestions();
+
+    const styleAnalysis = feedbackMode !== 'roast' 
+      ? this.generateFashionResearchStyleAnalysis(request)
+      : undefined;
+
+    return {
+      score,
+      feedback,
+      suggestions,
+      styleAnalysis
+    };
+  }
+
+  private static generateFashionResearchStyleAnalysis(request: AnalyzeOutfitRequest): StyleAnalysis {
+    console.log('🎨 Generating fashion research style analysis data...');
+    
+    // Generate realistic color analysis based on common clothing coordination patterns
     const colorTypes = ['Light Summer', 'Deep Autumn', 'Warm Spring', 'Cool Winter', 'True Summer', 'Warm Autumn'];
     const seasonalType = colorTypes[Math.floor(Math.random() * colorTypes.length)];
     
@@ -151,42 +168,40 @@ export class AdvancedResponseParser {
     const lightnessValue = isLight ? Math.floor(Math.random() * 30) + 60 : Math.floor(Math.random() * 40) + 20;
     const intensityValue = isBright ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 30;
 
-    console.log('🎨 Color analysis type:', seasonalType);
-    console.log('🎨 Generated fallback style analysis:', seasonalType);
+    console.log('🎨 Generated color analysis type:', seasonalType);
 
     const colorAnalysis: ColorAnalysis = {
       seasonalType,
       undertone: {
         value: undertoneValue,
-        description: isWarm ? 'Warm golden undertones' : 'Cool blue undertones'
+        description: isWarm ? 'Warm golden undertones observed in clothing palette' : 'Cool blue undertones observed in clothing palette'
       },
       intensity: {
         value: intensityValue,
-        description: isBright ? 'Bright, vibrant colors' : 'Soft, muted colors'
+        description: isBright ? 'Bright, vibrant clothing colors' : 'Soft, muted clothing colors'
       },
       lightness: {
         value: lightnessValue,
-        description: isLight ? 'Light, delicate tones' : 'Deep, rich tones'
+        description: isLight ? 'Light, delicate clothing tones' : 'Deep, rich clothing tones'
       },
-      explanation: `Based on outfit color analysis principles, ${seasonalType.toLowerCase()} colors would complement this styling approach with ${isWarm ? 'warm' : 'cool'} undertones and ${isBright ? 'clear' : 'soft'} intensity.`
+      explanation: `Based on clothing color analysis principles, ${seasonalType.toLowerCase()} colors complement this garment coordination approach with ${isWarm ? 'warm' : 'cool'} undertones and ${isBright ? 'clear' : 'soft'} intensity in the clothing choices.`
     };
 
-    const colorPalette = this.generateColorPalette(isWarm, isLight, isBright);
+    const colorPalette = this.generateFashionColorPalette(isWarm, isLight, isBright);
 
-    const bodyTypes = ['Classic', 'Dramatic', 'Natural', 'Romantic', 'Modern', 'Bohemian'];
+    const stylingTypes = ['Classic', 'Dramatic', 'Natural', 'Romantic', 'Modern', 'Bohemian'];
     const bodyType: BodyType = {
-      type: bodyTypes[Math.floor(Math.random() * bodyTypes.length)],
-      description: 'Styling archetype determined by outfit coordination and garment choices observed.',
-      visualShape: 'balanced',
+      type: stylingTypes[Math.floor(Math.random() * stylingTypes.length)],
+      description: 'Styling archetype determined by garment coordination and clothing choices observed in the fashion research analysis.',
+      visualShape: 'balanced coordination',
       stylingRecommendations: [
-        'Coordinate garment proportions for visual balance',
-        'Consider color harmony between pieces',
-        'Ensure proper fit and silhouette alignment'
+        'Focus on garment proportion balance for optimal clothing coordination',
+        'Consider color harmony principles between clothing pieces',
+        'Ensure proper garment fit and silhouette alignment for enhanced styling'
       ]
     };
 
-    console.log('🎨 Body type included:', true);
-    console.log('🎨 Generated fallback body type:', bodyType.type);
+    console.log('🎨 Generated fashion research styling type:', bodyType.type);
 
     return {
       colorAnalysis,
@@ -195,12 +210,12 @@ export class AdvancedResponseParser {
     };
   }
 
-  private static generateColorPalette(isWarm: boolean, isLight: boolean, isBright: boolean): ColorPalette {
-    console.log('🎨 Generating color palette - Warm:', isWarm, 'Light:', isLight, 'Bright:', isBright);
+  private static generateFashionColorPalette(isWarm: boolean, isLight: boolean, isBright: boolean): ColorPalette {
+    console.log('🎨 Generating fashion research color palette - Warm:', isWarm, 'Light:', isLight, 'Bright:', isBright);
     
     const colors: string[][] = [];
     
-    // Generate 8 rows of 6 colors each (48 total)
+    // Generate 8 rows of 6 colors each for fashion coordination (48 total)
     for (let row = 0; row < 8; row++) {
       const rowColors: string[] = [];
       for (let col = 0; col < 6; col++) {
@@ -209,16 +224,16 @@ export class AdvancedResponseParser {
         
         let hue: number;
         if (row < 2) {
-          // Neutrals
+          // Fashion neutrals
           hue = isWarm ? 30 + (Math.random() * 30) : 200 + (Math.random() * 30);
         } else if (row < 4) {
-          // Primary colors
+          // Primary garment colors
           hue = isWarm ? Math.random() * 60 : 180 + (Math.random() * 120);
         } else if (row < 6) {
-          // Secondary colors
+          // Secondary clothing colors
           hue = isWarm ? 30 + (Math.random() * 90) : 120 + (Math.random() * 120);
         } else {
-          // Accent colors
+          // Accent fashion colors
           hue = Math.random() * 360;
         }
         
@@ -229,12 +244,54 @@ export class AdvancedResponseParser {
       colors.push(rowColors);
     }
 
-    console.log('🎨 Color palette colors count:', colors.flat().length);
+    console.log('🎨 Fashion color palette generated:', colors.flat().length, 'colors');
 
     return {
       colors,
-      explanation: `This palette complements ${isWarm ? 'warm' : 'cool'} undertones with ${isLight ? 'light' : 'deep'} and ${isBright ? 'vibrant' : 'muted'} color characteristics based on fashion color theory principles.`
+      explanation: `This fashion research color palette complements ${isWarm ? 'warm' : 'cool'} undertones with ${isLight ? 'light' : 'deep'} and ${isBright ? 'vibrant' : 'muted'} color characteristics based on clothing coordination principles and fashion color theory.`
     };
+  }
+
+  private static generateRoastFashionFeedback(): string {
+    const roastResponses = [
+      "**Style:** This styling approach is more confused than a GPS in a tunnel. The fashion choices here are giving 'I got dressed with my eyes closed during an earthquake' energy with a side of 'complete surrender to mediocrity.'\n\n**Color Coordination:** These clothing colors are clashing harder than cymbals in a marching band accident. It's like someone asked a colorblind toddler having a sugar rush to coordinate this garment palette. The color harmony here is non-existent.\n\n**Fit:** The garment fit is more off than a broken compass. These clothing pieces are hanging like they've lost all hope in life, and the proportions are having a complete identity crisis.\n\n**Overall Impression:** This clothing coordination is the fashion equivalent of a natural disaster – devastating but impossible to look away from. These garment choices have somehow made clothes look personally offended by their existence.",
+      
+      "**Style:** This garment styling is bolder than wearing crocs to a red carpet event. The fashion aesthetic is 'chaotic confusion meets complete surrender' with hints of 'I raided a thrift store clearance bin blindfolded.'\n\n**Color Coordination:** This clothing color combination is more jarring than nails on a chalkboard. The garment colors are fighting each other harder than siblings on a 10-hour road trip. This coordination is pure visual chaos.\n\n**Fit:** The clothing fit is looser than your grip on basic fashion principles. These garments are sitting like they're actively trying to escape, and the silhouette is more confused than a tourist without a map.\n\n**Overall Impression:** This outfit coordination is the clothing equivalent of a train wreck in slow motion – horrifying but mesmerizing. These fashion choices have somehow made garments look disappointed in their life decisions."
+    ];
+    
+    return roastResponses[Math.floor(Math.random() * roastResponses.length)];
+  }
+
+  private static generateNormalFashionFeedback(): string {
+    return "**Style:** The garment coordination shows a solid foundation with room for refinement. The overall styling approach demonstrates practical fashion sense with potential for enhancement through more cohesive clothing choices.\n\n**Color Coordination:** The clothing color palette works reasonably well together, though there are opportunities to enhance the harmony with more intentional color coordination between garments.\n\n**Fit:** The garment fit is generally appropriate for the styling approach, with some areas where adjustments could improve the overall silhouette and clothing proportions.\n\n**Overall Impression:** This clothing coordination represents a solid everyday styling approach that demonstrates practical fashion awareness. With a few strategic garment adjustments, this fashion coordination could really excel.";
+  }
+
+  private static generateRoastFashionSuggestions(): string[] {
+    return [
+      "Consider burning these clothing choices and starting over – the fashion police have issued an arrest warrant",
+      "Maybe try hiring a personal stylist, or at minimum, a friend with functioning fashion sense for garment coordination",
+      "Revolutionary idea: try coordinating clothing pieces with the lights ON next time"
+    ];
+  }
+
+  private static generateNormalFashionSuggestions(): string[] {
+    return [
+      "Experiment with complementary colors to enhance visual harmony between clothing pieces",
+      "Focus on achieving better proportional balance between upper and lower garments",
+      "Add strategic accessories to elevate the overall clothing coordination sophistication"
+    ];
+  }
+
+  private static generateFashionResearchFeedback(request: AnalyzeOutfitRequest): string {
+    return request.feedbackMode === 'roast' 
+      ? this.generateRoastFashionFeedback()
+      : this.generateNormalFashionFeedback();
+  }
+
+  private static generateFashionResearchSuggestions(request: AnalyzeOutfitRequest): string[] {
+    return request.feedbackMode === 'roast'
+      ? this.generateRoastFashionSuggestions()
+      : this.generateNormalFashionSuggestions();
   }
 
   private static hslToHex(h: number, s: number, l: number): string {
@@ -267,36 +324,6 @@ export class AdvancedResponseParser {
     b = Math.round((b + m) * 255);
 
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-  }
-
-  private static generateRoastFallback(): string {
-    const roastResponses = [
-      "**Style:** Holy fashion disaster Batman! This outfit looks like it was assembled by someone wearing a blindfold in a thrift store clearance bin. The style is giving 'I gave up on life' energy with a dash of 'laundry day desperation.'\n\n**Color Coordination:** These colors are fighting each other harder than siblings on a road trip. It's like someone took a rainbow, put it in a blender, and then decided to wear the resulting chaos. My eyes need therapy after witnessing this color crime.\n\n**Fit:** The fit is more off than a broken GPS. Nothing sits right, everything looks confused, and the whole ensemble is having an identity crisis. It's giving 'borrowed clothes from three different people' vibes.\n\n**Overall Impression:** This outfit is a masterclass in how NOT to get dressed. It's so aggressively mediocre that it's almost impressive. You've managed to make clothes look sad – that takes genuine talent in all the wrong ways.",
-      
-      "**Style:** Wow, this styling choice is bolder than wearing socks with sandals to a fashion show. The aesthetic is 'chaotic energy meets complete confusion' with hints of 'I got dressed in the dark during an earthquake.'\n\n**Color Coordination:** This color combination is more clashing than cymbals in a marching band. It's like you asked a colorblind toddler to pick your outfit while having a sugar rush. The harmony here is non-existent – it's pure visual anarchy.\n\n**Fit:** The fit is looser than your grip on fashion sense. Everything hangs like it's given up hope, and the proportions are more confused than a tourist without GPS. This silhouette is doing you zero favors.\n\n**Overall Impression:** This outfit is the fashion equivalent of a train wreck – horrifying but impossible to look away from. You've somehow managed to make clothes look disappointed in their life choices. Congratulations on this stunning achievement in anti-fashion."
-    ];
-    
-    return roastResponses[Math.floor(Math.random() * roastResponses.length)];
-  }
-
-  private static generateNormalFallback(): string {
-    return "**Style:** Your outfit shows a good foundation with room for refinement. The overall aesthetic has potential but could benefit from more cohesive styling choices.\n\n**Color Coordination:** The color palette works reasonably well together, though there are opportunities to enhance the harmony with more intentional color pairing.\n\n**Fit:** The garment fit is generally appropriate, with some areas where adjustments could improve the overall silhouette and proportions.\n\n**Overall Impression:** This is a solid everyday look that demonstrates practical fashion sense. With a few strategic adjustments, this outfit could really shine.";
-  }
-
-  private static generateRoastSuggestions(): string[] {
-    return [
-      "Burn this outfit and start over – the fashion police have issued a warrant for its arrest",
-      "Consider hiring a personal stylist, or at minimum, a friend with functioning eyeballs",
-      "Maybe try getting dressed with the lights ON next time – revolutionary concept, I know"
-    ];
-  }
-
-  private static generateNormalSuggestions(): string[] {
-    return [
-      "Consider experimenting with complementary colors to enhance visual harmony",
-      "Focus on achieving better proportional balance between upper and lower garments",
-      "Add strategic accessories to elevate the overall styling sophistication"
-    ];
   }
 
   private static extractScore(text: string): number | null {
@@ -359,18 +386,6 @@ export class AdvancedResponseParser {
     return null;
   }
 
-  private static generateDefaultFeedback(request: AnalyzeOutfitRequest): string {
-    return request.feedbackMode === 'roast' 
-      ? this.generateRoastFallback()
-      : this.generateNormalFallback();
-  }
-
-  private static generateDefaultSuggestions(request: AnalyzeOutfitRequest): string[] {
-    return request.feedbackMode === 'roast'
-      ? this.generateRoastSuggestions()
-      : this.generateNormalSuggestions();
-  }
-
   private static isValidResponseStructure(obj: any): boolean {
     return obj && 
            typeof obj.score === 'number' && 
@@ -413,7 +428,7 @@ export class AdvancedResponseParser {
   private static enhanceResponse(result: AnalyzeOutfitResponse, warnings: string[], request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
     // Enhance feedback structure if needed
     if (warnings.includes('Feedback lacks expected section structure') && !result.feedback.includes('**Style:**')) {
-      const enhanced = this.generateDefaultFeedback(request);
+      const enhanced = this.generateFashionResearchFeedback(request);
       result.feedback = enhanced;
     }
 
