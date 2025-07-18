@@ -218,9 +218,6 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
                   Versatile styling potential
                 </span>
               </div>
-              <p className="text-sm text-fashion-600 mt-2 italic">
-                For more detailed physical analysis, consider uploading a full-body photo.
-              </p>
             </div>
           )}
         </div>
@@ -240,9 +237,6 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
                 <span className="block">• Attention to styling details</span>
                 <span className="block">• Preference for quality over quantity in fashion</span>
               </div>
-              <p className="text-sm text-fashion-600 mt-2 italic">
-                For more detailed personality insights, consider uploading a full-body photo.
-              </p>
             </div>
           )}
         </div>
@@ -274,9 +268,6 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
                   Strategic garment choices
                 </span>
               </div>
-              <p className="text-sm text-fashion-600 mt-2 italic">
-                For detailed weight gain pattern analysis, consider uploading a full-body photo.
-              </p>
             </div>
           )}
         </div>

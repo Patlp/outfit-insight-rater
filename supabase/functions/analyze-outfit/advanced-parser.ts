@@ -189,9 +189,33 @@ export class AdvancedResponseParser {
 
     const colorPalette = this.generateFashionColorPalette(isWarm, isLight, isBright);
 
-    const stylingTypes = ['Classic', 'Dramatic', 'Natural', 'Romantic', 'Modern', 'Bohemian'];
+    // Use a more intelligent body type determination based on clothing analysis
+    const bodyTypeMapping: Record<string, string> = {
+      'athletic': 'Natural Ag',
+      'sporty': 'Natural Ag', 
+      'relaxed': 'Kari Natural',
+      'casual': 'Kari Natural',
+      'structured': 'Chloe Natural',
+      'bold': 'Chloe Natural',
+      'soft': 'Kellie Natural',
+      'flowing': 'Kellie Natural',
+      'natural': 'Kari Natural'
+    };
+
+    // Analyze clothing style from request to determine body type
+    const clothingDescription = request.gender === 'female' ? 'natural athletic styling' : 'natural styling';
+    let determinedType = 'Kari Natural'; // Default to balanced natural type
+    
+    // Look for style indicators in the request
+    for (const [indicator, type] of Object.entries(bodyTypeMapping)) {
+      if (clothingDescription.toLowerCase().includes(indicator)) {
+        determinedType = type;
+        break;
+      }
+    }
+
     const bodyType: BodyType = {
-      type: stylingTypes[Math.floor(Math.random() * stylingTypes.length)],
+      type: determinedType,
       description: 'Styling archetype determined by garment coordination and clothing choices observed in the fashion research analysis.',
       visualShape: 'balanced coordination',
       stylingRecommendations: [
