@@ -186,14 +186,18 @@ export class AdvancedResponseParser {
     feedback = aiResponse
       .replace(/\b\d+\/10\b|\b\d+ out of 10\b|\bScore:?\s*\d+\b/gi, '')
       .replace(/(Suggestions|Improvements|Recommendations|Tips):[\s\S]+$/i, '')
-      .replace(/"styleAnalysis":\s*\{[\s\S]*?\}(?:\s*[,}])?/gi, '')
-      .replace(/"colorAnalysis":\s*\{[\s\S]*?\}(?:\s*[,}])?/gi, '')
-      .replace(/"colorPalette":\s*\{[\s\S]*?\}(?:\s*[,}])?/gi, '')
-      .replace(/\{[\s\S]*?"seasonalType"[\s\S]*?\}/gi, '')
-      .replace(/\{[\s\S]*?"colors":\s*\[[\s\S]*?\][\s\S]*?\}/gi, '')
-      .replace(/\{[\s\S]*?"undertone"[\s\S]*?\}/gi, '')
-      .replace(/\},?\s*"colorPalette"[\s\S]*/gi, '')
-      .replace(/\},?\s*\}?\s*$/gi, '')
+      .replace(/"styleAnalysis"[\s\S]*$/gi, '')
+      .replace(/",\s*"suggestions"[\s\S]*$/gi, '')
+      .replace(/",\s*"intensity"[\s\S]*$/gi, '')
+      .replace(/",\s*"lightness"[\s\S]*$/gi, '')
+      .replace(/",\s*"explanation"[\s\S]*$/gi, '')
+      .replace(/",\s*"colorAnalysis"[\s\S]*$/gi, '')
+      .replace(/",\s*"colorPalette"[\s\S]*$/gi, '')
+      .replace(/\],?\s*"[\w]+":\s*[\{\[][\s\S]*$/gi, '')
+      .replace(/\}[\s,]*"[\w]+"[\s\S]*$/gi, '')
+      .replace(/\}[\s,]*\}[\s]*$/gi, '')
+      .replace(/",[\s]*$/gi, '"')
+      .replace(/\s*'''[\s]*$/gi, '')
       .trim();
 
     // If no suggestions found, generate fallback
