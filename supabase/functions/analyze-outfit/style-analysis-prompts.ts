@@ -23,11 +23,7 @@ In addition to your outfit feedback, you MUST provide comprehensive style analys
    - Generate a 6x8 grid (48 total) of specific hex color codes suited to their seasonal type
    - Colors should progress from light to dark within each column
    - Include variety: neutrals, accent colors, and complementary tones
-   - CRITICAL: Provide highly personalized explanation that includes:
-     * SPECIFIC analysis of their skin tone from the photo (e.g., "Your warm golden undertone with olive complexion")
-     * VISIBLE facial features that match these colors (e.g., "Your deep brown eyes and rich auburn hair")
-     * HOW the colors enhance their specific features (e.g., "These warm earth tones bring out the golden flecks in your eyes and complement your skin's natural warmth")
-     * PERSONALIZED reasoning that makes it clear you analyzed THEIR specific features, not generic advice
+   - Provide explanation of why these colors enhance their features
 
 3. **BODY TYPE ANALYSIS** (if full body is visible):
    - Assess silhouette and body proportions
@@ -69,7 +65,7 @@ CRITICAL JSON STRUCTURE - You must include a "styleAnalysis" object in your resp
         ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
         ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
       ],
-      "explanation": "[PERSONALIZED 2-3 sentences that mention their SPECIFIC skin tone from the photo and visible facial features (hair, eyes) explaining exactly why these colors enhance THEIR unique features]"
+      "explanation": "[2-3 sentences about why these colors work for their features]"
     },
     "bodyType": {
       "type": "[Body type name if full body visible, otherwise omit this entire object]",
