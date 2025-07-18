@@ -18,10 +18,10 @@ const StyleAnalysisSection: React.FC<StyleAnalysisSectionProps> = ({ styleAnalys
       </div>
 
       <Tabs defaultValue="color-analysis" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="color-analysis">Color Analysis</TabsTrigger>
-          <TabsTrigger value="color-palette">Color Palette</TabsTrigger>
-          <TabsTrigger value="body-type">Body Type</TabsTrigger>
+        <TabsList className="flex w-full">
+          <TabsTrigger value="color-analysis" className="flex-1">Color Analysis</TabsTrigger>
+          <TabsTrigger value="color-palette" className="flex-1">Color Palette</TabsTrigger>
+          <TabsTrigger value="body-type" className="flex-1">Body Type</TabsTrigger>
         </TabsList>
         
         <TabsContent value="color-analysis" className="mt-6">
