@@ -203,9 +203,25 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
               )}
             </>
           ) : (
-            <p className="text-sm text-fashion-600 italic">
-              Upload a clearer photo showing your face and whole body to get detailed physical analysis.
-            </p>
+            <div>
+              <p className="text-sm text-fashion-700 mb-2">
+                Based on your clothing choices and styling approach, your {bodyType.type.toLowerCase()} archetype typically features:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                  Balanced proportions
+                </span>
+                <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                  {bodyType.visualShape || 'Harmonious silhouette'}
+                </span>
+                <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                  Versatile styling potential
+                </span>
+              </div>
+              <p className="text-sm text-fashion-600 mt-2 italic">
+                For more detailed physical analysis, consider uploading a full-body photo.
+              </p>
+            </div>
           )}
         </div>
 
@@ -215,9 +231,19 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
           {guideData?.style_personality ? (
             <p className="text-sm text-fashion-700 italic">{guideData.style_personality}</p>
           ) : (
-            <p className="text-sm text-fashion-600 italic">
-              Upload a clearer photo showing your face and whole body to get personality insights.
-            </p>
+            <div>
+              <p className="text-sm text-fashion-700 mb-2">
+                {bodyType.type} archetypes often express themselves through their clothing choices with:
+              </p>
+              <div className="text-sm text-fashion-600">
+                <span className="block">• Thoughtful garment coordination</span>
+                <span className="block">• Attention to styling details</span>
+                <span className="block">• Preference for quality over quantity in fashion</span>
+              </div>
+              <p className="text-sm text-fashion-600 mt-2 italic">
+                For more detailed personality insights, consider uploading a full-body photo.
+              </p>
+            </div>
           )}
         </div>
 
@@ -233,9 +259,25 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-fashion-600 italic">
-              Upload a clearer photo showing your face and whole body to get weight gain pattern analysis.
-            </p>
+            <div>
+              <p className="text-sm text-fashion-700 mb-2">
+                Based on your {bodyType.type.toLowerCase()} styling archetype, focus on:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                  Proportional balance
+                </span>
+                <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                  Consistent styling approach
+                </span>
+                <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                  Strategic garment choices
+                </span>
+              </div>
+              <p className="text-sm text-fashion-600 mt-2 italic">
+                For detailed weight gain pattern analysis, consider uploading a full-body photo.
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -292,7 +334,7 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
               </div>
             )}
 
-            {/* What Not to Wear section */}
+            {/* What Not to Wear section - Always show if available from either source */}
             {((guideData?.what_not_to_wear && guideData.what_not_to_wear.length > 0) || 
               (bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0)) && (
               <div>
@@ -314,6 +356,27 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
               </div>
             )}
           </>
+        )}
+        
+        {/* Show What Not to Wear from AI analysis if no database guide data */}
+        {!guideData && bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0 && (
+          <div>
+            <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+              What Not to Wear
+            </h4>
+            <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
+              {bodyType.whatNotToWear.map((avoidItem, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <span className="font-medium text-red-800">{avoidItem.item}</span>
+                    <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -198,6 +198,11 @@ export class AdvancedResponseParser {
         'Focus on garment proportion balance for optimal clothing coordination',
         'Consider color harmony principles between clothing pieces',
         'Ensure proper garment fit and silhouette alignment for enhanced styling'
+      ],
+      whatNotToWear: [
+        { item: 'Oversized or poorly fitted garments', reason: 'Can overwhelm your natural proportions and styling approach' },
+        { item: 'Clashing color combinations', reason: 'Disrupts the harmony of your garment coordination' },
+        { item: 'Too many competing patterns', reason: 'Creates visual confusion in your clothing choices' }
       ]
     };
 
