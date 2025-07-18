@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleAnalysis } from '@/context/RatingContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ColorAnalysisSection from './ColorAnalysisSection';
 import ColorPaletteSection from './ColorPaletteSection';
 import BodyTypeSection from './BodyTypeSection';
@@ -16,13 +17,31 @@ const StyleAnalysisSection: React.FC<StyleAnalysisSectionProps> = ({ styleAnalys
         <p className="text-fashion-600 text-sm">Personalized insights based on your features</p>
       </div>
 
-      <ColorAnalysisSection colorAnalysis={styleAnalysis.colorAnalysis} />
-      
-      <ColorPaletteSection colorPalette={styleAnalysis.colorPalette} />
-      
-      {styleAnalysis.bodyType && (
-        <BodyTypeSection bodyType={styleAnalysis.bodyType} />
-      )}
+      <Tabs defaultValue="color-analysis" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="color-analysis">Color Analysis</TabsTrigger>
+          <TabsTrigger value="color-palette">Color Palette</TabsTrigger>
+          <TabsTrigger value="body-type">Body Type</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="color-analysis" className="mt-6">
+          <ColorAnalysisSection colorAnalysis={styleAnalysis.colorAnalysis} />
+        </TabsContent>
+        
+        <TabsContent value="color-palette" className="mt-6">
+          <ColorPaletteSection colorPalette={styleAnalysis.colorPalette} />
+        </TabsContent>
+        
+        <TabsContent value="body-type" className="mt-6">
+          {styleAnalysis.bodyType ? (
+            <BodyTypeSection bodyType={styleAnalysis.bodyType} />
+          ) : (
+            <div className="fashion-card text-center py-8">
+              <p className="text-fashion-600">Body type analysis will be available after uploading a full-body photo.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

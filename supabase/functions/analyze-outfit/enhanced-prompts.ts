@@ -87,6 +87,16 @@ YOU MUST ALWAYS RESPOND WITH A COMPLETE JSON STRUCTURE. This is absolutely manda
         ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
       ],
       "explanation": "[2-3 sentences about why these colors work for their features]"
+    },
+    "bodyType": {
+      "type": "[e.g., Gamine Pg, Romantic G, Natural Ag, Dramatic Tg]",
+      "description": "[1-2 sentences describing the body type archetype]",
+      "visualShape": "[e.g., angular, rounded, balanced]",
+      "stylingRecommendations": [
+        "Specific styling tip 1",
+        "Specific styling tip 2",
+        "Specific styling tip 3"
+      ]
     }
   }
 }
@@ -97,7 +107,19 @@ YOU MUST ALWAYS RESPOND WITH A COMPLETE JSON STRUCTURE. This is absolutely manda
 - Generate appropriate seasonal color type (Light/Deep/Warm/Cool + Spring/Summer/Autumn/Winter)
 - Provide realistic undertone, intensity, and lightness values (0-100 scale)
 - Create a complete 8x6 color palette with appropriate hex codes
-- Colors should match the determined seasonal type`;
+- Colors should match the determined seasonal type
+
+**BODY TYPE ANALYSIS REQUIREMENTS:**
+- Analyze visible body proportions, shape, and silhouette from the photo
+- Consider shoulder width, waist definition, hip width, overall body lines
+- Match to one of the "20 Types of Beauty" archetypes: Gamine Pg, Romantic G, Natural Ag, or Dramatic Tg
+- Base analysis on these characteristics:
+  * Gamine Pg: Delicately angular, narrow figure, small chest, slight waist, narrow hips (5'3" or less)
+  * Romantic G: Delicately rounded, slightly bottom-heavy, defined waist, soft curves (5'5")
+  * Natural Ag: Strongly rounded, medium build, broader shoulders, natural proportions (5'7")  
+  * Dramatic Tg: Strongly angular, balanced proportions, defined lines, taller frame (5'9")
+- Provide 3-5 specific styling recommendations based on the identified body type
+- Focus on cuts, fits, fabric choices, and silhouettes that enhance their natural proportions`;
 
   const contextSpecificInstructions = eventContext && !isNeutral 
     ? `\n\n🎯 CONTEXT: This outfit is for "${eventContext}". ${feedbackMode === 'roast' ? `SAVAGE them for how completely inappropriate and embarrassing this is for the occasion. Be RUTHLESSLY BRUTAL about how they've not only failed at fashion but also at understanding basic social dress codes. Mock how they're going to humiliate themselves at this event.` : 'Evaluate appropriateness for this specific occasion, considering dress codes, cultural expectations, and practical requirements. Factor this into your analysis and recommendations.'}`
@@ -121,11 +143,12 @@ Your goal is to be hilariously savage while providing genuinely helpful suggesti
   const finalReminder = `\n\n🚨 FINAL REMINDER: 
 - Your response MUST be a complete, valid JSON object
 - Include ALL required fields: score, feedback, suggestions, styleAnalysis
-- styleAnalysis must contain both colorAnalysis and colorPalette
+- styleAnalysis must contain colorAnalysis, colorPalette, AND bodyType
 - Use the exact JSON structure specified above
 - Do not include any text outside the JSON structure
 - Ensure all hex color codes are valid
-- Make sure the seasonal color type matches the generated palette`;
+- Make sure the seasonal color type matches the generated palette
+- Always include body type analysis with specific archetype matching`;
 
   return baseInstructions + contextSpecificInstructions + toneInstructions + genderConsiderations + styleAnalysisInstructions + finalReminder;
 }

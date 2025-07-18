@@ -192,6 +192,57 @@ export type Database = {
         }
         Relationships: []
       }
+      body_type_guide: {
+        Row: {
+          body_shape_keywords: string[] | null
+          category: string
+          created_at: string
+          description: string
+          height_range: string | null
+          id: string
+          physical_characteristics: string[] | null
+          recommended_cuts: string[] | null
+          recommended_fabrics: string[] | null
+          recommended_fits: string[] | null
+          styling_guidelines: string[] | null
+          type_name: string
+          updated_at: string
+          visual_representation_url: string | null
+        }
+        Insert: {
+          body_shape_keywords?: string[] | null
+          category: string
+          created_at?: string
+          description: string
+          height_range?: string | null
+          id?: string
+          physical_characteristics?: string[] | null
+          recommended_cuts?: string[] | null
+          recommended_fabrics?: string[] | null
+          recommended_fits?: string[] | null
+          styling_guidelines?: string[] | null
+          type_name: string
+          updated_at?: string
+          visual_representation_url?: string | null
+        }
+        Update: {
+          body_shape_keywords?: string[] | null
+          category?: string
+          created_at?: string
+          description?: string
+          height_range?: string | null
+          id?: string
+          physical_characteristics?: string[] | null
+          recommended_cuts?: string[] | null
+          recommended_fabrics?: string[] | null
+          recommended_fits?: string[] | null
+          styling_guidelines?: string[] | null
+          type_name?: string
+          updated_at?: string
+          visual_representation_url?: string | null
+        }
+        Relationships: []
+      }
       email_records: {
         Row: {
           created_at: string
