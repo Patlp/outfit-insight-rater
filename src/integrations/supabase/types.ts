@@ -194,52 +194,70 @@ export type Database = {
       }
       body_type_guide: {
         Row: {
+          body_proportions: string[] | null
           body_shape_keywords: string[] | null
+          bone_structure: string | null
           category: string
           created_at: string
           description: string
+          facial_features: string[] | null
           height_range: string | null
           id: string
           physical_characteristics: string[] | null
           recommended_cuts: string[] | null
           recommended_fabrics: string[] | null
           recommended_fits: string[] | null
+          specific_measurements: string | null
+          style_personality: string | null
           styling_guidelines: string[] | null
           type_name: string
           updated_at: string
           visual_representation_url: string | null
+          weight_gain_pattern: string[] | null
         }
         Insert: {
+          body_proportions?: string[] | null
           body_shape_keywords?: string[] | null
+          bone_structure?: string | null
           category: string
           created_at?: string
           description: string
+          facial_features?: string[] | null
           height_range?: string | null
           id?: string
           physical_characteristics?: string[] | null
           recommended_cuts?: string[] | null
           recommended_fabrics?: string[] | null
           recommended_fits?: string[] | null
+          specific_measurements?: string | null
+          style_personality?: string | null
           styling_guidelines?: string[] | null
           type_name: string
           updated_at?: string
           visual_representation_url?: string | null
+          weight_gain_pattern?: string[] | null
         }
         Update: {
+          body_proportions?: string[] | null
           body_shape_keywords?: string[] | null
+          bone_structure?: string | null
           category?: string
           created_at?: string
           description?: string
+          facial_features?: string[] | null
           height_range?: string | null
           id?: string
           physical_characteristics?: string[] | null
           recommended_cuts?: string[] | null
           recommended_fabrics?: string[] | null
           recommended_fits?: string[] | null
+          specific_measurements?: string | null
+          style_personality?: string | null
           styling_guidelines?: string[] | null
           type_name?: string
           updated_at?: string
           visual_representation_url?: string | null
+          weight_gain_pattern?: string[] | null
         }
         Relationships: []
       }

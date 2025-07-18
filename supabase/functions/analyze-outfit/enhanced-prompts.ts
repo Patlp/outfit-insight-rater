@@ -110,16 +110,49 @@ YOU MUST ALWAYS RESPOND WITH A COMPLETE JSON STRUCTURE. This is absolutely manda
 - Colors should match the determined seasonal type
 
 **BODY TYPE ANALYSIS REQUIREMENTS:**
-- Analyze visible body proportions, shape, and silhouette from the photo
-- Consider shoulder width, waist definition, hip width, overall body lines
-- Match to one of the "20 Types of Beauty" archetypes: Gamine Pg, Romantic G, Natural Ag, or Dramatic Tg
-- Base analysis on these characteristics:
-  * Gamine Pg: Delicately angular, narrow figure, small chest, slight waist, narrow hips (5'3" or less)
-  * Romantic G: Delicately rounded, slightly bottom-heavy, defined waist, soft curves (5'5")
-  * Natural Ag: Strongly rounded, medium build, broader shoulders, natural proportions (5'7")  
-  * Dramatic Tg: Strongly angular, balanced proportions, defined lines, taller frame (5'9")
-- Provide 3-5 specific styling recommendations based on the identified body type
-- Focus on cuts, fits, fabric choices, and silhouettes that enhance their natural proportions`;
+- CRITICALLY ANALYZE ACTUAL VISIBLE BODY FEATURES from the uploaded photo
+- Examine shoulder width relative to hip width with precision
+- Assess waist definition - is it clearly defined, slight, or undefined?  
+- Analyze bust size and shape - small, medium, large, rounded, or angular?
+- Evaluate hip width and shape - narrow, medium, wide, curved, or straight?
+- Observe overall body lines - angular/sharp vs curved/soft vs balanced/natural
+- Consider height proportions and bone structure visible in the photo
+- Note specific physical details: padding in rear, ribcage width, arm shape, leg proportions
+
+**DETAILED BODY TYPE MATCHING:**
+Match to the most specific variation from these expanded "20 Types of Beauty" archetypes:
+
+**GAMINE FAMILY** (5'2"-5'3", delicate angular):
+- Gamine Pg: Little-girl figure, very narrow, small chest, slight waist, narrow hips, angular features
+- Teresa Gamine: Pg plus T traits, more bust/hips/rear, sharp petite with yang features  
+- Selina Gamine: Sharp small features, defined waist, narrow proportions, angular frame
+
+**ROMANTIC FAMILY** (5'4"-5'5", soft curves):
+- Romantic G: Slightly bottom-heavy, small chest, very defined waist, curved hips, soft rounded features
+- Christine Romantic: G figure, small rounded breasts, defined waist, very padded rear, romantic curves
+- Toni Romantic: Small chest, defined waist, focus on lower body curves, delicate bone structure
+- Danielle Romantic: Enhanced G figure, luxury proportions, ornate femininity, rich curves
+
+**NATURAL FAMILY** (5'6"-5'8", natural ease):
+- Natural Ag: Medium top-heavy, large chest, slight waist, broader shoulders, natural proportions
+- Kari Natural: Balanced proportions, natural waist definition, even bust/hips, comfortable structure
+- Chloe Natural: Strong broad frame, commanding presence, bold natural confidence, oversized proportions
+- Kellie Natural: Gentle curves, soft natural waist, medium-soft bone structure, natural elegance
+
+**DRAMATIC FAMILY** (5'8"+, sharp angular):
+- Dramatic Tg: Balanced womanly figure, defined waist, long lines, sharp angular features
+- Susan Dramatic: Pure dramatic, sharp geometric, bold angular, height with strong features
+- Dramatic Sophisticate: Refined angular beauty, sophisticated proportions, elegant sharp lines
+
+**PERSONALIZED ANALYSIS REQUIREMENTS:**
+- Call out SPECIFIC visible features: "I can see your [narrow/broad] shoulders compared to your [hips width]"
+- Reference ACTUAL proportions: "Your waist shows [clear definition/slight curve/natural ease]"  
+- Note REAL physical details: "Your [bust size] and [hip shape] combined with your [height/frame] indicates..."
+- Mention OBSERVABLE bone structure: "Your [delicate/medium/strong] bone structure and [angular/curved/natural] lines suggest..."
+- Include WEIGHT GAIN patterns if relevant: "Your body type typically gains weight in [specific areas]"
+
+- Provide 4-6 highly specific styling recommendations based on the EXACT body type identified
+- Reference actual measurements and proportions from the analysis`;
 
   const contextSpecificInstructions = eventContext && !isNeutral 
     ? `\n\n🎯 CONTEXT: This outfit is for "${eventContext}". ${feedbackMode === 'roast' ? `SAVAGE them for how completely inappropriate and embarrassing this is for the occasion. Be RUTHLESSLY BRUTAL about how they've not only failed at fashion but also at understanding basic social dress codes. Mock how they're going to humiliate themselves at this event.` : 'Evaluate appropriateness for this specific occasion, considering dress codes, cultural expectations, and practical requirements. Factor this into your analysis and recommendations.'}`

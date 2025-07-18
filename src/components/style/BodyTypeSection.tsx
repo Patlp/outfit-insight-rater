@@ -17,6 +17,11 @@ interface BodyTypeGuideData {
   recommended_cuts: string[];
   visual_representation_url?: string;
   height_range: string;
+  weight_gain_pattern?: string[];
+  specific_measurements?: string;
+  bone_structure?: string;
+  body_proportions?: string[];
+  style_personality?: string;
 }
 
 const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
@@ -166,7 +171,48 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
               Typical height: {guideData.height_range}
             </p>
           )}
+          {guideData?.bone_structure && (
+            <p className="text-sm text-fashion-600 mt-1">
+              Bone structure: {guideData.bone_structure}
+            </p>
+          )}
+          {guideData?.style_personality && (
+            <p className="text-sm text-fashion-600 mt-1 italic">
+              Personality: {guideData.style_personality}
+            </p>
+          )}
         </div>
+
+        {/* Physical characteristics section */}
+        {guideData?.specific_measurements && (
+          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-semibold text-fashion-800 mb-2">Physical Analysis</h4>
+            <p className="text-sm text-fashion-700 mb-2">{guideData.specific_measurements}</p>
+            {guideData.body_proportions && guideData.body_proportions.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {guideData.body_proportions.map((proportion, index) => (
+                  <span key={index} className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                    {proportion}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Weight gain pattern if available */}
+        {guideData?.weight_gain_pattern && guideData.weight_gain_pattern.length > 0 && (
+          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-semibold text-fashion-800 mb-2">Weight Gain Pattern</h4>
+            <div className="flex flex-wrap gap-1">
+              {guideData.weight_gain_pattern.map((pattern, index) => (
+                <span key={index} className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                  {pattern}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Enhanced styling recommendations */}
