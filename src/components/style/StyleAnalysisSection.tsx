@@ -37,7 +37,8 @@ const StyleAnalysisSection: React.FC<StyleAnalysisSectionProps> = ({ styleAnalys
             <BodyTypeSection bodyType={styleAnalysis.bodyType} />
           ) : (
             <div className="fashion-card text-center py-8">
-              <p className="text-fashion-600">Body type analysis will be available after uploading a full-body photo.</p>
+              <p className="text-fashion-600 mb-2">Body type analysis is processing...</p>
+              <p className="text-fashion-500 text-sm">For best results, upload a full-body photo. We can still provide estimates with partial images.</p>
             </div>
           )}
         </TabsContent>
