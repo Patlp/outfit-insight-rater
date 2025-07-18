@@ -164,23 +164,8 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
         
         <div className="bg-fashion-50 rounded-lg p-4 mb-4">
           <p className="text-fashion-700 leading-relaxed font-medium">
-            {guideData?.description || bodyType.description}
+            {guideData?.description || bodyType.description.replace(/Delicately angular beauty designed for thinking-dominant pituitary for analytical brain style detail-oriented personality/gi, 'Petite with sharp, angular features and a youthful appearance. Known for compact proportions and geometric lines.')}
           </p>
-          {guideData?.height_range && (
-            <p className="text-sm text-fashion-600 mt-2">
-              Typical height: {guideData.height_range}
-            </p>
-          )}
-          {guideData?.bone_structure && (
-            <p className="text-sm text-fashion-600 mt-1">
-              Bone structure: {guideData.bone_structure}
-            </p>
-          )}
-          {guideData?.style_personality && (
-            <p className="text-sm text-fashion-600 mt-1 italic">
-              Personality: {guideData.style_personality}
-            </p>
-          )}
         </div>
 
         {/* Physical characteristics section */}
@@ -188,6 +173,16 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
           <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
             <h4 className="text-sm font-semibold text-fashion-800 mb-2">Physical Analysis</h4>
             <p className="text-sm text-fashion-700 mb-2">{guideData.specific_measurements}</p>
+            {guideData?.height_range && (
+              <p className="text-sm text-fashion-600 mt-2">
+                Typical height: {guideData.height_range}
+              </p>
+            )}
+            {guideData?.bone_structure && (
+              <p className="text-sm text-fashion-600 mt-1">
+                Bone structure: {guideData.bone_structure}
+              </p>
+            )}
             {guideData.body_proportions && guideData.body_proportions.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {guideData.body_proportions.map((proportion, index) => (
@@ -197,6 +192,14 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Personality section */}
+        {guideData?.style_personality && (
+          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-semibold text-fashion-800 mb-2">Typical Personality</h4>
+            <p className="text-sm text-fashion-700 italic">{guideData.style_personality}</p>
           </div>
         )}
 
