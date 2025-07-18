@@ -214,6 +214,7 @@ export type Database = {
           updated_at: string
           visual_representation_url: string | null
           weight_gain_pattern: string[] | null
+          what_not_to_wear: Json | null
         }
         Insert: {
           body_proportions?: string[] | null
@@ -236,6 +237,7 @@ export type Database = {
           updated_at?: string
           visual_representation_url?: string | null
           weight_gain_pattern?: string[] | null
+          what_not_to_wear?: Json | null
         }
         Update: {
           body_proportions?: string[] | null
@@ -258,6 +260,7 @@ export type Database = {
           updated_at?: string
           visual_representation_url?: string | null
           weight_gain_pattern?: string[] | null
+          what_not_to_wear?: Json | null
         }
         Relationships: []
       }

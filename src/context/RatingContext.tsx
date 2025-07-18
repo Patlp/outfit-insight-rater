@@ -37,6 +37,7 @@ export interface BodyType {
   description: string;
   visualShape: string;
   stylingRecommendations: string[];
+  whatNotToWear?: Array<{ item: string; reason: string }>;
 }
 
 export interface StyleAnalysis {

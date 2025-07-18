@@ -30,6 +30,7 @@ In addition to your outfit feedback, you MUST provide comprehensive style analys
    - Identify body type using "20 Types of Beauty" archetypes: Gamine, Soft Gamine, Flamboyant Gamine, Dramatic Classic, Soft Classic, Dramatic, Soft Dramatic, Natural, Flamboyant Natural, Soft Natural, Romantic, Theatrical Romantic
    - Provide visual shape description (geometric shape that represents the type)
    - Include 2-3 specific styling recommendations from Dwyn Larson's principles
+   - **CRITICAL**: Include "What Not to Wear" analysis - specific items/styles to avoid with clear reasoning
 
 CRITICAL JSON STRUCTURE - You must include a "styleAnalysis" object in your response with this exact format:
 
@@ -71,7 +72,13 @@ CRITICAL JSON STRUCTURE - You must include a "styleAnalysis" object in your resp
       "type": "[Body type name if full body visible, otherwise omit this entire object]",
       "description": "[Brief description of the body type characteristics]", 
       "visualShape": "[Geometric shape description like 'Rectangle', 'Hourglass', 'Inverted Triangle', etc.]",
-      "stylingRecommendations": ["recommendation 1", "recommendation 2", "recommendation 3"]
+      "stylingRecommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
+      "whatNotToWear": [
+        {
+          "item": "[specific clothing item or style to avoid]",
+          "reason": "[clear explanation why this doesn't work for this body type]"
+        }
+      ]
     }
   }
 }

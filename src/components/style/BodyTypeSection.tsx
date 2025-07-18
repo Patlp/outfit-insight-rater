@@ -22,6 +22,7 @@ interface BodyTypeGuideData {
   bone_structure?: string;
   body_proportions?: string[];
   style_personality?: string;
+  what_not_to_wear?: Array<{ item: string; reason: string }>;
 }
 
 const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
@@ -40,7 +41,14 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
         if (error) {
           console.warn('No specific guide data found for:', bodyType.type);
         } else {
-          setGuideData(data);
+          // Parse the what_not_to_wear JSON data
+          const processedData = {
+            ...data,
+            what_not_to_wear: Array.isArray(data.what_not_to_wear) 
+              ? data.what_not_to_wear as Array<{ item: string; reason: string }>
+              : []
+          };
+          setGuideData(processedData);
         }
       } catch (err) {
         console.warn('Error fetching body type guide data:', err);
@@ -279,6 +287,28 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
                     <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
                       {fabric}
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* What Not to Wear section */}
+            {((guideData?.what_not_to_wear && guideData.what_not_to_wear.length > 0) || 
+              (bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0)) && (
+              <div>
+                <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                  What Not to Wear
+                </h4>
+                <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                  {(guideData?.what_not_to_wear || bodyType.whatNotToWear || []).map((avoidItem, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
+                      <div className="flex-1">
+                        <span className="font-medium text-red-800">{avoidItem.item}</span>
+                        <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
