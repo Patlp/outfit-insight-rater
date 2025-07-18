@@ -27,6 +27,14 @@ export function createOpenAIRequest(
     console.log('🎨 ACADEMIC RESEARCH MODE: Comprehensive clothing coordination study');
   }
 
+  // Extract base64 data if it includes data URL prefix
+  let cleanBase64 = imageBase64;
+  if (imageBase64.includes('data:image/')) {
+    cleanBase64 = imageBase64.split(',')[1];
+    console.log('🧹 Cleaned base64 data URL prefix');
+  }
+  console.log(`📸 Base64 data length: ${cleanBase64.length}`);
+
   // Enhanced user message with explicit fashion research framing
   const userMessage = eventContext && !isNeutral 
     ? `Please conduct a comprehensive fashion research study of the clothing items and styling choices visible in this image for "${eventContext}" contexts. Focus exclusively on garments, color coordination between clothing pieces, styling decisions, and fashion elements. Analyze the clothing coordination principles demonstrated and provide detailed fashion research findings following the specified JSON structure.`
@@ -47,7 +55,7 @@ export function createOpenAIRequest(
         {
           type: 'image_url',
           image_url: {
-            url: `data:image/jpeg;base64,${imageBase64}`
+            url: `data:image/jpeg;base64,${cleanBase64}`
           }
         }
       ]
