@@ -170,7 +170,7 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
 
         {/* Physical characteristics section */}
         {guideData?.specific_measurements && (
-          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
+          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
             <h4 className="text-sm font-semibold text-fashion-800 mb-2">Physical Analysis</h4>
             <p className="text-sm text-fashion-700 mb-2">{guideData.specific_measurements}</p>
             {guideData?.height_range && (
@@ -197,7 +197,7 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
 
         {/* Personality section */}
         {guideData?.style_personality && (
-          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
+          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
             <h4 className="text-sm font-semibold text-fashion-800 mb-2">Typical Personality</h4>
             <p className="text-sm text-fashion-700 italic">{guideData.style_personality}</p>
           </div>
@@ -205,7 +205,7 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
 
         {/* Weight gain pattern if available */}
         {guideData?.weight_gain_pattern && guideData.weight_gain_pattern.length > 0 && (
-          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4">
+          <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
             <h4 className="text-sm font-semibold text-fashion-800 mb-2">Weight Gain Pattern</h4>
             <div className="flex flex-wrap gap-1">
               {guideData.weight_gain_pattern.map((pattern, index) => (
