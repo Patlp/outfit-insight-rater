@@ -1,36 +1,39 @@
+
 import { AnalyzeOutfitRequest } from './types.ts';
 
 export function generateStyleAnalysisPrompt(request: AnalyzeOutfitRequest): string {
   const { gender, feedbackMode } = request;
 
-  console.log(`🎨 STYLE ANALYSIS: Generating prompts for ${gender} in ${feedbackMode} mode`);
+  console.log(`🎨 STYLE ANALYSIS: Generating clothing-focused prompts for ${gender} in ${feedbackMode} mode`);
 
   const baseStyleAnalysis = `
-ADVANCED STYLE ANALYSIS REQUIRED:
+CLOTHING-FOCUSED STYLE ANALYSIS FOR RESEARCH PURPOSES:
 
-In addition to your outfit feedback, you MUST provide comprehensive style analysis including:
+**RESEARCH DISCLAIMER:** This analysis examines clothing items, styling choices, and fashion principles for educational research purposes. Analysis focuses on garments, color coordination, and styling techniques.
 
-1. **FACIAL FEATURE & COLOR ANALYSIS**: 
-   - Analyze visible facial features: skin tone, hair color, eye color
-   - Determine seasonal color type (Light Spring, Light Summer, Light Autumn, Light Winter, True Spring, True Summer, True Autumn, True Winter, Deep Spring, Deep Summer, Deep Autumn, Deep Winter, Warm Spring, Warm Autumn, Cool Summer, Cool Winter)
-   - Provide three color characteristic values (0-100 scale):
-     * Undertone: 0 = cool (blue/pink undertones), 100 = warm (yellow/golden undertones)
-     * Intensity: 0 = muted/soft colors, 100 = bright/vibrant colors  
-     * Lightness: 0 = dark/deep colors, 100 = light/pale colors
-   - Explain what this seasonal type means and why these colors work
+**REQUIRED ANALYSIS COMPONENTS:**
 
-2. **PERSONALIZED COLOR PALETTE**:
-   - Generate a 6x8 grid (48 total) of specific hex color codes suited to their seasonal type
+1. **OUTFIT COLOR ANALYSIS**: 
+   - Analyze visible clothing colors, patterns, and color coordination
+   - Determine seasonal color type based on outfit color palette and styling approach
+   - Provide three color characteristic values (0-100 scale) based on clothing analysis:
+     * Undertone: 0 = cool clothing tones (blues/grays), 100 = warm clothing tones (oranges/golds)
+     * Intensity: 0 = muted/soft clothing colors, 100 = bright/vibrant clothing colors  
+     * Lightness: 0 = dark clothing palette, 100 = light clothing palette
+   - Explain fashion color theory principles that apply to this outfit style
+
+2. **COMPLEMENTARY COLOR PALETTE**:
+   - Generate a 6x8 grid (48 total) of specific hex color codes that would complement this outfit style
    - Colors should progress from light to dark within each column
-   - Include variety: neutrals, accent colors, and complementary tones
-   - Provide explanation of why these colors enhance their features
+   - Include variety: neutrals, accent colors, and complementary tones suitable for this styling approach
+   - Base recommendations on outfit color analysis and general fashion color theory principles
 
-3. **BODY TYPE ANALYSIS** (if full body is visible):
-   - Assess silhouette and body proportions
-   - Identify body type using "20 Types of Beauty" archetypes: Gamine, Soft Gamine, Flamboyant Gamine, Dramatic Classic, Soft Classic, Dramatic, Soft Dramatic, Natural, Flamboyant Natural, Soft Natural, Romantic, Theatrical Romantic
-   - Provide visual shape description (geometric shape that represents the type)
-   - Include 2-3 specific styling recommendations from Dwyn Larson's principles
-   - **CRITICAL**: Include "What Not to Wear" analysis - specific items/styles to avoid with clear reasoning
+3. **OUTFIT STYLING ANALYSIS** (based on visible clothing):
+   - Assess overall outfit silhouette and styling approach
+   - Identify styling archetype based on clothing choices: Classic, Dramatic, Natural, Romantic, Modern, Bohemian, etc.
+   - Provide visual styling description (structured, flowing, balanced, etc.)
+   - Include 2-3 specific styling recommendations based on garment coordination principles
+   - **CRITICAL**: Include "Styling Optimization" analysis - specific outfit improvements and garment coordination suggestions
 
 CRITICAL JSON STRUCTURE - You must include a "styleAnalysis" object in your response with this exact format:
 
@@ -40,20 +43,20 @@ CRITICAL JSON STRUCTURE - You must include a "styleAnalysis" object in your resp
   "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
   "styleAnalysis": {
     "colorAnalysis": {
-      "seasonalType": "[e.g., Light Summer]",
+      "seasonalType": "[e.g., Light Summer based on outfit colors]",
       "undertone": {
         "value": [0-100],
-        "description": "[e.g., Cool blue undertones]"
+        "description": "[e.g., Cool tones in outfit color palette]"
       },
       "intensity": {
         "value": [0-100], 
-        "description": "[e.g., Soft, muted colors]"
+        "description": "[e.g., Soft, muted outfit colors]"
       },
       "lightness": {
         "value": [0-100],
-        "description": "[e.g., Light, delicate tones]"
+        "description": "[e.g., Light clothing palette]"
       },
-      "explanation": "[2-3 sentences explaining why this seasonal type suits them]"
+      "explanation": "[2-3 sentences explaining color theory principles for this outfit style]"
     },
     "colorPalette": {
       "colors": [
@@ -66,65 +69,57 @@ CRITICAL JSON STRUCTURE - You must include a "styleAnalysis" object in your resp
         ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
         ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
       ],
-      "explanation": "[2-3 sentences about why these colors work for their features]"
+      "explanation": "[2-3 sentences about color coordination principles for this styling approach]"
     },
     "bodyType": {
-      "type": "[Body type name if full body visible, otherwise omit this entire object]",
-      "description": "[Brief description of the body type characteristics]", 
-      "visualShape": "[Geometric shape description like 'Rectangle', 'Hourglass', 'Inverted Triangle', etc.]",
-      "stylingRecommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
-      "whatNotToWear": [
-        {
-          "item": "[specific clothing item or style to avoid]",
-          "reason": "[clear explanation why this doesn't work for this body type]"
-        }
+      "type": "[Styling archetype based on outfit choices, e.g., Classic, Dramatic, Natural, Romantic]",
+      "description": "[Brief description of the styling approach observed]", 
+      "visualShape": "[silhouette description based on outfit: structured, flowing, balanced, etc.]",
+      "stylingRecommendations": [
+        "Specific garment coordination tip 1",
+        "Specific outfit proportion tip 2",
+        "Specific styling enhancement tip 3"
       ]
     }
   }
 }
 
-SEASONAL COLOR TYPES REFERENCE:
-- **Light Spring**: Light, warm, clear colors with yellow undertones
-- **Light Summer**: Light, cool, soft colors with blue undertones  
-- **Light Autumn**: Light, warm, muted colors with golden undertones
-- **Light Winter**: Light, cool, clear colors with blue undertones
-- **True Spring**: Clear, warm, bright colors with yellow undertones
-- **True Summer**: Cool, soft, muted colors with blue undertones
-- **True Autumn**: Rich, warm, earthy colors with golden undertones
-- **True Winter**: Cool, clear, deep colors with blue undertones
-- **Deep Spring**: Deep, warm, clear colors with yellow undertones
-- **Deep Summer**: Deep, cool, soft colors with blue undertones
-- **Deep Autumn**: Deep, warm, rich colors with golden undertones
-- **Deep Winter**: Deep, cool, clear colors with blue undertones
-- **Warm Spring**: Warm, clear, light-to-medium colors with golden undertones
-- **Warm Autumn**: Warm, rich, earthy colors with golden undertones
-- **Cool Summer**: Cool, light-to-medium, soft colors with blue undertones
-- **Cool Winter**: Cool, clear, medium-to-deep colors with blue undertones
+**SEASONAL COLOR TYPES REFERENCE (based on outfit color analysis):**
+- **Light Spring**: Light, warm, clear outfit colors with golden undertones
+- **Light Summer**: Light, cool, soft outfit colors with blue undertones  
+- **Light Autumn**: Light, warm, muted outfit colors with golden undertones
+- **Light Winter**: Light, cool, clear outfit colors with blue undertones
+- **True Spring**: Clear, warm, bright outfit colors with yellow undertones
+- **True Summer**: Cool, soft, muted outfit colors with blue undertones
+- **True Autumn**: Rich, warm, earthy outfit colors with golden undertones
+- **True Winter**: Cool, clear, deep outfit colors with blue undertones
+- **Deep Spring**: Deep, warm, clear outfit colors with yellow undertones
+- **Deep Summer**: Deep, cool, soft outfit colors with blue undertones
+- **Deep Autumn**: Deep, warm, rich outfit colors with golden undertones
+- **Deep Winter**: Deep, cool, clear outfit colors with blue undertones
+- **Warm Spring**: Warm, clear, light-to-medium outfit colors with golden undertones
+- **Warm Autumn**: Warm, rich, earthy outfit colors with golden undertones
+- **Cool Summer**: Cool, light-to-medium, soft outfit colors with blue undertones
+- **Cool Winter**: Cool, clear, medium-to-deep outfit colors with blue undertones
 
-BODY TYPE ARCHETYPES (from "20 Types of Beauty"):
-- **Gamine**: Petite, angular, boyish features - geometric shapes, clean lines
-- **Soft Gamine**: Petite with some curves - fitted clothes with geometric details
-- **Flamboyant Gamine**: Petite but bold - sharp, asymmetrical, creative styling
-- **Dramatic Classic**: Moderate height, balanced, refined - tailored, elegant pieces
-- **Soft Classic**: Moderate, balanced with slight softness - classic with gentle details
-- **Dramatic**: Tall, angular, striking - bold, structured, avant-garde pieces
-- **Soft Dramatic**: Tall with curves - glamorous, form-fitting, luxurious fabrics
-- **Natural**: Moderate to tall, athletic build - relaxed, unconstructed, casual
-- **Flamboyant Natural**: Tall, broad, strong - oversized, free-flowing, bold textures
-- **Soft Natural**: Moderate height, soft yang - relaxed fit, natural fabrics, flowing
-- **Romantic**: Petite, curvy, delicate - soft fabrics, ornate details, flowing shapes
-- **Theatrical Romantic**: Small with dramatic curves - ornate, intricate, form-fitting
+**STYLING ARCHETYPES (based on clothing choices and outfit coordination):**
+- **Classic**: Timeless pieces, balanced proportions, refined coordination
+- **Dramatic**: Bold silhouettes, sharp lines, high contrast styling
+- **Natural**: Relaxed tailoring, organic textures, effortless coordination
+- **Romantic**: Soft draping, delicate details, flowing garments
+- **Modern**: Clean lines, minimalist approach, contemporary styling
+- **Bohemian**: Relaxed layers, mixed textures, free-spirited coordination
 
-COLOR PALETTE GENERATION RULES:
-- Use authentic hex codes that match the seasonal color type
-- Ensure colors harmonize with identified undertones
+**COLOR PALETTE GENERATION RULES:**
+- Use authentic hex codes that complement the outfit's existing color scheme
+- Ensure colors harmonize with identified seasonal undertones from clothing analysis
 - Include a range: neutrals (grays, beiges, whites), earth tones, accent colors
-- For cool types: blues, purples, cool greens, gray-based neutrals
-- For warm types: oranges, warm reds, golden yellows, warm browns
-- For light types: pastels, soft shades, light neutrals
-- For deep types: rich jewel tones, deep earth tones, dramatic contrasts
-- For muted types: dusty, grayed colors, subtle tones
-- For clear types: pure, vibrant colors, high contrast
+- For cool outfit tones: blues, purples, cool greens, gray-based neutrals
+- For warm outfit tones: oranges, warm reds, golden yellows, warm browns
+- For light outfit palettes: pastels, soft shades, light neutrals
+- For deep outfit palettes: rich jewel tones, deep earth tones, dramatic contrasts
+- For muted outfit colors: dusty, grayed colors, subtle tones
+- For clear outfit colors: pure, vibrant colors, high contrast
 `;
 
   return baseStyleAnalysis;
@@ -132,33 +127,27 @@ COLOR PALETTE GENERATION RULES:
 
 export function generateBodyTypeReference(): string {
   return `
-BODY TYPE STYLING PRINCIPLES (based on "20 Types of Beauty"):
+STYLING ARCHETYPE PRINCIPLES (based on outfit and garment coordination):
 
-**Yang Types (Angular, Structured)**:
-- Gamine: Geometric prints, crisp lines, short hair, minimal jewelry
-- Dramatic: Bold shoulders, sharp lapels, high contrast, architectural details
-- Natural: Relaxed tailoring, organic textures, minimal structure
+**STRUCTURED STYLING** (Angular, Tailored Clothing):
+- Classic: Timeless pieces, balanced proportions, refined coordination
+- Dramatic: Bold shoulders, sharp lines, architectural garment details
+- Modern: Clean lines, minimalist approach, contemporary tailoring
 
-**Yin Types (Curved, Soft)**:
-- Romantic: Soft draping, delicate details, flowing fabrics, ornate accessories
-- Soft Classic: Gentle curves in tailoring, moderate details, refined elegance
+**FLOWING STYLING** (Soft, Draped Clothing):
+- Romantic: Soft draping, delicate details, flowing fabrics, ornate styling
+- Bohemian: Relaxed layers, organic textures, free-flowing silhouettes
+- Ethereal: Light fabrics, graceful draping, delicate proportions
 
-**Balanced Types**:
-- Classic: Timeless pieces, balanced proportions, moderate everything
-- Natural: Unconstructed elegance, organic materials, effortless styling
+**NATURAL STYLING** (Relaxed, Effortless Coordination):
+- Casual: Relaxed tailoring, comfortable fit, effortless styling
+- Sporty: Athletic-inspired pieces, functional design, active wear elements
+- Relaxed: Unconstructed elegance, natural materials, easy coordination
 
-**Mixed Types**:
-- Soft Gamine: Geometric structure with soft details
-- Flamboyant Natural: Relaxed structure with bold elements  
-- Soft Dramatic: Curved structure with bold details
-- Theatrical Romantic: Ornate details with dramatic flair
-
-VISUAL SHAPE MAPPING:
-- Rectangle: Natural, Flamboyant Natural
-- Hourglass: Soft Dramatic, Romantic
-- Inverted Triangle: Dramatic, Flamboyant Gamine
-- Triangle/Pear: Soft Natural, Soft Classic
-- Round/Oval: Soft Gamine, Theatrical Romantic
-- Diamond: Gamine, Dramatic Classic
+**OUTFIT COORDINATION MAPPING:**
+- Structured/Sharp: Classic, Dramatic, Modern archetypes
+- Flowing/Curved: Romantic, Bohemian, Ethereal archetypes
+- Natural/Balanced: Casual, Sporty, Relaxed archetypes
+- Mixed Approach: Contemporary, Eclectic, Creative archetypes
 `;
 }

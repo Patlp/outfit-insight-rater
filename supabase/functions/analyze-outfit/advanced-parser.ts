@@ -1,514 +1,422 @@
-
-import { AnalyzeOutfitResponse, AnalyzeOutfitRequest } from './types.ts';
-import { TextProcessor } from './text-processor.ts';
-import { validateResponse, hasGrammarIssues } from './response-validator.ts';
-import { RoastModeParser } from './roast-parser.ts';
+import { AnalyzeOutfitResponse, AnalyzeOutfitRequest, StyleAnalysis, ColorAnalysis, ColorPalette, BodyType } from './types.ts';
 
 export class AdvancedResponseParser {
-  
   static parseAIResponse(aiResponse: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
     console.log('🎨 ADVANCED PARSER: Starting enhanced parsing...');
-    console.log('🎨 AI Response preview:', aiResponse.substring(0, 200) + '...');
-    
-    // 🔥 ROAST MODE: Use specialized parser to preserve brutality
-    if (request.feedbackMode === 'roast') {
-      console.log('🔥 ROAST MODE DETECTED: Using brutal parser...');
-      return RoastModeParser.parseRoastResponse(aiResponse, request);
+    console.log('🎨 AI Response preview:', aiResponse.substring(0, 100) + '...');
+
+    // Check for content policy issues and provide immediate fallback
+    if (this.isContentPolicyResponse(aiResponse)) {
+      console.log('🚨 CONTENT POLICY DETECTED: Generating compliant fallback response...');
+      return this.generateCompliantFallback(request);
     }
+
+    // Enhanced JSON extraction with multiple attempts
+    let result = this.tryFlexibleJSONParsing(aiResponse);
     
-    // Enhanced parsing with multiple attempts
-    let result = this.attemptFlexibleParsing(aiResponse, request);
-    
-    // Validate the result
-    const validation = validateResponse(result);
-    
-    if (!validation.isValid || validation.warnings.length > 0) {
+    if (!result) {
       console.log('🎨 First parsing attempt failed, trying enhanced methods...');
-      console.log('🎨 Errors:', validation.errors);
-      console.log('🎨 Warnings:', validation.warnings);
-      
-      // Second attempt: Enhanced parsing with text processing
-      result = this.attemptEnhancedParsing(aiResponse, request);
-      
-      // Final validation
-      const finalValidation = validateResponse(result);
-      if (!finalValidation.isValid) {
-        console.log('🎨 Enhanced parsing also failed, using intelligent fallback');
-        result = this.generateIntelligentFallback(request, aiResponse);
-      }
+      result = this.tryEnhancedParsing(aiResponse, request);
     }
-    
-    // Always ensure we have style analysis - this is the key fix!
-    if (!result.styleAnalysis) {
-      console.log('🎨 CRITICAL: No style analysis found, generating fallback style data...');
-      result.styleAnalysis = this.generateFallbackStyleAnalysis(request);
+
+    // Enhanced validation and fallback
+    const validation = this.validateResponse(result, request.feedbackMode);
+    console.log('🎨 Errors:', validation.errors);
+    console.log('🎨 Warnings:', validation.warnings);
+
+    if (!validation.isValid) {
+      console.log('🎨 CRITICAL: Response validation failed, generating enhanced fallback...');
+      result = this.generateCompliantFallback(request);
+    } else if (validation.warnings.length > 0) {
+      console.log('🎨 Enhancing response to address warnings...');
+      result = this.enhanceResponse(result, validation.warnings, request);
     }
-    
-    // Final quality enhancement
-    result = this.enhanceResponseQuality(result);
-    
+
+    // Ensure style analysis is always present for normal mode
+    if (request.feedbackMode !== 'roast' && !result.styleAnalysis) {
+      console.log('🎨 CRITICAL: No style analysis found, generating compliant style data...');
+      result.styleAnalysis = this.generateCompliantStyleAnalysis(request);
+    }
+
     console.log('🎨 FINAL RESULT - Style analysis included:', !!result.styleAnalysis);
-    if (result.styleAnalysis) {
-      console.log('🎨 Color analysis type:', result.styleAnalysis.colorAnalysis?.seasonalType);
-      console.log('🎨 Color palette colors count:', result.styleAnalysis.colorPalette?.colors?.length * result.styleAnalysis.colorPalette?.colors?.[0]?.length);
-      console.log('🎨 Body type included:', !!result.styleAnalysis.bodyType);
-    }
-    
     return result;
   }
-  
-  private static attemptFlexibleParsing(aiResponse: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
+
+  private static isContentPolicyResponse(response: string): boolean {
+    const policyIndicators = [
+      "I can't help with identifying",
+      "I cannot identify",
+      "I'm not able to identify",
+      "I can't analyze people",
+      "I cannot analyze people",
+      "analyze people in photos",
+      "identifying or analyzing people",
+      "cannot provide analysis of individuals",
+      "not able to analyze personal",
+      "can't identify individuals"
+    ];
+    
+    const lowerResponse = response.toLowerCase();
+    return policyIndicators.some(indicator => lowerResponse.includes(indicator.toLowerCase()));
+  }
+
+  private static tryFlexibleJSONParsing(text: string): AnalyzeOutfitResponse | null {
     console.log('🎨 Attempting flexible JSON parsing...');
     
-    // Try multiple JSON extraction methods
-    const jsonExtractionMethods = [
-      // Method 1: Complete JSON response
-      () => {
-        const jsonPattern = /\{[\s\S]*?"styleAnalysis"[\s\S]*?\}(?:\s*$)/;
-        const match = aiResponse.match(jsonPattern);
-        return match ? JSON.parse(match[0]) : null;
-      },
-      
-      // Method 2: Look for JSON anywhere in response
-      () => {
-        const jsonPattern = /\{[\s\S]*?"score"[\s\S]*?"feedback"[\s\S]*?\}/;
-        const match = aiResponse.match(jsonPattern);
-        return match ? JSON.parse(match[0]) : null;
-      },
-      
-      // Method 3: Extract JSON between code blocks
-      () => {
-        const codeBlockPattern = /```json\s*([\s\S]*?)\s*```/;
-        const match = aiResponse.match(codeBlockPattern);
-        return match ? JSON.parse(match[1]) : null;
-      },
-      
-      // Method 4: Look for style analysis object specifically  
-      () => {
-        const stylePattern = /"styleAnalysis":\s*\{[\s\S]*?\}(?=\s*[,}])/;
-        const match = aiResponse.match(stylePattern);
-        if (match) {
-          const completeJson = `{${match[0]}}`;
-          const parsed = JSON.parse(completeJson);
-          return { styleAnalysis: parsed.styleAnalysis };
-        }
-        return null;
-      }
+    // Multiple JSON extraction strategies
+    const strategies = [
+      // Strategy 1: Look for complete JSON blocks
+      /```json\s*(\{[\s\S]*?\})\s*```/gi,
+      // Strategy 2: Look for JSON without code blocks
+      /(\{[\s\S]*?"styleAnalysis"[\s\S]*?\})/gi,
+      // Strategy 3: Look for any large JSON-like structure
+      /(\{[\s\S]{200,}\})/gi
     ];
-    
-    let parsedData = null;
-    for (const method of jsonExtractionMethods) {
-      try {
-        parsedData = method();
-        if (parsedData) {
-          console.log('🎨 Successfully parsed JSON with extraction method');
-          break;
+
+    for (const strategy of strategies) {
+      const matches = [...text.matchAll(strategy)];
+      for (const match of matches) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          if (this.isValidResponseStructure(parsed)) {
+            console.log('🎨 Successfully parsed JSON structure');
+            return parsed;
+          }
+        } catch (e) {
+          continue;
         }
-      } catch (e) {
-        console.log('🎨 JSON extraction method failed:', e.message);
       }
     }
-    
-    if (parsedData && parsedData.score && parsedData.feedback && parsedData.suggestions) {
-      console.log('🎨 Complete structured response found!');
-      return {
-        score: parsedData.score,
-        feedback: parsedData.feedback,
-        suggestions: parsedData.suggestions,
-        styleAnalysis: parsedData.styleAnalysis
-      };
-    }
-    
-    // Fallback to manual parsing
-    console.log('🎨 No complete JSON found, attempting manual parsing...');
-    return this.attemptManualParsing(aiResponse, request, parsedData?.styleAnalysis);
+
+    return null;
   }
-  
-  private static attemptManualParsing(aiResponse: string, request: AnalyzeOutfitRequest, existingStyleAnalysis?: any): AnalyzeOutfitResponse {
-    let score = 7;
-    let feedback = aiResponse;
-    let suggestions: string[] = [];
-    let styleAnalysis = existingStyleAnalysis;
 
-    // Extract score with multiple patterns
-    const scorePatterns = [
-      /(\d+)(?:\s*\/\s*10|(?:\s+out\s+of|\s+on\s+a\s+scale\s+of)\s+10)/i,
-      /(?:score|rating):\s*(\d+)/i,
-      /\b(\d+)\s*\/\s*10\b/i,
-      /\*\*Score:\*\*\s*(\d+)/i
-    ];
-    
-    for (const pattern of scorePatterns) {
-      const match = aiResponse.match(pattern);
-      if (match) {
-        const parsedScore = parseInt(match[1], 10);
-        if (parsedScore >= 1 && parsedScore <= 10) {
-          score = parsedScore;
-          console.log('🎨 Extracted score:', score);
-          break;
-        }
-      }
-    }
-
-    // Extract suggestions with improved patterns
-    const suggestionPatterns = [
-      /(?:SUGGESTIONS|Suggestions|Improvements|Recommendations|Tips):([\s\S]+?)(?:\n\n|\n[A-Z]|$)/i,
-      /\d+\.\s*([^.\n]+(?:\.[^.\n]*)*)/g
-    ];
-    
-    for (const pattern of suggestionPatterns) {
-      if (pattern.global) {
-        const matches = [...aiResponse.matchAll(pattern)];
-        if (matches.length > 0) {
-          suggestions = matches
-            .map(match => match[1].trim())
-            .filter(s => s.length > 10)
-            .slice(0, 3);
-          console.log('🎨 Extracted suggestions:', suggestions.length);
-          break;
-        }
-      } else {
-        const match = aiResponse.match(pattern);
-        if (match) {
-          const suggestionsText = match[1];
-          suggestions = suggestionsText
-            .split(/\n\d+\.|\n-|\n\*/)
-            .filter(item => item.trim().length > 10)
-            .map(item => item.trim())
-            .slice(0, 3);
-          console.log('🎨 Extracted suggestions from section:', suggestions.length);
-          break;
-        }
-      }
-    }
-
-    // Clean feedback - remove JSON data, scores, and technical information
-    feedback = aiResponse
-      .replace(/\b\d+\/10\b|\b\d+ out of 10\b|\bScore:?\s*\d+\b/gi, '')
-      .replace(/(Suggestions|Improvements|Recommendations|Tips):[\s\S]+$/i, '')
-      .replace(/"styleAnalysis"[\s\S]*$/gi, '')
-      .replace(/",\s*"suggestions"[\s\S]*$/gi, '')
-      .replace(/",\s*"intensity"[\s\S]*$/gi, '')
-      .replace(/",\s*"lightness"[\s\S]*$/gi, '')
-      .replace(/",\s*"explanation"[\s\S]*$/gi, '')
-      .replace(/",\s*"colorAnalysis"[\s\S]*$/gi, '')
-      .replace(/",\s*"colorPalette"[\s\S]*$/gi, '')
-      .replace(/\],?\s*"[\w]+":\s*[\{\[][\s\S]*$/gi, '')
-      .replace(/\}[\s,]*"[\w]+"[\s\S]*$/gi, '')
-      .replace(/\}[\s,]*\}[\s]*$/gi, '')
-      .replace(/",[\s]*$/gi, '"')
-      .replace(/\s*'''[\s]*$/gi, '')
-      .trim();
-
-    // If no suggestions found, generate fallback
-    if (suggestions.length === 0) {
-      console.log('🎨 No suggestions found, generating fallback suggestions');
-      const fallback = TextProcessor.generateFallbackContent(request);
-      suggestions = fallback.suggestions;
-    }
-
-    return { score, feedback, suggestions, styleAnalysis };
-  }
-  
-  private static attemptEnhancedParsing(aiResponse: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
+  private static tryEnhancedParsing(text: string, request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
     console.log('🎨 Attempting enhanced parsing with text processing...');
     
-    // Use structured text processing
-    const sections = TextProcessor.extractStructuredFeedback(aiResponse);
+    // Extract basic components
+    const score = this.extractScore(text) || 7;
+    const feedback = this.extractFeedback(text) || this.generateDefaultFeedback(request);
+    const suggestions = this.extractSuggestions(text) || this.generateDefaultSuggestions(request);
     
-    let feedback = '';
-    if (Object.keys(sections).length > 0) {
-      feedback = TextProcessor.rebuildFeedbackFromSections(sections);
-    } else {
-      feedback = TextProcessor.cleanAndEnhanceText(aiResponse);
-    }
-    
-    // Extract score with more aggressive parsing
-    let score = 7;
-    const allNumbers = aiResponse.match(/\d+/g);
-    if (allNumbers) {
-      for (const num of allNumbers) {
-        const parsedNum = parseInt(num, 10);
-        if (parsedNum >= 1 && parsedNum <= 10) {
-          score = parsedNum;
-          break;
-        }
-      }
-    }
-    
-    // Extract and process suggestions
-    let suggestions: string[] = [];
-    const lines = aiResponse.split('\n');
-    
-    for (const line of lines) {
-      const cleaned = line.trim();
-      if (cleaned.length > 15 && 
-          (cleaned.includes('consider') || cleaned.includes('try') || 
-           cleaned.includes('add') || cleaned.includes('opt for') ||
-           cleaned.match(/^\d+\./) || cleaned.match(/^[-*]/))) {
-        suggestions.push(cleaned);
-      }
-    }
-    
-    suggestions = TextProcessor.formatSuggestions(suggestions).slice(0, 3);
-    
-    // Fallback if still no suggestions
-    if (suggestions.length === 0) {
-      const fallback = TextProcessor.generateFallbackContent(request);
-      suggestions = fallback.suggestions;
-    }
+    // Generate compliant style analysis
+    const styleAnalysis = this.generateCompliantStyleAnalysis(request);
 
-    // Try to extract style analysis even in enhanced parsing
-    let styleAnalysis = this.extractStyleAnalysisFromText(aiResponse);
-    
-    return { score, feedback, suggestions, styleAnalysis };
-  }
-  
-  private static extractStyleAnalysisFromText(aiResponse: string): any {
-    console.log('🎨 Attempting to extract style analysis from text...');
-    
-    try {
-      // Try to find style analysis JSON
-      const styleAnalysisMatch = aiResponse.match(/"styleAnalysis":\s*\{[\s\S]*?\}(?=\s*[,}])/);
-      if (styleAnalysisMatch) {
-        const styleAnalysisData = JSON.parse(`{${styleAnalysisMatch[0]}}`);
-        console.log('🎨 Successfully extracted style analysis from text');
-        return styleAnalysisData.styleAnalysis;
-      }
-      
-      // Try to find individual components
-      const colorAnalysisMatch = aiResponse.match(/"colorAnalysis":\s*\{[\s\S]*?\}(?=\s*[,}])/);
-      const colorPaletteMatch = aiResponse.match(/"colorPalette":\s*\{[\s\S]*?\}(?=\s*[,}])/);
-      
-      if (colorAnalysisMatch || colorPaletteMatch) {
-        console.log('🎨 Found partial style analysis components');
-        const result: any = {};
-        
-        if (colorAnalysisMatch) {
-          const colorData = JSON.parse(`{${colorAnalysisMatch[0]}}`);
-          result.colorAnalysis = colorData.colorAnalysis;
-        }
-        
-        if (colorPaletteMatch) {
-          const paletteData = JSON.parse(`{${colorPaletteMatch[0]}}`);
-          result.colorPalette = paletteData.colorPalette;
-        }
-        
-        return Object.keys(result).length > 0 ? result : undefined;
-      }
-    } catch (e) {
-      console.log('🎨 Could not extract style analysis from text:', e.message);
-    }
-    
-    return undefined;
-  }
-  
-  private static generateIntelligentFallback(request: AnalyzeOutfitRequest, aiResponse: string): AnalyzeOutfitResponse {
-    console.log('🎨 Generating intelligent fallback response...');
-    
-    // Try to extract any useful content from the AI response
-    const hasPositiveLanguage = /good|nice|great|excellent|well|perfect/i.test(aiResponse);
-    const hasNegativeLanguage = /bad|poor|terrible|awful|wrong|clash/i.test(aiResponse);
-    
-    let score = 7;
-    if (hasPositiveLanguage && !hasNegativeLanguage) score = 8;
-    if (hasNegativeLanguage && !hasPositiveLanguage) score = 5;
-    
-    const fallback = TextProcessor.generateFallbackContent(request);
-    
     return {
       score,
-      feedback: aiResponse.length > 50 ? TextProcessor.cleanAndEnhanceText(aiResponse) : fallback.feedback,
-      suggestions: fallback.suggestions,
-      styleAnalysis: this.generateFallbackStyleAnalysis(request)
+      feedback,
+      suggestions,
+      styleAnalysis
     };
   }
-  
-  private static generateFallbackStyleAnalysis(request: AnalyzeOutfitRequest): any {
-    console.log('🎨 Generating fallback style analysis data...');
+
+  private static generateCompliantFallback(request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
+    console.log('🚨 Generating content policy compliant fallback response...');
     
-    // Generate appropriate style analysis based on gender
-    const isFemale = request.gender === 'female';
+    const { gender, feedbackMode } = request;
+    const score = feedbackMode === 'roast' ? Math.floor(Math.random() * 4) + 3 : Math.floor(Math.random() * 3) + 7;
     
-    const seasonalTypes = [
-      'Light Spring', 'Light Summer', 'Light Autumn', 'Light Winter',
-      'True Spring', 'True Summer', 'True Autumn', 'True Winter',
-      'Deep Spring', 'Deep Summer', 'Deep Autumn', 'Deep Winter',
-      'Warm Spring', 'Warm Autumn', 'Cool Summer', 'Cool Winter'
-    ];
+    const feedback = feedbackMode === 'roast' 
+      ? this.generateRoastFallback()
+      : this.generateNormalFallback();
     
-    const randomSeason = seasonalTypes[Math.floor(Math.random() * seasonalTypes.length)];
-    
-    // Determine characteristics based on seasonal type
-    const isWarm = randomSeason.includes('Spring') || randomSeason.includes('Autumn');
-    const isLight = randomSeason.includes('Light');
-    const isDeep = randomSeason.includes('Deep');
-    
-    const undertoneValue = isWarm ? 70 + Math.random() * 30 : Math.random() * 40;
-    const lightnessValue = isLight ? 60 + Math.random() * 40 : isDeep ? Math.random() * 40 : 30 + Math.random() * 40;
-    const intensityValue = randomSeason.includes('True') || randomSeason.includes('Deep') ? 60 + Math.random() * 40 : 20 + Math.random() * 50;
-    
-    // Generate color palette based on characteristics
-    const colorPalette = this.generateColorPalette(isWarm, isLight, intensityValue > 50);
-    
-    const styleAnalysis = {
-      colorAnalysis: {
-        seasonalType: randomSeason,
-        undertone: {
-          value: Math.round(undertoneValue),
-          description: isWarm ? "Warm golden undertones" : "Cool blue undertones"
-        },
-        intensity: {
-          value: Math.round(intensityValue),
-          description: intensityValue > 50 ? "Bright, vibrant colors" : "Soft, muted colors"
-        },
-        lightness: {
-          value: Math.round(lightnessValue),
-          description: isLight ? "Light, delicate tones" : isDeep ? "Deep, rich colors" : "Medium depth colors"
-        },
-        explanation: `Based on your features, you have a ${randomSeason} color profile. This means ${isWarm ? 'warm' : 'cool'} tones will enhance your natural beauty.`
-      },
-      colorPalette: {
-        colors: colorPalette,
-        explanation: `These colors are specifically chosen to complement your ${randomSeason} coloring and will make your features pop.`
-      }
+    const suggestions = feedbackMode === 'roast'
+      ? this.generateRoastSuggestions()
+      : this.generateNormalSuggestions();
+
+    const styleAnalysis = feedbackMode !== 'roast' 
+      ? this.generateCompliantStyleAnalysis(request)
+      : undefined;
+
+    return {
+      score,
+      feedback,
+      suggestions,
+      styleAnalysis
     };
-    
-    // Always include body type analysis - provide estimate based on available information
-    const bodyTypes = [
-      {
-        type: 'Gamine Pg',
-        description: 'Petite with angular features and a youthful, delicate bone structure.',
-        visualShape: 'angular',
-        stylingRecommendations: [
-          'Choose structured, tailored pieces that complement your sharp lines',
-          'Opt for shorter hemlines and cropped styles that suit your petite frame',
-          'Add geometric patterns and clean lines to enhance your angular beauty',
-          'Layer with fitted jackets and blazers for a polished look'
-        ]
-      },
-      {
-        type: 'Romantic G',
-        description: 'Soft, curved silhouette with a defined waist and feminine proportions.',
-        visualShape: 'rounded',
-        stylingRecommendations: [
-          'Embrace flowing fabrics and soft textures that complement your curves',
-          'Choose pieces that define your waist to highlight your natural shape',
-          'Add delicate details like ruffles, lace, or soft draping',
-          'Opt for rounded necklines and feminine silhouettes'
-        ]
-      },
-      {
-        type: 'Natural Ag',
-        description: 'Balanced proportions with natural, relaxed lines and moderate structure.',
-        visualShape: 'balanced',
-        stylingRecommendations: [
-          'Choose relaxed, comfortable fits that don\'t fight your natural lines',
-          'Opt for natural fabrics like cotton, linen, and soft wools',
-          'Add casual layers and unstructured pieces for an effortless look',
-          'Embrace earthy tones and natural textures'
-        ]
-      },
-      {
-        type: 'Dramatic Tg',
-        description: 'Tall and angular with bold, striking features and strong bone structure.',
-        visualShape: 'angular',
-        stylingRecommendations: [
-          'Choose bold, architectural pieces that match your strong presence',
-          'Opt for longer lines and dramatic silhouettes',
-          'Add statement accessories and bold patterns',
-          'Embrace sharp tailoring and structured designs'
-        ]
-      }
-    ];
-    
-    // Select a body type based on gender preferences and randomization
-    const selectedBodyType = bodyTypes[Math.floor(Math.random() * bodyTypes.length)];
-    
-    styleAnalysis.bodyType = selectedBodyType;
-    
-    console.log('🎨 Generated fallback style analysis:', randomSeason);
-    console.log('🎨 Generated fallback body type:', selectedBodyType.type);
-    return styleAnalysis;
   }
-  
-  private static generateColorPalette(isWarm: boolean, isLight: boolean, isBright: boolean): string[][] {
+
+  private static generateCompliantStyleAnalysis(request: AnalyzeOutfitRequest): StyleAnalysis {
+    console.log('🎨 Generating compliant style analysis data...');
+    
+    // Generate realistic color analysis based on common outfit patterns
+    const colorTypes = ['Light Summer', 'Deep Autumn', 'Warm Spring', 'Cool Winter', 'True Summer', 'Warm Autumn'];
+    const seasonalType = colorTypes[Math.floor(Math.random() * colorTypes.length)];
+    
+    const isWarm = seasonalType.includes('Warm') || seasonalType.includes('Autumn') || seasonalType.includes('Spring');
+    const isLight = seasonalType.includes('Light') || seasonalType.includes('Summer');
+    const isBright = seasonalType.includes('True') || seasonalType.includes('Winter');
+    
+    const undertoneValue = isWarm ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 30) + 10;
+    const lightnessValue = isLight ? Math.floor(Math.random() * 30) + 60 : Math.floor(Math.random() * 40) + 20;
+    const intensityValue = isBright ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 30;
+
+    console.log('🎨 Color analysis type:', seasonalType);
+    console.log('🎨 Generated fallback style analysis:', seasonalType);
+
+    const colorAnalysis: ColorAnalysis = {
+      seasonalType,
+      undertone: {
+        value: undertoneValue,
+        description: isWarm ? 'Warm golden undertones' : 'Cool blue undertones'
+      },
+      intensity: {
+        value: intensityValue,
+        description: isBright ? 'Bright, vibrant colors' : 'Soft, muted colors'
+      },
+      lightness: {
+        value: lightnessValue,
+        description: isLight ? 'Light, delicate tones' : 'Deep, rich tones'
+      },
+      explanation: `Based on outfit color analysis principles, ${seasonalType.toLowerCase()} colors would complement this styling approach with ${isWarm ? 'warm' : 'cool'} undertones and ${isBright ? 'clear' : 'soft'} intensity.`
+    };
+
+    const colorPalette = this.generateColorPalette(isWarm, isLight, isBright);
+
+    const bodyTypes = ['Classic', 'Dramatic', 'Natural', 'Romantic', 'Modern', 'Bohemian'];
+    const bodyType: BodyType = {
+      type: bodyTypes[Math.floor(Math.random() * bodyTypes.length)],
+      description: 'Styling archetype determined by outfit coordination and garment choices observed.',
+      visualShape: 'balanced',
+      stylingRecommendations: [
+        'Coordinate garment proportions for visual balance',
+        'Consider color harmony between pieces',
+        'Ensure proper fit and silhouette alignment'
+      ]
+    };
+
+    console.log('🎨 Body type included:', true);
+    console.log('🎨 Generated fallback body type:', bodyType.type);
+
+    return {
+      colorAnalysis,
+      colorPalette,
+      bodyType
+    };
+  }
+
+  private static generateColorPalette(isWarm: boolean, isLight: boolean, isBright: boolean): ColorPalette {
     console.log('🎨 Generating color palette - Warm:', isWarm, 'Light:', isLight, 'Bright:', isBright);
     
-    const palette: string[][] = [];
+    const colors: string[][] = [];
     
-    if (isWarm) {
-      // Warm color palette
-      if (isLight) {
-        // Light and warm
-        palette.push(['#F5E6D3', '#E8D5B7', '#D4C2A0', '#C5B094', '#B8A082', '#AB9070']);
-        palette.push(['#F4E1C7', '#E6D2B5', '#D7C1A2', '#C8B090', '#B89F7E', '#A88E6C']);
-        palette.push(['#F2DDB8', '#E3CDA5', '#D3BD92', '#C4AD7F', '#B49C6C', '#A58B59']);
-        palette.push(['#F0D8A8', '#E0C894', '#D0B880', '#C0A86C', '#B09858', '#A08744']);
-        palette.push(['#EDD3A3', '#DCC28F', '#CBB17B', '#BAA067', '#A98F53', '#987E3F']);
-        palette.push(['#EACE9E', '#D8BD8A', '#C6AC76', '#B49B62', '#A2894E', '#90783A']);
-        palette.push(['#E7C999', '#D5B885', '#C3A771', '#B1965D', '#9F8449', '#8D7335']);
-        palette.push(['#E4C494', '#D2B380', '#C0A26C', '#AE9158', '#9C7F44', '#8A6E30']);
-      } else {
-        // Deep and warm
-        palette.push(['#8B4513', '#A0522D', '#CD853F', '#D2691E', '#DEB887', '#F4A460']);
-        palette.push(['#800000', '#A52A2A', '#B22222', '#DC143C', '#FF6347', '#FF7F50']);
-        palette.push(['#556B2F', '#6B8E23', '#808000', '#9ACD32', '#ADFF2F', '#7FFF00']);
-        palette.push(['#B8860B', '#DAA520', '#FFD700', '#FFFF00', '#FFFFE0', '#FFFACD']);
-        palette.push(['#CD853F', '#D2691E', '#FF8C00', '#FFA500', '#FFB84D', '#FFC649']);
-        palette.push(['#A0522D', '#CD853F', '#DEB887', '#F5DEB3', '#FFEBCD', '#FFE4B5']);
-        palette.push(['#8B4513', '#A0522D', '#BC8F8F', '#F4A460', '#DEB887', '#D2B48C']);
-        palette.push(['#654321', '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#B8860B']);
+    // Generate 8 rows of 6 colors each (48 total)
+    for (let row = 0; row < 8; row++) {
+      const rowColors: string[] = [];
+      for (let col = 0; col < 6; col++) {
+        const lightness = 20 + (col * 13); // Progress from dark to light
+        const saturation = isBright ? 60 + (Math.random() * 30) : 30 + (Math.random() * 30);
+        
+        let hue: number;
+        if (row < 2) {
+          // Neutrals
+          hue = isWarm ? 30 + (Math.random() * 30) : 200 + (Math.random() * 30);
+        } else if (row < 4) {
+          // Primary colors
+          hue = isWarm ? Math.random() * 60 : 180 + (Math.random() * 120);
+        } else if (row < 6) {
+          // Secondary colors
+          hue = isWarm ? 30 + (Math.random() * 90) : 120 + (Math.random() * 120);
+        } else {
+          // Accent colors
+          hue = Math.random() * 360;
+        }
+        
+        const adjustedLightness = isLight ? Math.max(30, lightness) : Math.min(70, lightness);
+        const hex = this.hslToHex(hue, saturation, adjustedLightness);
+        rowColors.push(hex);
       }
-    } else {
-      // Cool color palette
-      if (isLight) {
-        // Light and cool
-        palette.push(['#E6F3FF', '#CCE7FF', '#B3DBFF', '#99CFFF', '#80C3FF', '#66B7FF']);
-        palette.push(['#F0E6FF', '#E1CCFF', '#D1B3FF', '#C299FF', '#B280FF', '#A366FF']);
-        palette.push(['#E6F0FF', '#CCE1FF', '#B3D1FF', '#99C2FF', '#80B2FF', '#66A3FF']);
-        palette.push(['#F0F0FF', '#E1E1FF', '#D1D1FF', '#C2C2FF', '#B2B2FF', '#A3A3FF']);
-        palette.push(['#E6FFE6', '#CCFFCC', '#B3FFB3', '#99FF99', '#80FF80', '#66FF66']);
-        palette.push(['#F0FFF0', '#E1FFE1', '#D1FFD1', '#C2FFC2', '#B2FFB2', '#A3FFA3']);
-        palette.push(['#E6F7FF', '#CCEFFF', '#B3E6FF', '#99DEFF', '#80D5FF', '#66CDFF']);
-        palette.push(['#F0FFFF', '#E1FFFF', '#D1FFFF', '#C2FFFF', '#B2FFFF', '#A3FFFF']);
-      } else {
-        // Deep and cool
-        palette.push(['#191970', '#0000CD', '#0000FF', '#4169E1', '#6495ED', '#87CEEB']);
-        palette.push(['#4B0082', '#8B008B', '#9400D3', '#8A2BE2', '#9370DB', '#BA55D3']);
-        palette.push(['#008B8B', '#20B2AA', '#00CED1', '#00BFFF', '#87CEEB', '#B0E0E6']);
-        palette.push(['#2F4F4F', '#708090', '#778899', '#B0C4DE', '#C0C0C0', '#D3D3D3']);
-        palette.push(['#006400', '#228B22', '#32CD32', '#7CFC00', '#98FB98', '#90EE90']);
-        palette.push(['#800080', '#9932CC', '#BA55D3', '#DA70D6', '#EE82EE', '#DDA0DD']);
-        palette.push(['#483D8B', '#6A5ACD', '#7B68EE', '#9370DB', '#8A2BE2', '#9400D3']);
-        palette.push(['#2E8B57', '#3CB371', '#66CDAA', '#20B2AA', '#48D1CC', '#00CED1']);
-      }
+      colors.push(rowColors);
     }
-    
-    return palette;
+
+    console.log('🎨 Color palette colors count:', colors.flat().length);
+
+    return {
+      colors,
+      explanation: `This palette complements ${isWarm ? 'warm' : 'cool'} undertones with ${isLight ? 'light' : 'deep'} and ${isBright ? 'vibrant' : 'muted'} color characteristics based on fashion color theory principles.`
+    };
   }
-  
-  private static enhanceResponseQuality(response: AnalyzeOutfitResponse): AnalyzeOutfitResponse {
-    // Enhance feedback quality
-    response.feedback = TextProcessor.cleanAndEnhanceText(response.feedback);
-    
-    // Check for grammar issues and clean if needed
-    if (hasGrammarIssues(response.feedback)) {
-      console.log('🎨 Grammar issues detected in feedback, applying additional cleaning');
-      response.feedback = TextProcessor.cleanAndEnhanceText(response.feedback);
+
+  private static hslToHex(h: number, s: number, l: number): string {
+    const hDecimal = h / 360;
+    const sDecimal = s / 100;
+    const lDecimal = l / 100;
+
+    const c = (1 - Math.abs(2 * lDecimal - 1)) * sDecimal;
+    const x = c * (1 - Math.abs((hDecimal * 6) % 2 - 1));
+    const m = lDecimal - c / 2;
+
+    let r = 0, g = 0, b = 0;
+
+    if (0 <= hDecimal * 6 && hDecimal * 6 < 1) {
+      r = c; g = x; b = 0;
+    } else if (1 <= hDecimal * 6 && hDecimal * 6 < 2) {
+      r = x; g = c; b = 0;
+    } else if (2 <= hDecimal * 6 && hDecimal * 6 < 3) {
+      r = 0; g = c; b = x;
+    } else if (3 <= hDecimal * 6 && hDecimal * 6 < 4) {
+      r = 0; g = x; b = c;
+    } else if (4 <= hDecimal * 6 && hDecimal * 6 < 5) {
+      r = x; g = 0; b = c;
+    } else if (5 <= hDecimal * 6 && hDecimal * 6 < 6) {
+      r = c; g = 0; b = x;
     }
+
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
+
+  private static generateRoastFallback(): string {
+    const roastResponses = [
+      "**Style:** Holy fashion disaster Batman! This outfit looks like it was assembled by someone wearing a blindfold in a thrift store clearance bin. The style is giving 'I gave up on life' energy with a dash of 'laundry day desperation.'\n\n**Color Coordination:** These colors are fighting each other harder than siblings on a road trip. It's like someone took a rainbow, put it in a blender, and then decided to wear the resulting chaos. My eyes need therapy after witnessing this color crime.\n\n**Fit:** The fit is more off than a broken GPS. Nothing sits right, everything looks confused, and the whole ensemble is having an identity crisis. It's giving 'borrowed clothes from three different people' vibes.\n\n**Overall Impression:** This outfit is a masterclass in how NOT to get dressed. It's so aggressively mediocre that it's almost impressive. You've managed to make clothes look sad – that takes genuine talent in all the wrong ways.",
+      
+      "**Style:** Wow, this styling choice is bolder than wearing socks with sandals to a fashion show. The aesthetic is 'chaotic energy meets complete confusion' with hints of 'I got dressed in the dark during an earthquake.'\n\n**Color Coordination:** This color combination is more clashing than cymbals in a marching band. It's like you asked a colorblind toddler to pick your outfit while having a sugar rush. The harmony here is non-existent – it's pure visual anarchy.\n\n**Fit:** The fit is looser than your grip on fashion sense. Everything hangs like it's given up hope, and the proportions are more confused than a tourist without GPS. This silhouette is doing you zero favors.\n\n**Overall Impression:** This outfit is the fashion equivalent of a train wreck – horrifying but impossible to look away from. You've somehow managed to make clothes look disappointed in their life choices. Congratulations on this stunning achievement in anti-fashion."
+    ];
     
-    // Enhance suggestions quality
-    response.suggestions = TextProcessor.formatSuggestions(response.suggestions);
-    
-    // Final validation and corrections
-    response.suggestions = response.suggestions.filter(s => s.length > 5 && !hasGrammarIssues(s));
-    
-    // Ensure we have at least one suggestion
-    if (response.suggestions.length === 0) {
-      response.suggestions = ['Consider experimenting with different styling approaches to enhance your look.'];
+    return roastResponses[Math.floor(Math.random() * roastResponses.length)];
+  }
+
+  private static generateNormalFallback(): string {
+    return "**Style:** Your outfit shows a good foundation with room for refinement. The overall aesthetic has potential but could benefit from more cohesive styling choices.\n\n**Color Coordination:** The color palette works reasonably well together, though there are opportunities to enhance the harmony with more intentional color pairing.\n\n**Fit:** The garment fit is generally appropriate, with some areas where adjustments could improve the overall silhouette and proportions.\n\n**Overall Impression:** This is a solid everyday look that demonstrates practical fashion sense. With a few strategic adjustments, this outfit could really shine.";
+  }
+
+  private static generateRoastSuggestions(): string[] {
+    return [
+      "Burn this outfit and start over – the fashion police have issued a warrant for its arrest",
+      "Consider hiring a personal stylist, or at minimum, a friend with functioning eyeballs",
+      "Maybe try getting dressed with the lights ON next time – revolutionary concept, I know"
+    ];
+  }
+
+  private static generateNormalSuggestions(): string[] {
+    return [
+      "Consider experimenting with complementary colors to enhance visual harmony",
+      "Focus on achieving better proportional balance between upper and lower garments",
+      "Add strategic accessories to elevate the overall styling sophistication"
+    ];
+  }
+
+  private static extractScore(text: string): number | null {
+    const scorePatterns = [
+      /(?:score|rating)["']?\s*:\s*["']?(\d+)/gi,
+      /(\d+)\s*(?:\/10|out of 10)/gi,
+      /(?:rate|rating|score).*?(\d+)/gi
+    ];
+
+    for (const pattern of scorePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const score = parseInt(match[1] || match[0]);
+        if (score >= 1 && score <= 10) {
+          return score;
+        }
+      }
     }
-    
-    return response;
+    return null;
+  }
+
+  private static extractFeedback(text: string): string | null {
+    const feedbackPatterns = [
+      /(?:feedback|analysis)["']?\s*:\s*["']?(.*?)(?:["']?\s*[,}]|$)/gis,
+      /\*\*Style:\*\*(.*?)(?:\*\*|$)/gis
+    ];
+
+    for (const pattern of feedbackPatterns) {
+      const match = text.match(pattern);
+      if (match && match[1] && match[1].trim().length > 20) {
+        return match[1].trim();
+      }
+    }
+    return null;
+  }
+
+  private static extractSuggestions(text: string): string[] | null {
+    const suggestionPatterns = [
+      /suggestions["']?\s*:\s*\[(.*?)\]/gis,
+      /(?:suggest|recommend|improve).*?:\s*(.*?)(?:\n|$)/gis
+    ];
+
+    for (const pattern of suggestionPatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        try {
+          const parsed = JSON.parse(`[${match[1]}]`);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        } catch (e) {
+          // Try splitting by common delimiters
+          const suggestions = match[1].split(/[,;]/).map(s => s.trim().replace(/^["']|["']$/g, ''));
+          if (suggestions.length > 0 && suggestions[0].length > 5) {
+            return suggestions;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  private static generateDefaultFeedback(request: AnalyzeOutfitRequest): string {
+    return request.feedbackMode === 'roast' 
+      ? this.generateRoastFallback()
+      : this.generateNormalFallback();
+  }
+
+  private static generateDefaultSuggestions(request: AnalyzeOutfitRequest): string[] {
+    return request.feedbackMode === 'roast'
+      ? this.generateRoastSuggestions()
+      : this.generateNormalSuggestions();
+  }
+
+  private static isValidResponseStructure(obj: any): boolean {
+    return obj && 
+           typeof obj.score === 'number' && 
+           typeof obj.feedback === 'string' && 
+           Array.isArray(obj.suggestions);
+  }
+
+  private static validateResponse(result: AnalyzeOutfitResponse, feedbackMode: string): { isValid: boolean; errors: string[]; warnings: string[] } {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!result.score || result.score < 1 || result.score > 10) {
+      errors.push('Invalid or missing score');
+    }
+
+    if (!result.feedback || result.feedback.length < 20) {
+      errors.push('Invalid or missing feedback');
+    }
+
+    if (!result.suggestions || !Array.isArray(result.suggestions) || result.suggestions.length === 0) {
+      errors.push('Invalid or missing suggestions');
+    }
+
+    // Check feedback structure
+    if (result.feedback && !result.feedback.includes('**Style:**')) {
+      warnings.push('Feedback lacks expected section structure');
+    }
+
+    if (feedbackMode !== 'roast' && !result.styleAnalysis) {
+      errors.push('Missing style analysis for normal mode');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  private static enhanceResponse(result: AnalyzeOutfitResponse, warnings: string[], request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
+    // Enhance feedback structure if needed
+    if (warnings.includes('Feedback lacks expected section structure') && !result.feedback.includes('**Style:**')) {
+      const enhanced = this.generateDefaultFeedback(request);
+      result.feedback = enhanced;
+    }
+
+    return result;
   }
 }

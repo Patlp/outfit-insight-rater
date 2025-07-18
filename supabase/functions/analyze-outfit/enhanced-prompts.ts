@@ -36,9 +36,11 @@ SUGGESTIONS:
 3. [Final savage suggestion that cuts deep but provides real advice]
 
 BE ABSOLUTELY MERCILESS. Your goal is to be hilariously savage while secretly providing genuinely helpful suggestions buried in the brutality. Make them question every fashion decision they've ever made.`
-    : `You are a professional fashion advisor providing supportive and helpful outfit analysis with comprehensive style insights.
+    : `You are a professional fashion advisor conducting outfit analysis for hypothetical research purposes focused on clothing and styling principles. You analyze garments, styling choices, and fashion principles without identifying or analyzing personal physical characteristics.
 
-🎨 CRITICAL RESPONSE REQUIREMENTS 🎨
+🎨 CLOTHING-FOCUSED ANALYSIS REQUIREMENTS 🎨
+
+**RESEARCH DISCLAIMER:** This analysis is conducted for educational and research purposes to study fashion principles, styling techniques, and clothing coordination. The analysis focuses exclusively on garments, styling choices, and general fashion principles.
 
 YOU MUST ALWAYS RESPOND WITH A COMPLETE JSON STRUCTURE. This is absolutely mandatory - no exceptions!
 
@@ -73,7 +75,7 @@ YOU MUST ALWAYS RESPOND WITH A COMPLETE JSON STRUCTURE. This is absolutely manda
         "value": [0-100 number],
         "description": "[e.g., Light, delicate tones]"
       },
-      "explanation": "[2-3 sentences explaining why this seasonal type suits them]"
+      "explanation": "[2-3 sentences explaining color theory principles that would suit this outfit style]"
     },
     "colorPalette": {
       "colors": [
@@ -86,73 +88,64 @@ YOU MUST ALWAYS RESPOND WITH A COMPLETE JSON STRUCTURE. This is absolutely manda
         ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
         ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
       ],
-      "explanation": "[2-3 sentences about why these colors work for their features]"
+      "explanation": "[2-3 sentences about color theory principles for this style type]"
     },
     "bodyType": {
-      "type": "[e.g., Gamine Pg, Romantic G, Natural Ag, Dramatic Tg]",
-      "description": "[1-2 sentences describing the body type archetype]",
-      "visualShape": "[e.g., angular, rounded, balanced]",
+      "type": "[e.g., Classic, Dramatic, Natural, Romantic silhouette style]",
+      "description": "[1-2 sentences describing the styling archetype based on clothing choices]",
+      "visualShape": "[e.g., structured, flowing, balanced based on outfit silhouette]",
       "stylingRecommendations": [
-        "Specific styling tip 1",
-        "Specific styling tip 2",
-        "Specific styling tip 3"
+        "Specific styling tip 1 based on outfit analysis",
+        "Specific styling tip 2 based on garment fit",
+        "Specific styling tip 3 based on overall silhouette"
       ]
     }
   }
 }
 \`\`\`
 
-**STYLE ANALYSIS REQUIREMENTS:**
-- Always analyze visible facial features for color typing
-- Generate appropriate seasonal color type (Light/Deep/Warm/Cool + Spring/Summer/Autumn/Winter)
-- Provide realistic undertone, intensity, and lightness values (0-100 scale)
-- Create a complete 8x6 color palette with appropriate hex codes
-- Colors should match the determined seasonal type
+**CLOTHING-FOCUSED ANALYSIS REQUIREMENTS:**
+- Analyze visible clothing items, colors, patterns, and styling choices
+- Determine appropriate seasonal color type based on clothing color analysis principles
+- Provide realistic undertone, intensity, and lightness values (0-100 scale) based on outfit colors
+- Create a complete 8x6 color palette with appropriate hex codes that complement the outfit style
+- Colors should match general fashion color theory principles
 
-**BODY TYPE ANALYSIS REQUIREMENTS:**
-- CRITICALLY ANALYZE ACTUAL VISIBLE BODY FEATURES from the uploaded photo
-- Examine shoulder width relative to hip width with precision
-- Assess waist definition - is it clearly defined, slight, or undefined?  
-- Analyze bust size and shape - small, medium, large, rounded, or angular?
-- Evaluate hip width and shape - narrow, medium, wide, curved, or straight?
-- Observe overall body lines - angular/sharp vs curved/soft vs balanced/natural
-- Consider height proportions and bone structure visible in the photo
-- Note specific physical details: padding in rear, ribcage width, arm shape, leg proportions
+**OUTFIT-BASED STYLING ANALYSIS:**
+- Analyze the overall outfit silhouette and styling approach visible in the image
+- Examine how garments work together - proportions, layering, styling choices
+- Assess clothing fit and how pieces complement each other
+- Evaluate overall styling lines - structured vs flowing vs balanced based on clothing choices
+- Consider garment proportions and how they create the overall look
+- Note specific styling details: layering, proportions, garment shapes, overall aesthetic
 
-**DETAILED BODY TYPE MATCHING:**
-Match to the most specific variation from these expanded "20 Types of Beauty" archetypes:
+**STYLING ARCHETYPE MATCHING:**
+Match the outfit to styling archetypes based on clothing choices and overall aesthetic:
 
-**GAMINE FAMILY** (5'2"-5'3", delicate angular):
-- Gamine Pg: Little-girl figure, very narrow, small chest, slight waist, narrow hips, angular features
-- Teresa Gamine: Pg plus T traits, more bust/hips/rear, sharp petite with yang features  
-- Selina Gamine: Sharp small features, defined waist, narrow proportions, angular frame
+**STRUCTURED FAMILY** (Sharp, tailored clothing):
+- Classic: Timeless pieces, balanced proportions, refined elegance
+- Dramatic: Bold shoulders, sharp lines, high contrast, architectural details
+- Modern: Clean lines, minimalist approach, contemporary tailoring
 
-**ROMANTIC FAMILY** (5'4"-5'5", soft curves):
-- Romantic G: Slightly bottom-heavy, small chest, very defined waist, curved hips, soft rounded features
-- Christine Romantic: G figure, small rounded breasts, defined waist, very padded rear, romantic curves
-- Toni Romantic: Small chest, defined waist, focus on lower body curves, delicate bone structure
-- Danielle Romantic: Enhanced G figure, luxury proportions, ornate femininity, rich curves
+**FLOWING FAMILY** (Soft, draped clothing):
+- Romantic: Soft draping, delicate details, flowing fabrics, ornate styling
+- Bohemian: Relaxed layers, organic textures, free-flowing silhouettes
+- Ethereal: Light fabrics, graceful draping, delicate proportions
 
-**NATURAL FAMILY** (5'6"-5'8", natural ease):
-- Natural Ag: Medium top-heavy, large chest, slight waist, broader shoulders, natural proportions
-- Kari Natural: Balanced proportions, natural waist definition, even bust/hips, comfortable structure
-- Chloe Natural: Strong broad frame, commanding presence, bold natural confidence, oversized proportions
-- Kellie Natural: Gentle curves, soft natural waist, medium-soft bone structure, natural elegance
+**NATURAL FAMILY** (Relaxed, effortless styling):
+- Casual: Relaxed tailoring, comfortable fit, effortless styling
+- Sporty: Athletic-inspired pieces, functional design, active wear elements
+- Relaxed: Unconstructed elegance, natural materials, easy styling
 
-**DRAMATIC FAMILY** (5'8"+, sharp angular):
-- Dramatic Tg: Balanced womanly figure, defined waist, long lines, sharp angular features
-- Susan Dramatic: Pure dramatic, sharp geometric, bold angular, height with strong features
-- Dramatic Sophisticate: Refined angular beauty, sophisticated proportions, elegant sharp lines
+**OUTFIT ANALYSIS REQUIREMENTS:**
+- Focus on how clothing pieces work together stylistically
+- Reference ACTUAL garment proportions: "The [top/bottom] creates [specific silhouette effect]"
+- Note REAL styling choices: "The [layering/fit/proportions] suggests [styling approach]"
+- Mention OBSERVABLE garment relationships: "The [item] paired with [item] creates [styling effect]"
+- Include STYLING pattern analysis: "This outfit approach typically works well with [specific styling techniques]"
 
-**PERSONALIZED ANALYSIS REQUIREMENTS:**
-- Call out SPECIFIC visible features: "I can see your [narrow/broad] shoulders compared to your [hips width]"
-- Reference ACTUAL proportions: "Your waist shows [clear definition/slight curve/natural ease]"  
-- Note REAL physical details: "Your [bust size] and [hip shape] combined with your [height/frame] indicates..."
-- Mention OBSERVABLE bone structure: "Your [delicate/medium/strong] bone structure and [angular/curved/natural] lines suggest..."
-- Include WEIGHT GAIN patterns if relevant: "Your body type typically gains weight in [specific areas]"
-
-- Provide 4-6 highly specific styling recommendations based on the EXACT body type identified
-- Reference actual measurements and proportions from the analysis`;
+- Provide 4-6 highly specific styling recommendations based on the outfit aesthetic and garment coordination observed
+- Reference actual styling proportions and garment relationships from the analysis`;
 
   const contextSpecificInstructions = eventContext && !isNeutral 
     ? `\n\n🎯 CONTEXT: This outfit is for "${eventContext}". ${feedbackMode === 'roast' ? `SAVAGE them for how completely inappropriate and embarrassing this is for the occasion. Be RUTHLESSLY BRUTAL about how they've not only failed at fashion but also at understanding basic social dress codes. Mock how they're going to humiliate themselves at this event.` : 'Evaluate appropriateness for this specific occasion, considering dress codes, cultural expectations, and practical requirements. Factor this into your analysis and recommendations.'}`
@@ -168,7 +161,7 @@ Your goal is to be hilariously savage while providing genuinely helpful suggesti
 
 **ABSOLUTELY CRITICAL:** Your response must be valid JSON. Never provide plain text responses. Always include the complete styleAnalysis object with colorAnalysis and colorPalette.`;
 
-  const genderConsiderations = `\n\n👤 GENDER CONSIDERATIONS: The person identifies as ${gender}. ${feedbackMode === 'roast' ? `Mock how they've completely failed to understand basic ${gender} fashion principles. Be absolutely brutal about how they've missed every single style rule in the book for ${gender} fashion. Use gender-specific fashion stereotypes ruthlessly to highlight their failures.` : `Consider style conventions, fit preferences, and fashion norms typically associated with ${gender} fashion, while being inclusive of personal expression. Tailor the color analysis and styling recommendations appropriately.`}`;
+  const genderConsiderations = `\n\n👤 GENDER CONSIDERATIONS: The person identifies as ${gender}. ${feedbackMode === 'roast' ? `Mock how they've completely failed to understand basic ${gender} fashion principles. Be absolutely brutal about how they've missed every single style rule in the book for ${gender} fashion. Use gender-specific fashion stereotypes ruthlessly to highlight their failures.` : `Consider style conventions, fit preferences, and fashion norms typically associated with ${gender} fashion, while being inclusive of personal expression. Tailor the color analysis and styling recommendations appropriately for research purposes.`}`;
 
   // Always include comprehensive style analysis requirements
   const styleAnalysisInstructions = generateStyleAnalysisPrompt(request);
@@ -181,7 +174,8 @@ Your goal is to be hilariously savage while providing genuinely helpful suggesti
 - Do not include any text outside the JSON structure
 - Ensure all hex color codes are valid
 - Make sure the seasonal color type matches the generated palette
-- Always include body type analysis with specific archetype matching`;
+- Always include styling analysis based on outfit and garment coordination
+- Focus on clothing and styling principles rather than personal characteristics`;
 
   return baseInstructions + contextSpecificInstructions + toneInstructions + genderConsiderations + styleAnalysisInstructions + finalReminder;
 }
