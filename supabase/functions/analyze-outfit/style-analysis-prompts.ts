@@ -3,6 +3,8 @@ import { AnalyzeOutfitRequest } from './types.ts';
 export function generateStyleAnalysisPrompt(request: AnalyzeOutfitRequest): string {
   const { gender, feedbackMode } = request;
 
+  console.log(`🎨 STYLE ANALYSIS: Generating prompts for ${gender} in ${feedbackMode} mode`);
+
   const baseStyleAnalysis = `
 ADVANCED STYLE ANALYSIS REQUIRED:
 

@@ -94,7 +94,8 @@ Your goal is to be hilariously savage while providing genuinely helpful suggesti
 
   const genderConsiderations = `\n\nGENDER CONSIDERATIONS: The person identifies as ${gender}. ${feedbackMode === 'roast' ? `Mock how they've completely failed to understand basic ${gender} fashion principles. Be absolutely brutal about how they've missed every single style rule in the book for ${gender} fashion. Use gender-specific fashion stereotypes ruthlessly to highlight their failures.` : `Consider style conventions, fit preferences, and fashion norms typically associated with ${gender} fashion, while being inclusive of personal expression.`}`;
 
-  const styleAnalysisInstructions = feedbackMode === 'normal' ? generateStyleAnalysisPrompt(request) : '';
+  // Always include style analysis for all modes
+  const styleAnalysisInstructions = generateStyleAnalysisPrompt(request);
 
   return baseInstructions + contextSpecificInstructions + toneInstructions + genderConsiderations + styleAnalysisInstructions;
 }

@@ -49,21 +49,38 @@ export class AdvancedResponseParser {
     let suggestions: string[] = [];
     let styleAnalysis = undefined;
 
-    // First try to parse JSON if it contains styleAnalysis
+    // First try to parse complete JSON response
     try {
-      const jsonMatch = aiResponse.match(/\{[\s\S]*"styleAnalysis"[\s\S]*\}/);
+      // Look for JSON that starts with { and contains styleAnalysis
+      const jsonPattern = /\{[\s\S]*?"styleAnalysis"[\s\S]*?\}(?:\s*$)/;
+      const jsonMatch = aiResponse.match(jsonPattern);
+      
       if (jsonMatch) {
         const jsonData = JSON.parse(jsonMatch[0]);
-        if (jsonData.styleAnalysis) {
-          score = jsonData.score || score;
-          feedback = jsonData.feedback || feedback;
-          suggestions = jsonData.suggestions || suggestions;
-          styleAnalysis = jsonData.styleAnalysis;
-          return { score, feedback, suggestions, styleAnalysis };
+        if (jsonData.score !== undefined && jsonData.feedback && jsonData.suggestions && jsonData.styleAnalysis) {
+          console.log('Successfully parsed complete JSON response with style analysis');
+          return {
+            score: jsonData.score,
+            feedback: jsonData.feedback,
+            suggestions: jsonData.suggestions,
+            styleAnalysis: jsonData.styleAnalysis
+          };
         }
       }
     } catch (e) {
-      console.log('Failed to parse JSON response, falling back to text parsing');
+      console.log('Failed to parse JSON response, attempting manual parsing...');
+    }
+
+    // Fallback: Try to find JSON-like structure in response
+    try {
+      const styleAnalysisMatch = aiResponse.match(/"styleAnalysis":\s*\{[\s\S]*?\}(?=\s*[,}])/);
+      if (styleAnalysisMatch) {
+        const styleAnalysisData = JSON.parse(`{${styleAnalysisMatch[0]}}`);
+        styleAnalysis = styleAnalysisData.styleAnalysis;
+        console.log('Extracted style analysis from response');
+      }
+    } catch (e) {
+      console.log('Could not extract style analysis from response');
     }
 
     // Extract score with multiple patterns
@@ -168,8 +185,21 @@ export class AdvancedResponseParser {
       const fallback = TextProcessor.generateFallbackContent(request);
       suggestions = fallback.suggestions;
     }
+
+    // Try to extract style analysis even in enhanced parsing
+    let styleAnalysis = undefined;
+    try {
+      const styleAnalysisMatch = aiResponse.match(/"styleAnalysis":\s*\{[\s\S]*?\}(?=\s*[,}])/);
+      if (styleAnalysisMatch) {
+        const styleAnalysisData = JSON.parse(`{${styleAnalysisMatch[0]}}`);
+        styleAnalysis = styleAnalysisData.styleAnalysis;
+        console.log('Extracted style analysis in enhanced parsing');
+      }
+    } catch (e) {
+      console.log('Could not extract style analysis in enhanced parsing');
+    }
     
-    return { score, feedback, suggestions };
+    return { score, feedback, suggestions, styleAnalysis };
   }
   
   private static generateFallbackResponse(request: AnalyzeOutfitRequest): AnalyzeOutfitResponse {
@@ -179,7 +209,8 @@ export class AdvancedResponseParser {
     return {
       score: 7,
       feedback: fallback.feedback,
-      suggestions: fallback.suggestions
+      suggestions: fallback.suggestions,
+      styleAnalysis: undefined
     };
   }
   

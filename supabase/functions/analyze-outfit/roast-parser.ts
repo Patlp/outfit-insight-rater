@@ -11,6 +11,39 @@ export class RoastModeParser {
     let score = 3; // Default low score for roast mode
     let feedback = aiResponse;
     let suggestions: string[] = [];
+    let styleAnalysis = undefined;
+
+    // First try to parse JSON if it contains styleAnalysis
+    try {
+      const jsonPattern = /\{[\s\S]*?"styleAnalysis"[\s\S]*?\}(?:\s*$)/;
+      const jsonMatch = aiResponse.match(jsonPattern);
+      
+      if (jsonMatch) {
+        const jsonData = JSON.parse(jsonMatch[0]);
+        if (jsonData.styleAnalysis) {
+          console.log('🔥 ROAST MODE: Extracted style analysis from JSON response');
+          score = Math.min(jsonData.score || score, 6); // Cap at 6 for roast mode
+          feedback = jsonData.feedback || feedback;
+          suggestions = jsonData.suggestions || suggestions;
+          styleAnalysis = jsonData.styleAnalysis;
+          return { score, feedback, suggestions, styleAnalysis };
+        }
+      }
+    } catch (e) {
+      console.log('🔥 ROAST MODE: Failed to parse JSON, using text parsing');
+    }
+
+    // Try to extract style analysis separately
+    try {
+      const styleAnalysisMatch = aiResponse.match(/"styleAnalysis":\s*\{[\s\S]*?\}(?=\s*[,}])/);
+      if (styleAnalysisMatch) {
+        const styleAnalysisData = JSON.parse(`{${styleAnalysisMatch[0]}}`);
+        styleAnalysis = styleAnalysisData.styleAnalysis;
+        console.log('🔥 ROAST MODE: Extracted style analysis');
+      }
+    } catch (e) {
+      console.log('🔥 ROAST MODE: Could not extract style analysis');
+    }
 
     // Extract score - but for roast mode, bias toward lower scores
     const scorePatterns = [
@@ -78,7 +111,7 @@ export class RoastModeParser {
     }
 
     console.log('🔥 ROAST PARSER COMPLETE - Brutality preserved!');
-    return { score, feedback, suggestions };
+    return { score, feedback, suggestions, styleAnalysis };
   }
 
   private static isTooNice(feedback: string): boolean {

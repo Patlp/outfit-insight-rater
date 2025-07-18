@@ -64,6 +64,11 @@ serve(async (req) => {
 
     // Parse AI response with advanced parser (automatically detects roast mode)
     const result = parseAIResponse(aiResponse, requestData);
+    
+    console.log(`Style analysis included: ${result.styleAnalysis ? 'YES' : 'NO'}`);
+    if (result.styleAnalysis) {
+      console.log('Style analysis data:', JSON.stringify(result.styleAnalysis, null, 2));
+    }
 
     // Final validation with feedback mode
     const validation = validateResponse(result, feedbackMode);
