@@ -172,213 +172,209 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
         </div>
         
         <ContentOverlay>
-          <div className="bg-fashion-50 rounded-lg p-4 mb-4">
-            <p className="text-fashion-700 leading-relaxed font-medium">
-              {guideData?.description || bodyType.description.replace(/Delicately angular beauty designed for thinking-dominant pituitary for analytical brain style detail-oriented personality/gi, 'Petite with sharp, angular features and a youthful appearance. Known for compact proportions and geometric lines.')}
-            </p>
-          </div>
-        </ContentOverlay>
+          <div>
+            <div className="bg-fashion-50 rounded-lg p-4 mb-4">
+              <p className="text-fashion-700 leading-relaxed font-medium">
+                {guideData?.description || bodyType.description.replace(/Delicately angular beauty designed for thinking-dominant pituitary for analytical brain style detail-oriented personality/gi, 'Petite with sharp, angular features and a youthful appearance. Known for compact proportions and geometric lines.')}
+              </p>
+            </div>
 
-        {/* Physical characteristics section */}
-        <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
-          <h4 className="text-sm font-semibold text-fashion-800 mb-2">Physical Analysis</h4>
-          <ContentOverlay>
-            {guideData?.specific_measurements ? (
-              <>
-                <p className="text-sm text-fashion-700 mb-2">{guideData.specific_measurements}</p>
-                {guideData?.height_range && (
-                  <p className="text-sm text-fashion-600 mt-2">
-                    Typical height: {guideData.height_range}
+            {/* Physical characteristics section */}
+            <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
+              <h4 className="text-sm font-semibold text-fashion-800 mb-2">Physical Analysis</h4>
+              {guideData?.specific_measurements ? (
+                <>
+                  <p className="text-sm text-fashion-700 mb-2">{guideData.specific_measurements}</p>
+                  {guideData?.height_range && (
+                    <p className="text-sm text-fashion-600 mt-2">
+                      Typical height: {guideData.height_range}
+                    </p>
+                  )}
+                  {guideData?.bone_structure && (
+                    <p className="text-sm text-fashion-600 mt-1">
+                      Bone structure: {guideData.bone_structure}
+                    </p>
+                  )}
+                  {guideData.body_proportions && guideData.body_proportions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {guideData.body_proportions.map((proportion, index) => (
+                        <span key={index} className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                          {proportion}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>
+                  <p className="text-sm text-fashion-700 mb-2">
+                    Based on your clothing choices and styling approach, your {bodyType.type.toLowerCase()} archetype typically features:
                   </p>
-                )}
-                {guideData?.bone_structure && (
-                  <p className="text-sm text-fashion-600 mt-1">
-                    Bone structure: {guideData.bone_structure}
-                  </p>
-                )}
-                {guideData.body_proportions && guideData.body_proportions.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {guideData.body_proportions.map((proportion, index) => (
-                      <span key={index} className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
-                        {proportion}
-                      </span>
-                    ))}
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                      Balanced proportions
+                    </span>
+                    <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                      {bodyType.visualShape || 'Harmonious silhouette'}
+                    </span>
+                    <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
+                      Versatile styling potential
+                    </span>
                   </div>
-                )}
-              </>
-            ) : (
-              <div>
-                <p className="text-sm text-fashion-700 mb-2">
-                  Based on your clothing choices and styling approach, your {bodyType.type.toLowerCase()} archetype typically features:
-                </p>
+                </div>
+              )}
+            </div>
+
+            {/* Personality section */}
+            <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
+              <h4 className="text-sm font-semibold text-fashion-800 mb-2">Typical Personality</h4>
+              {guideData?.style_personality ? (
+                <p className="text-sm text-fashion-700 italic">{guideData.style_personality}</p>
+              ) : (
+                <div>
+                  <p className="text-sm text-fashion-700 mb-2">
+                    {bodyType.type} archetypes often express themselves through their clothing choices with:
+                  </p>
+                  <div className="text-sm text-fashion-600">
+                    <span className="block">• Thoughtful garment coordination</span>
+                    <span className="block">• Attention to styling details</span>
+                    <span className="block">• Preference for quality over quantity in fashion</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Weight gain pattern section */}
+            <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
+              <h4 className="text-sm font-semibold text-fashion-800 mb-2">Weight Gain Pattern</h4>
+              {guideData?.weight_gain_pattern && guideData.weight_gain_pattern.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
-                  <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
-                    Balanced proportions
-                  </span>
-                  <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
-                    {bodyType.visualShape || 'Harmonious silhouette'}
-                  </span>
-                  <span className="px-2 py-1 bg-fashion-100 text-fashion-700 rounded text-xs">
-                    Versatile styling potential
-                  </span>
-                </div>
-              </div>
-            )}
-          </ContentOverlay>
-        </div>
-
-        {/* Personality section */}
-        <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
-          <h4 className="text-sm font-semibold text-fashion-800 mb-2">Typical Personality</h4>
-          <ContentOverlay>
-            {guideData?.style_personality ? (
-              <p className="text-sm text-fashion-700 italic">{guideData.style_personality}</p>
-            ) : (
-              <div>
-                <p className="text-sm text-fashion-700 mb-2">
-                  {bodyType.type} archetypes often express themselves through their clothing choices with:
-                </p>
-                <div className="text-sm text-fashion-600">
-                  <span className="block">• Thoughtful garment coordination</span>
-                  <span className="block">• Attention to styling details</span>
-                  <span className="block">• Preference for quality over quantity in fashion</span>
-                </div>
-              </div>
-            )}
-          </ContentOverlay>
-        </div>
-
-        {/* Weight gain pattern section */}
-        <div className="bg-fashion-25 border border-fashion-200 rounded-lg p-4 mb-4 text-left">
-          <h4 className="text-sm font-semibold text-fashion-800 mb-2">Weight Gain Pattern</h4>
-          <ContentOverlay>
-            {guideData?.weight_gain_pattern && guideData.weight_gain_pattern.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {guideData.weight_gain_pattern.map((pattern, index) => (
-                  <span key={index} className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
-                    {pattern}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm text-fashion-700 mb-2">
-                  Based on your {bodyType.type.toLowerCase()} styling archetype, focus on:
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
-                    Proportional balance
-                  </span>
-                  <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
-                    Consistent styling approach
-                  </span>
-                  <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
-                    Strategic garment choices
-                  </span>
-                </div>
-              </div>
-            )}
-          </ContentOverlay>
-        </div>
-      </div>
-
-      {/* Enhanced styling recommendations */}
-      <ContentOverlay className="space-y-6">
-        <div>
-          <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
-            Styling Recommendations
-          </h4>
-          <div className="grid gap-3">
-            {bodyType.stylingRecommendations.map((recommendation, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-fashion-50 rounded-lg">
-                <div className="w-1.5 h-1.5 rounded-full bg-fashion-500 mt-2 flex-shrink-0"></div>
-                <span className="text-fashion-700 leading-relaxed">{recommendation}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Additional guide information if available */}
-        {guideData && (
-          <>
-            {guideData.recommended_fits.length > 0 && (
-              <div>
-                <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
-                  Best Fits
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {guideData.recommended_fits.map((fit, index) => (
-                    <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
-                      {fit}
+                  {guideData.weight_gain_pattern.map((pattern, index) => (
+                    <span key={index} className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                      {pattern}
                     </span>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div>
+                  <p className="text-sm text-fashion-700 mb-2">
+                    Based on your {bodyType.type.toLowerCase()} styling archetype, focus on:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                      Proportional balance
+                    </span>
+                    <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                      Consistent styling approach
+                    </span>
+                    <span className="px-2 py-1 bg-fashion-200 text-fashion-800 rounded text-xs">
+                      Strategic garment choices
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
 
-            {guideData.recommended_fabrics.length > 0 && (
+            {/* Enhanced styling recommendations */}
+            <div className="space-y-6">
               <div>
                 <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
-                  Recommended Fabrics
+                  Styling Recommendations
                 </h4>
-                <div className="flex flex-wrap gap-2">
-                  {guideData.recommended_fabrics.map((fabric, index) => (
-                    <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
-                      {fabric}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* What Not to Wear section - Always show if available from either source */}
-            {((guideData?.what_not_to_wear && guideData.what_not_to_wear.length > 0) || 
-              (bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0)) && (
-              <div>
-                <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                  What Not to Wear
-                </h4>
-                <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
-                  {(guideData?.what_not_to_wear || bodyType.whatNotToWear || []).map((avoidItem, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
-                      <div className="flex-1">
-                        <span className="font-medium text-red-800">{avoidItem.item}</span>
-                        <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
-                      </div>
+                <div className="grid gap-3">
+                  {bodyType.stylingRecommendations.map((recommendation, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-fashion-50 rounded-lg">
+                      <div className="w-1.5 h-1.5 rounded-full bg-fashion-500 mt-2 flex-shrink-0"></div>
+                      <span className="text-fashion-700 leading-relaxed">{recommendation}</span>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
-          </>
-        )}
-        
-        {/* Show What Not to Wear from AI analysis if no database guide data */}
-        {!guideData && bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0 && (
-          <div>
-            <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-              What Not to Wear
-            </h4>
-            <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
-              {bodyType.whatNotToWear.map((avoidItem, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <span className="font-medium text-red-800">{avoidItem.item}</span>
-                    <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
+
+              {/* Additional guide information if available */}
+              {guideData && (
+                <>
+                  {guideData.recommended_fits.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
+                        Best Fits
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {guideData.recommended_fits.map((fit, index) => (
+                          <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
+                            {fit}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {guideData.recommended_fabrics.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
+                        Recommended Fabrics
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {guideData.recommended_fabrics.map((fabric, index) => (
+                          <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
+                            {fabric}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* What Not to Wear section - Always show if available from either source */}
+                  {((guideData?.what_not_to_wear && guideData.what_not_to_wear.length > 0) || 
+                    (bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0)) && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                        What Not to Wear
+                      </h4>
+                      <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                        {(guideData?.what_not_to_wear || bodyType.whatNotToWear || []).map((avoidItem, index) => (
+                          <div key={index} className="flex items-start gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
+                            <div className="flex-1">
+                              <span className="font-medium text-red-800">{avoidItem.item}</span>
+                              <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Show What Not to Wear from AI analysis if no database guide data */}
+              {!guideData && bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    What Not to Wear
+                  </h4>
+                  <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                    {bodyType.whatNotToWear.map((avoidItem, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <span className="font-medium text-red-800">{avoidItem.item}</span>
+                          <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        )}
-      </ContentOverlay>
+        </ContentOverlay>
+      </div>
     </div>
   );
 };
