@@ -73,7 +73,7 @@ const PaymentSuccess: React.FC = () => {
   };
 
   const handleContinue = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const formatTime = (seconds: number) => {

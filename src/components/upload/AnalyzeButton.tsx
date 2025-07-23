@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useRating } from '@/context/RatingContext';
+import { useUploadSession } from '@/context/UploadSessionContext';
 import { analyzeOutfit } from '@/utils/aiRatingService';
 import { toast } from 'sonner';
 
@@ -18,6 +19,8 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
     setRatingResult,
     occasionContext
   } = useRating();
+  
+  const { setCurrentUpload, setAnalysisResult } = useUploadSession();
 
   const handleAnalyze = async () => {
     if (!imageFile || !imageSrc) {
@@ -53,6 +56,22 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
       });
       
       setRatingResult(result);
+      
+      // Store in upload session context for preservation across signup/payment
+      setCurrentUpload({
+        imageBase64: imageSrc,
+        gender: selectedGender,
+        feedbackMode,
+        timestamp: Date.now()
+      });
+      
+      setAnalysisResult({
+        score: result.score,
+        feedback: result.feedback,
+        suggestions: result.suggestions || [],
+        styleAnalysis: result.styleAnalysis
+      });
+      
       toast.success('Analysis complete!');
     } catch (error) {
       const analysisTime = performance.now() - analysisStartTime;

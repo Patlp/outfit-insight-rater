@@ -89,15 +89,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signUp = async (email: string, password: string, requirePayment = true) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
     });
     
-    // If signup is successful and payment is required, redirect to Stripe
+    // If signup is successful and payment is required, create checkout session
     if (!error && requirePayment) {
-      setTimeout(() => {
-        window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+      setTimeout(async () => {
+        try {
+          await createCheckoutSession();
+        } catch (checkoutError) {
+          console.error('Failed to create checkout session:', checkoutError);
+          // Fallback: still allow user to continue without payment
+        }
       }, 1000);
     }
     
