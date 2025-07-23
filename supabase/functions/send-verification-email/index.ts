@@ -28,7 +28,7 @@ serve(async (req) => {
     const headers = Object.fromEntries(req.headers)
     const wh = new Webhook(hookSecret)
     
-    console.log('Webhook received:', { payload: payload.substring(0, 200) })
+    console.log('Webhook received for verification email:', { payload: payload.substring(0, 200) })
     
     const {
       user,
