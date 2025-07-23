@@ -29,7 +29,7 @@ serve(async (req) => {
     
     console.log('Webhook received for verification email:', { 
       payload: payload.substring(0, 500),
-      headers: headers,
+      headers: Object.keys(headers),
       hookSecret: hookSecret ? 'Present' : 'Missing'
     })
     
@@ -42,23 +42,40 @@ serve(async (req) => {
       })
     }
     
-    const wh = new Webhook(hookSecret)
+    let webhookData;
+    try {
+      const wh = new Webhook(hookSecret)
+      webhookData = wh.verify(payload, headers) as {
+        user: {
+          email: string
+        }
+        email_data: {
+          token: string
+          token_hash: string
+          redirect_to: string
+          email_action_type: string
+          site_url: string
+        }
+      }
+    } catch (webhookError) {
+      console.error('Webhook verification failed:', webhookError)
+      // Try to parse payload without verification for debugging
+      try {
+        const parsedPayload = JSON.parse(payload)
+        console.log('Raw payload structure:', JSON.stringify(parsedPayload, null, 2))
+      } catch (parseError) {
+        console.error('Could not parse payload as JSON:', parseError)
+      }
+      return new Response(JSON.stringify({ error: 'Webhook verification failed', details: webhookError.message }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      })
+    }
     
     const {
       user,
       email_data: { token, token_hash, redirect_to, email_action_type },
-    } = wh.verify(payload, headers) as {
-      user: {
-        email: string
-      }
-      email_data: {
-        token: string
-        token_hash: string
-        redirect_to: string
-        email_action_type: string
-        site_url: string
-      }
-    }
+    } = webhookData
 
     // Create the verification link
     const verificationUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`
