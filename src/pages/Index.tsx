@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { RatingProvider } from '@/context/RatingContext';
-import { AuthProvider } from '@/context/AuthContext';
 import GenderToggle from '@/components/GenderToggle';
 import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
@@ -66,14 +65,12 @@ const HomeContent: React.FC = () => {
 const Index: React.FC = () => {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <RatingProvider>
-          <div className="min-h-screen bg-warm-cream">
-            <HomeContent />
-            <Toaster position="bottom-center" />
-          </div>
-        </RatingProvider>
-      </AuthProvider>
+      <RatingProvider>
+        <div className="min-h-screen bg-warm-cream">
+          <HomeContent />
+          <Toaster position="bottom-center" />
+        </div>
+      </RatingProvider>
     </ErrorBoundary>
   );
 };
