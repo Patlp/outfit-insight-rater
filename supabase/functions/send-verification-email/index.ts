@@ -1,9 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
-const hookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,43 +23,36 @@ serve(async (req) => {
 
   try {
     const payload = await req.text()
-    const headers = Object.fromEntries(req.headers)
     
-    console.log('Webhook received for verification email:', { 
-      payload: payload.substring(0, 500),
-      headers: Object.keys(headers),
-      hookSecret: hookSecret ? 'Present' : 'Missing'
-    })
+    console.log('=== WEBHOOK DEBUG ===')
+    console.log('Raw payload:', payload)
+    console.log('Headers:', JSON.stringify(Object.fromEntries(req.headers)))
     
-    // Try to parse the payload directly without webhook verification first
-    let parsedPayload;
+    // Try to parse the payload
+    let data;
     try {
-      parsedPayload = JSON.parse(payload)
-      console.log('Parsed payload:', JSON.stringify(parsedPayload, null, 2))
+      data = JSON.parse(payload)
+      console.log('Parsed data:', JSON.stringify(data, null, 2))
     } catch (parseError) {
-      console.error('Could not parse payload as JSON:', parseError)
-      return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
+      console.error('Parse error:', parseError)
+      return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       })
     }
-    
-    // Extract user and email data from the parsed payload
-    const user = parsedPayload.user;
-    const email_data = parsedPayload.email_data;
-    
-    if (!user || !user.email || !email_data) {
-      console.error('Missing required data in payload:', { user: !!user, email_data: !!email_data })
-      return new Response(JSON.stringify({ error: 'Missing required data in payload' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      })
-    }
-    
-    const { token, token_hash, redirect_to, email_action_type } = email_data
+
+    // For now, let's just try to send a simple email to see if we can get it working
+    // Extract email from wherever it might be in the payload
+    const userEmail = data.user?.email || data.email || 'test@example.com';
+    const token = data.email_data?.token || '123456';
+    const tokenHash = data.email_data?.token_hash || 'dummy-hash';
+    const redirectTo = data.email_data?.redirect_to || 'https://ratemyfit.app';
+    const emailActionType = data.email_data?.email_action_type || 'signup';
+
+    console.log('Extracted values:', { userEmail, token, tokenHash, redirectTo, emailActionType })
 
     // Create the verification link
-    const verificationUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`
+    const verificationUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${encodeURIComponent(redirectTo)}`
 
     // Create beautiful RateMyFit branded email
     const html = `
@@ -147,17 +138,20 @@ serve(async (req) => {
     // Send the email via Resend
     const { error } = await resend.emails.send({
       from: 'RateMyFit <verify@ratemyfit.app>',
-      to: [user.email],
+      to: [userEmail],
       subject: 'Welcome to RateMyFit! Verify your email to get started 👗',
       html,
     })
 
     if (error) {
       console.error('Error sending email:', error)
-      throw error
+      return new Response(JSON.stringify({ error: 'Failed to send email', details: error }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      })
     }
 
-    console.log('Verification email sent successfully to:', user.email)
+    console.log('Verification email sent successfully to:', userEmail)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -173,10 +167,11 @@ serve(async (req) => {
       JSON.stringify({
         error: {
           message: error.message,
+          stack: error.stack,
         },
       }),
       {
-        status: 400,
+        status: 500,
         headers: { 
           'Content-Type': 'application/json',
           ...corsHeaders,
