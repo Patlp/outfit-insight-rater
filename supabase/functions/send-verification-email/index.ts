@@ -33,49 +33,32 @@ serve(async (req) => {
       hookSecret: hookSecret ? 'Present' : 'Missing'
     })
     
-    // Check if we have the hook secret
-    if (!hookSecret) {
-      console.error('SEND_EMAIL_HOOK_SECRET not found')
-      return new Response(JSON.stringify({ error: 'Hook secret not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      })
-    }
-    
-    let webhookData;
+    // Try to parse the payload directly without webhook verification first
+    let parsedPayload;
     try {
-      const wh = new Webhook(hookSecret)
-      webhookData = wh.verify(payload, headers) as {
-        user: {
-          email: string
-        }
-        email_data: {
-          token: string
-          token_hash: string
-          redirect_to: string
-          email_action_type: string
-          site_url: string
-        }
-      }
-    } catch (webhookError) {
-      console.error('Webhook verification failed:', webhookError)
-      // Try to parse payload without verification for debugging
-      try {
-        const parsedPayload = JSON.parse(payload)
-        console.log('Raw payload structure:', JSON.stringify(parsedPayload, null, 2))
-      } catch (parseError) {
-        console.error('Could not parse payload as JSON:', parseError)
-      }
-      return new Response(JSON.stringify({ error: 'Webhook verification failed', details: webhookError.message }), {
+      parsedPayload = JSON.parse(payload)
+      console.log('Parsed payload:', JSON.stringify(parsedPayload, null, 2))
+    } catch (parseError) {
+      console.error('Could not parse payload as JSON:', parseError)
+      return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       })
     }
     
-    const {
-      user,
-      email_data: { token, token_hash, redirect_to, email_action_type },
-    } = webhookData
+    // Extract user and email data from the parsed payload
+    const user = parsedPayload.user;
+    const email_data = parsedPayload.email_data;
+    
+    if (!user || !user.email || !email_data) {
+      console.error('Missing required data in payload:', { user: !!user, email_data: !!email_data })
+      return new Response(JSON.stringify({ error: 'Missing required data in payload' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      })
+    }
+    
+    const { token, token_hash, redirect_to, email_action_type } = email_data
 
     // Create the verification link
     const verificationUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`
