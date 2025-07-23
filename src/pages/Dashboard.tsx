@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Crown, Upload, ArrowLeft } from 'lucide-react';
 import SubscriptionStatusIndicator from '@/components/SubscriptionStatusIndicator';
-import RatingDisplay from '@/components/RatingDisplay';
 import FeedbackSection from '@/components/rating/FeedbackSection';
 import StyleAnalysisSection from '@/components/style/StyleAnalysisSection';
 import ColorAnalysisSection from '@/components/style/ColorAnalysisSection';
