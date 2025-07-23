@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
-  const signUp = async (email: string, password: string, requirePayment = true) => {
+  const signUp = async (email: string, password: string, fromPayment = false) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -192,10 +192,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
     
-    // If signup is successful and payment is required, set flag for payment redirect
-    if (!error && requirePayment) {
+    // If signup is from payment, the user already has premium access
+    if (!error && fromPayment) {
+      console.log('Account created from payment - automatically premium');
+      setSubscription({
+        subscribed: true,
+        subscription_tier: 'Premium',
+        subscription_end: null,
+        isChecking: false,
+        lastChecked: new Date()
+      });
+    } else if (!error && !fromPayment) {
+      // Regular signup - needs payment
       setJustSignedUp(true);
-      console.log('Signup successful, will redirect to payment once session is established');
+      console.log('Regular signup - will need subscription');
     }
     
     return { error };

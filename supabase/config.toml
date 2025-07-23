@@ -113,7 +113,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-checkout]
-verify_jwt = true
+verify_jwt = false
 
 [functions.check-subscription]
 verify_jwt = true
@@ -125,4 +125,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.send-verification-email]
+verify_jwt = false
+
+[functions.verify-payment]
 verify_jwt = false

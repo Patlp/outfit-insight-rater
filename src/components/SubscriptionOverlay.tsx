@@ -1,18 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lock, Crown, Sparkles } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Lock, Crown, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionOverlayProps {
   children: React.ReactNode;
 }
 
 const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) => {
-  const { user, subscription, createCheckoutSession } = useAuth();
-  const navigate = useNavigate();
+  const { subscription } = useAuth();
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // If user is subscribed, show content normally
   if (subscription.subscribed) {
@@ -20,21 +23,37 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
   }
 
   const handleSubscribe = async () => {
-    if (!user) {
-      toast.error('Please sign in to subscribe');
-      navigate('/auth');
+    if (!email) {
+      toast.error('Please enter your email address');
       return;
     }
 
-    try {
-      await createCheckoutSession();
-    } catch (error) {
-      toast.error('Failed to start subscription process. Please try again.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
     }
-  };
 
-  const handleSignIn = () => {
-    navigate('/auth');
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { email }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Failed to start subscription process. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -53,7 +72,7 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
                 <Crown className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-fashion-900 mb-2">
-                Unlock Style Tips
+                Unlock Premium Features
               </h3>
               <p className="text-fashion-600 text-sm leading-relaxed">
                 Get personalized color analysis, curated color palettes, and body type styling recommendations
@@ -80,27 +99,41 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
               <div className="text-sm text-fashion-600">Cancel anytime</div>
             </div>
 
-            {user ? (
+            <div className="space-y-4">
+              <div className="space-y-2 text-left">
+                <Label htmlFor="email">Email address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
               <Button 
                 onClick={handleSubscribe}
+                disabled={isLoading}
                 className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium py-3"
               >
-                <Lock className="h-4 w-4 mr-2" />
-                Unlock Style Tips – Subscribe Now
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-4 w-4 mr-2" />
+                    Get Premium Access
+                  </>
+                )}
               </Button>
-            ) : (
-              <div className="space-y-3">
-                <Button 
-                  onClick={handleSignIn}
-                  className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium py-3"
-                >
-                  Sign In to Subscribe
-                </Button>
-                <p className="text-xs text-fashion-500">
-                  Need an account? Sign up to get started
-                </p>
-              </div>
-            )}
+
+              <p className="text-xs text-fashion-500">
+                After payment, you'll create your account and get instant access
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
