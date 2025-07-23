@@ -46,10 +46,18 @@ serve(async (req) => {
     const userEmail = data.user?.email || data.email || 'test@example.com';
     const token = data.email_data?.token || '123456';
     const tokenHash = data.email_data?.token_hash || 'dummy-hash';
-    const redirectTo = data.email_data?.redirect_to || 'https://ratemyfit.app';
+    const originalRedirectTo = data.email_data?.redirect_to || 'https://ratemyfit.app';
     const emailActionType = data.email_data?.email_action_type || 'signup';
 
-    console.log('Extracted values:', { userEmail, token, tokenHash, redirectTo, emailActionType })
+    // Fix the redirect URL to use the actual application domain instead of localhost
+    let redirectTo = originalRedirectTo;
+    if (redirectTo.includes('localhost:3000')) {
+      // Extract the payment parameter if it exists
+      const paymentParam = redirectTo.includes('payment=required') ? '&payment=required' : '';
+      redirectTo = `https://ratemyfit.lovable.app/auth?verified=true${paymentParam}`;
+    }
+
+    console.log('Extracted values:', { userEmail, token, tokenHash, originalRedirectTo, redirectTo, emailActionType })
 
     // Create the verification link
     const verificationUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${encodeURIComponent(redirectTo)}`
