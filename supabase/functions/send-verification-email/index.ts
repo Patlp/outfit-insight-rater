@@ -54,7 +54,7 @@ serve(async (req) => {
     if (redirectTo.includes('localhost:3000')) {
       // Extract the payment parameter if it exists
       const paymentParam = redirectTo.includes('payment=required') ? '&payment=required' : '';
-      redirectTo = `https://ratemyfit.lovable.app/auth?verified=true${paymentParam}`;
+      redirectTo = `https://34608f81-40f2-4f2b-8203-91da7d176d20.lovableproject.com/auth?verified=true${paymentParam}`;
     }
 
     console.log('Extracted values:', { userEmail, token, tokenHash, originalRedirectTo, redirectTo, emailActionType })
