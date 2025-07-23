@@ -9,9 +9,25 @@ import RoastModeToggle from '@/components/RoastModeToggle';
 import InviteWall from '@/components/InviteWall';
 import { useRating } from '@/context/RatingContext';
 import { Toaster } from '@/components/ui/sonner';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { useErrorRecovery } from '@/hooks/useErrorRecovery';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 
 const HomeContent: React.FC = () => {
   const { ratingResult } = useRating();
+  
+  // Initialize error recovery
+  useErrorRecovery({
+    onError: (error) => {
+      console.error('Global error caught:', error);
+      performanceMonitor.logMemoryUsage('error-recovery');
+    }
+  });
+  
+  React.useEffect(() => {
+    performanceMonitor.logMemoryUsage('component-mount');
+    console.log('HomeContent mounted successfully');
+  }, []);
   
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8 flex flex-col items-center">
@@ -44,12 +60,14 @@ const HomeContent: React.FC = () => {
 
 const Index: React.FC = () => {
   return (
-    <RatingProvider>
-      <div className="min-h-screen bg-warm-cream">
-        <HomeContent />
-        <Toaster position="bottom-center" />
-      </div>
-    </RatingProvider>
+    <ErrorBoundary>
+      <RatingProvider>
+        <div className="min-h-screen bg-warm-cream">
+          <HomeContent />
+          <Toaster position="bottom-center" />
+        </div>
+      </RatingProvider>
+    </ErrorBoundary>
   );
 };
 

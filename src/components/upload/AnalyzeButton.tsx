@@ -20,9 +20,23 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
   } = useRating();
 
   const handleAnalyze = async () => {
-    if (!imageFile || !imageSrc) return;
+    if (!imageFile || !imageSrc) {
+      console.error('AnalyzeButton: Missing required data', { hasImageFile: !!imageFile, hasImageSrc: !!imageSrc });
+      toast.error('Image data is missing. Please upload an image again.');
+      return;
+    }
+    
+    console.log('AnalyzeButton: Starting analysis', {
+      gender: selectedGender,
+      feedbackMode,
+      imageSrcLength: imageSrc.length,
+      occasionContext,
+      timestamp: new Date().toISOString()
+    });
     
     setIsAnalyzing(true);
+    const analysisStartTime = performance.now();
+    
     try {
       const result = await analyzeOutfit(
         selectedGender, 
@@ -30,10 +44,23 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         imageSrc, 
         occasionContext
       );
+      
+      const analysisTime = performance.now() - analysisStartTime;
+      console.log('AnalyzeButton: Analysis completed successfully', {
+        duration: analysisTime.toFixed(2) + 'ms',
+        hasResult: !!result,
+        score: result?.score
+      });
+      
       setRatingResult(result);
       toast.success('Analysis complete!');
     } catch (error) {
-      console.error('Analysis error:', error);
+      const analysisTime = performance.now() - analysisStartTime;
+      console.error('AnalyzeButton: Analysis failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        duration: analysisTime.toFixed(2) + 'ms'
+      });
       toast.error('Failed to analyze your outfit. Please try again.');
     } finally {
       setIsAnalyzing(false);

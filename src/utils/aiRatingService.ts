@@ -2,6 +2,7 @@
 import { Gender, FeedbackMode, RatingResult, OccasionContext } from '@/context/RatingContext';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 
 export const analyzeOutfit = async (
   gender: Gender, 
@@ -9,12 +10,21 @@ export const analyzeOutfit = async (
   imageBase64: string,
   occasionContext?: OccasionContext | null
 ): Promise<RatingResult> => {
+  const analysisId = `outfit-analysis-${Date.now()}`;
+  
   try {
     console.log('🚀 Starting outfit analysis service...');
     console.log('📸 Gender:', gender);
     console.log('📸 Feedback mode:', feedbackMode);
     console.log('📸 Image data length:', imageBase64.length);
     console.log('🎯 Occasion context:', occasionContext);
+
+    performanceMonitor.start(analysisId, {
+      gender,
+      feedbackMode,
+      imageSize: imageBase64.length,
+      hasOccasionContext: !!occasionContext
+    });
 
     // First, analyze the outfit
     const startTime = Date.now();
@@ -90,14 +100,20 @@ export const analyzeOutfit = async (
 
     const totalDuration = Date.now() - startTime;
     console.log(`🏁 Total analysis completed in ${totalDuration}ms`);
+    
+    performanceMonitor.end(analysisId);
+    performanceMonitor.logMemoryUsage('analysis-complete');
 
     return ratingResult;
   } catch (error) {
+    performanceMonitor.end(analysisId);
+    performanceMonitor.logMemoryUsage('analysis-error');
+    
     console.error('💥 Analysis service error:', error);
     console.error('💥 Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     });
     throw error;
   }

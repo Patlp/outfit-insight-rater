@@ -28,24 +28,70 @@ const CombinedUploadForm: React.FC<CombinedUploadFormProps> = ({ onFileProcessed
   };
 
   const handleFile = async (file: File) => {
-    if (validateFile(file)) {
-      try {
-        const processedFile = await compressImage(file, setIsCompressing);
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
+    console.log('Starting file processing:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!validateFile(file)) {
+      console.error('File validation failed');
+      return;
+    }
+    
+    try {
+      const processedFile = await compressImage(file, setIsCompressing);
+      console.log('Image compression completed, starting file read');
+      
+      const reader = new FileReader();
+      
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        toast.error('Failed to read image file. Please try again.');
+      };
+      
+      reader.onabort = () => {
+        console.error('FileReader aborted');
+        toast.error('Image reading was interrupted. Please try again.');
+      };
+      
+      reader.onload = (e) => {
+        try {
+          console.log('FileReader completed successfully');
           const imageSrc = e.target?.result as string;
+          
+          if (!imageSrc) {
+            throw new Error('Failed to read image data');
+          }
+          
           const occasionData = {
             eventContext: isNeutral ? null : eventContext.trim(),
             isNeutral
           };
+          
+          console.log('Calling onFileProcessed with:', {
+            fileSize: processedFile.size,
+            imageSrcLength: imageSrc.length,
+            occasionData
+          });
+          
           onFileProcessed(processedFile, imageSrc, occasionData);
-        };
-        reader.readAsDataURL(processedFile);
-      } catch (error) {
-        console.error('Error processing file:', error);
-        toast.error('Failed to process image');
-      }
+        } catch (error) {
+          console.error('Error in FileReader onload:', error);
+          toast.error('Failed to process image. Please try again.');
+        }
+      };
+      
+      reader.readAsDataURL(processedFile);
+    } catch (error) {
+      console.error('Failed to process file:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        fileName: file.name,
+        fileSize: file.size
+      });
+      toast.error('Failed to process image. Please try again.');
     }
   };
 

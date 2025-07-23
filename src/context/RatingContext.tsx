@@ -114,11 +114,24 @@ export const RatingProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [hasUnlockedRoastMode]);
 
   const resetState = () => {
-    setImageFile(null);
-    setImageSrc(null);
-    setRatingResult(null);
-    setOccasionContext(null);
-    setCurrentStep('upload');
+    console.log('Resetting application state');
+    try {
+      setImageFile(null);
+      setImageSrc(null);
+      setRatingResult(null);
+      setOccasionContext(null);
+      setCurrentStep('upload');
+      setIsAnalyzing(false);
+      
+      // Clean up any URL objects that might exist
+      if (imageSrc && imageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(imageSrc);
+      }
+      
+      console.log('State reset completed successfully');
+    } catch (error) {
+      console.error('Error resetting state:', error);
+    }
   };
 
   return (
