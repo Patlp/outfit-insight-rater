@@ -20,24 +20,6 @@ const Auth: React.FC = () => {
     if (user) {
       navigate('/');
     }
-    
-    // Check if user was redirected here after email verification
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('verified') === 'true') {
-      // Clear the URL parameter
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Check if payment is required
-      if (urlParams.get('payment') === 'required') {
-        toast.success('🎉 Email verified! Redirecting to complete your subscription...');
-        // Redirect to Stripe payment link
-        setTimeout(() => {
-          window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
-        }, 2000);
-      } else {
-        toast.success('🎉 Email verified successfully! Welcome to RateMyFit!');
-      }
-    }
   }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -89,7 +71,7 @@ const Auth: React.FC = () => {
           toast.error(error.message);
         }
       } else {
-        toast.success('Account created! Please check your email to verify your account.');
+        toast.success('🎉 Account created! Redirecting to payment...');
       }
     } catch (error) {
       toast.error('An unexpected error occurred');

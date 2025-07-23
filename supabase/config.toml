@@ -25,7 +25,7 @@ port = 54325
 
 [auth]
 enable_signup = true
-email_confirm = true
+email_confirm = false
 
 [auth.email]
 # Use our custom verification email function
@@ -100,9 +100,7 @@ enabled = false
 enabled = false
 
 [auth.hook.send_email]
-enabled = true
-uri = "https://frfvrgarcwmpviimsenu.supabase.co/functions/v1/send-verification-email"
-secrets = ["SEND_EMAIL_HOOK_SECRET"]
+enabled = false
 
 [functions]
 [functions.analyze-outfit]

@@ -88,18 +88,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signUp = async (email: string, password: string, requirePayment = true) => {
-    // Use the current domain for redirect, ensuring it works in all environments
-    const currentUrl = window.location.origin;
-    const paymentParam = requirePayment ? '&payment=required' : '';
-    const redirectUrl = `${currentUrl}/auth?verified=true${paymentParam}`;
-    
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
     });
+    
+    // If signup is successful and payment is required, redirect to Stripe
+    if (!error && requirePayment) {
+      setTimeout(() => {
+        window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+      }, 1000);
+    }
+    
     return { error };
   };
 
