@@ -24,6 +24,9 @@ enabled = true
 port = 54325
 
 [auth]
+enable_signup = true
+email_confirm = true
+
 [auth.email]
 # Use our custom verification email function
 enable_signup = true
@@ -98,7 +101,8 @@ enabled = false
 
 [auth.hook.send_email]
 enabled = true
-uri = "http://host.docker.internal:54321/functions/v1/send-verification-email"
+uri = "https://frfvrgarcwmpviimsenu.supabase.co/functions/v1/send-verification-email"
+secrets = ["SEND_EMAIL_HOOK_SECRET"]
 
 [functions]
 [functions.analyze-outfit]
