@@ -31,14 +31,8 @@ const UploadArea: React.FC = () => {
       
       console.log('UploadArea: State updated successfully');
       
-      // Prevent automatic scroll to top after state change
-      setTimeout(() => {
-        const element = document.querySelector('[data-upload-area]');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          console.log('UploadArea: Scrolled to analyze view');
-        }
-      }, 100);
+      // Keep user in current view position instead of scrolling
+      console.log('UploadArea: State updated successfully - staying in current position');
     } catch (error) {
       console.error('UploadArea: Error updating state:', error);
       toast.error('Failed to update application state. Please try again.');

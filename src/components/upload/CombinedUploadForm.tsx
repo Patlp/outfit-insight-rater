@@ -200,7 +200,11 @@ const CombinedUploadForm: React.FC<CombinedUploadFormProps> = ({ onFileProcessed
                 className="hidden"
                 onChange={handleChange}
                 disabled={isCompressing}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Reset input value to allow same file selection
+                  (e.target as HTMLInputElement).value = '';
+                }}
               />
               
               <label 
