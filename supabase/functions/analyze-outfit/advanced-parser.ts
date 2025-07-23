@@ -303,10 +303,12 @@ export class AdvancedResponseParser {
     }
 
     const explanation = this.generatePersonalizedPaletteExplanation(seasonalType, isWarm, isLight, isBright);
+    const categoryRecommendations = this.generateCategoryRecommendations(isWarm, isLight, isBright, seasonalType);
 
     return {
       colors,
-      explanation
+      explanation,
+      categoryRecommendations
     };
   }
 
@@ -397,9 +399,12 @@ export class AdvancedResponseParser {
 
     console.log('🎨 Fashion color palette generated:', colors.flat().length, 'colors');
 
+    const categoryRecommendations = this.generateCategoryRecommendations(isWarm, isLight, isBright, 'Fashion Research');
+
     return {
       colors,
-      explanation: `This personalized color palette has been curated specifically for your ${isWarm ? 'warm' : 'cool'} undertones and ${isLight ? 'light' : 'deep'} coloring. These ${isBright ? 'vibrant, clear' : 'soft, muted'} tones will harmonize beautifully with your natural features, enhancing your skin tone and bringing out the best in your eyes and hair color.`
+      explanation: `This personalized color palette has been curated specifically for your ${isWarm ? 'warm' : 'cool'} undertones and ${isLight ? 'light' : 'deep'} coloring. These ${isBright ? 'vibrant, clear' : 'soft, muted'} tones will harmonize beautifully with your natural features, enhancing your skin tone and bringing out the best in your eyes and hair color.`,
+      categoryRecommendations
     };
   }
 
@@ -443,6 +448,72 @@ export class AdvancedResponseParser {
     return request.feedbackMode === 'roast'
       ? this.generateRoastFashionSuggestions()
       : this.generateNormalFashionSuggestions();
+  }
+
+  private static generateCategoryRecommendations(isWarm: boolean, isLight: boolean, isBright: boolean, seasonalType: string): any[] {
+    const baseHues = isWarm 
+      ? [15, 30, 45, 200, 220, 280] // Warm reds, oranges, yellows, warm blues, purples
+      : [210, 240, 270, 300, 330, 180]; // Cool blues, purples, pinks, cyans
+
+    const saturation = isBright ? 70 : 45;
+    const lightness = isLight ? 65 : 40;
+
+    return [
+      {
+        category: "Tops & Blouses",
+        colors: baseHues.slice(0, 6).map(h => this.hslToHex(h, saturation, lightness + 10)),
+        explanation: `These colors enhance your ${isWarm ? 'warm' : 'cool'} undertones and brighten your complexion when worn near your face.`,
+        specificAdvice: [
+          `Choose ${isWarm ? 'warm' : 'cool'}-toned fabrics that complement your skin`,
+          "Consider necklines that frame your face beautifully",
+          "Layer with complementary colors from your palette"
+        ]
+      },
+      {
+        category: "Bottoms",
+        colors: baseHues.slice(1, 7).map(h => this.hslToHex(h, saturation - 15, lightness - 15)),
+        explanation: `These deeper tones create a solid foundation while maintaining harmony with your ${seasonalType} coloring.`,
+        specificAdvice: [
+          "Choose cuts that flatter your natural proportions",
+          "Balance colors with your tops for cohesive looks",
+          "Consider texture and pattern scale for your body type"
+        ]
+      },
+      {
+        category: "Outerwear",
+        colors: baseHues.slice(2, 8).map(h => this.hslToHex(h, saturation - 10, lightness)),
+        explanation: `Versatile outerwear colors that complement your ${seasonalType} palette and provide sophisticated layering options.`,
+        specificAdvice: [
+          "Invest in quality pieces in these versatile shades",
+          "Choose structured silhouettes that enhance your frame",
+          "Layer with confidence knowing these colors harmonize"
+        ]
+      },
+      {
+        category: "Footwear",
+        colors: [...baseHues.slice(0, 3).map(h => this.hslToHex(h, saturation - 20, lightness - 25)), "#8B4513", "#2F4F4F", "#000000"],
+        explanation: `Grounding colors that anchor your outfits while staying true to your ${isWarm ? 'warm' : 'cool'} undertones.`,
+        specificAdvice: [
+          "Choose shoe styles that complement your leg line",
+          "Coordinate with your outfit's undertones",
+          "Invest in quality basics in these foundational colors"
+        ]
+      },
+      {
+        category: "Accessories & Jewelry",
+        colors: [
+          isWarm ? "#FFD700" : "#C0C0C0", // Gold vs Silver
+          isWarm ? "#CD853F" : "#708090", // Warm vs Cool metals
+          ...baseHues.slice(0, 4).map(h => this.hslToHex(h, saturation + 10, lightness + 15))
+        ],
+        explanation: `${isWarm ? 'Gold and warm' : 'Silver and cool'} metal tones that enhance your natural coloring, plus accent colors that pop beautifully against your skin.`,
+        specificAdvice: [
+          `Choose ${isWarm ? 'gold, brass, and copper' : 'silver, platinum, and white gold'} metals`,
+          "Use accessories to add pops of your best colors",
+          "Consider scale and proportion for your features"
+        ]
+      }
+    ];
   }
 
   private static hslToHex(h: number, s: number, l: number): string {

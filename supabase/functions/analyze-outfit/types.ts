@@ -24,9 +24,17 @@ export interface ColorAnalysis {
   explanation: string;
 }
 
+export interface CategoryColorRecommendation {
+  category: string;
+  colors: string[];
+  explanation: string;
+  specificAdvice: string[];
+}
+
 export interface ColorPalette {
   colors: string[][];
   explanation: string;
+  categoryRecommendations?: CategoryColorRecommendation[];
 }
 
 export interface BodyType {

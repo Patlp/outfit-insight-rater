@@ -1,11 +1,18 @@
 import React from 'react';
 import { ColorPalette } from '@/context/RatingContext';
+import WardrobeColorPaletteSection from './WardrobeColorPaletteSection';
 
 interface ColorPaletteSectionProps {
   colorPalette: ColorPalette;
 }
 
 const ColorPaletteSection: React.FC<ColorPaletteSectionProps> = ({ colorPalette }) => {
+  // If we have category recommendations, show the new comprehensive wardrobe guide
+  if (colorPalette.categoryRecommendations?.length) {
+    return <WardrobeColorPaletteSection categoryRecommendations={colorPalette.categoryRecommendations} />;
+  }
+
+  // Fallback to traditional color grid
   return (
     <div className="fashion-card mb-6">
       <div className="flex items-center justify-between mb-4">

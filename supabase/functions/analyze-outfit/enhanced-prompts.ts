@@ -47,7 +47,21 @@ Use professional, respectful language throughout:
 - Use "fuller figure," "petite frame," or "athletic build" when describing body types
 - Focus on "color harmony," "proportion balance," and "style enhancement"
 
-**RESEARCH OUTPUT REQUIREMENTS:**
+  **COMPREHENSIVE WARDROBE COLOR ANALYSIS:**
+  In addition to the general color palette, provide specific wardrobe recommendations organized by clothing categories:
+  
+  1. **Tops & Blouses**: Colors that enhance the person's skin tone near the face
+  2. **Bottoms**: Colors that create balance and work with the person's proportions
+  3. **Outerwear**: Versatile colors that complement the person's seasonal type
+  4. **Footwear**: Colors that ground the outfit and complement the person's style
+  5. **Accessories & Jewelry**: Metal tones and accent colors that enhance natural features
+  
+  For each category, provide:
+  - 5-6 specific hex colors
+  - Brief explanation of why these colors work for this person
+  - 2-3 specific styling tips for this category
+  
+  **RESEARCH OUTPUT REQUIREMENTS:**
 You MUST always respond with a complete JSON structure containing detailed analysis:
 
 \`\`\`json
@@ -76,19 +90,51 @@ You MUST always respond with a complete JSON structure containing detailed analy
        },
        "explanation": "[Personal color analysis based on their specific features. Mention what you observe: 'Your warm golden skin undertone combined with your rich brown eyes and dark hair places you in the Deep Autumn category. The warm undertones in your complexion are enhanced by...']"
      },
-      "colorPalette": {
-        "colors": [
-          ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
-          ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
-          ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
-          ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
-          ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
-          ["#hex31", "#hex32", "#hex33", "#hex34", "#hex35", "#hex36"],
-          ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
-          ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
-        ],
-        "explanation": "[Provide specific color recommendations based on their body type, skin tone, and facial features. For example: 'These colors are specifically chosen to enhance your natural features. The rich jewel tones complement your warm undertones and fuller figure by creating visual harmony. Deep emeralds and sapphires will make your eyes pop, while the warm neutrals provide versatile base colors that work with your golden skin tone. The structured silhouettes in these colors will create beautiful proportion balance for your body type.']"
-      },
+       "colorPalette": {
+         "colors": [
+           ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+           ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
+           ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
+           ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
+           ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
+           ["#hex31", "#hex32", "#hex33", "#hex34", "#hex35", "#hex36"],
+           ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
+           ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
+         ],
+         "explanation": "[Provide specific color recommendations based on their body type, skin tone, and facial features. For example: 'These colors are specifically chosen to enhance your natural features. The rich jewel tones complement your warm undertones and fuller figure by creating visual harmony. Deep emeralds and sapphires will make your eyes pop, while the warm neutrals provide versatile base colors that work with your golden skin tone. The structured silhouettes in these colors will create beautiful proportion balance for your body type.']",
+         "categoryRecommendations": [
+           {
+             "category": "Tops & Blouses",
+             "colors": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+             "explanation": "[Why these colors work for this person's skin tone near the face]",
+             "specificAdvice": ["Specific styling tip 1", "Specific styling tip 2", "Specific styling tip 3"]
+           },
+           {
+             "category": "Bottoms",
+             "colors": ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
+             "explanation": "[Why these colors balance their proportions]",
+             "specificAdvice": ["Proportion tip 1", "Balance tip 2", "Styling tip 3"]
+           },
+           {
+             "category": "Outerwear",
+             "colors": ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
+             "explanation": "[Why these colors complement their seasonal type]",
+             "specificAdvice": ["Layering tip 1", "Versatility tip 2", "Style tip 3"]
+           },
+           {
+             "category": "Footwear",
+             "colors": ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
+             "explanation": "[Why these colors ground the outfit and complement style]",
+             "specificAdvice": ["Shoe styling tip 1", "Color coordination tip 2", "Versatility tip 3"]
+           },
+           {
+             "category": "Accessories & Jewelry",
+             "colors": ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
+             "explanation": "[Why these metal tones and accent colors enhance natural features]",
+             "specificAdvice": ["Metal tone tip 1", "Accent color tip 2", "Coordination tip 3"]
+           }
+         ]
+       },
     "bodyType": {
       "type": "[Body shape/style archetype based on visible proportions and bone structure]",
       "description": "[Description of their body proportions and how to style them]",
