@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ColorAnalysisSection from './ColorAnalysisSection';
 import ColorPaletteSection from './ColorPaletteSection';
 import BodyTypeSection from './BodyTypeSection';
-import SubscriptionOverlay from '@/components/SubscriptionOverlay';
 
 interface StyleAnalysisSectionProps {
   styleAnalysis: StyleAnalysis;
@@ -18,34 +17,32 @@ const StyleAnalysisSection: React.FC<StyleAnalysisSectionProps> = ({ styleAnalys
         <p className="text-fashion-600 text-sm">Personalized insights based on your features</p>
       </div>
 
-      <SubscriptionOverlay>
-        <Tabs defaultValue="color-analysis" className="w-full">
-          <TabsList className="flex w-full">
-            <TabsTrigger value="color-analysis" className="flex-1">Color Analysis</TabsTrigger>
-            <TabsTrigger value="color-palette" className="flex-1">Color Palette</TabsTrigger>
-            <TabsTrigger value="body-type" className="flex-1">Body Type</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="color-analysis" className="mt-6">
-            <ColorAnalysisSection colorAnalysis={styleAnalysis.colorAnalysis} />
-          </TabsContent>
-          
-          <TabsContent value="color-palette" className="mt-6">
-            <ColorPaletteSection colorPalette={styleAnalysis.colorPalette} />
-          </TabsContent>
-          
-          <TabsContent value="body-type" className="mt-6">
-            {styleAnalysis.bodyType ? (
-              <BodyTypeSection bodyType={styleAnalysis.bodyType} />
-            ) : (
-              <div className="fashion-card text-center py-8">
-                <p className="text-fashion-600 mb-2">Body type analysis is processing...</p>
-                <p className="text-fashion-500 text-sm">For best results, upload a full-body photo. We can still provide estimates with partial images.</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </SubscriptionOverlay>
+      <Tabs defaultValue="color-analysis" className="w-full">
+        <TabsList className="flex w-full">
+          <TabsTrigger value="color-analysis" className="flex-1">Color Analysis</TabsTrigger>
+          <TabsTrigger value="color-palette" className="flex-1">Color Palette</TabsTrigger>
+          <TabsTrigger value="body-type" className="flex-1">Body Type</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="color-analysis" className="mt-6">
+          <ColorAnalysisSection colorAnalysis={styleAnalysis.colorAnalysis} />
+        </TabsContent>
+        
+        <TabsContent value="color-palette" className="mt-6">
+          <ColorPaletteSection colorPalette={styleAnalysis.colorPalette} />
+        </TabsContent>
+        
+        <TabsContent value="body-type" className="mt-6">
+          {styleAnalysis.bodyType ? (
+            <BodyTypeSection bodyType={styleAnalysis.bodyType} />
+          ) : (
+            <div className="fashion-card text-center py-8">
+              <p className="text-fashion-600 mb-2">Body type analysis is processing...</p>
+              <p className="text-fashion-500 text-sm">For best results, upload a full-body photo. We can still provide estimates with partial images.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

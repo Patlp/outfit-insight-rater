@@ -1,6 +1,7 @@
 import React from 'react';
 import { CategoryColorRecommendation } from '@/context/RatingContext';
 import { Palette, Shirt, Package, Footprints, Crown } from 'lucide-react';
+import ContentOverlay from '@/components/ContentOverlay';
 
 interface WardrobeColorPaletteSectionProps {
   categoryRecommendations: CategoryColorRecommendation[];
@@ -51,40 +52,43 @@ const WardrobeColorPaletteSection: React.FC<WardrobeColorPaletteSectionProps> = 
               </h4>
             </div>
             
-            {/* Color swatches */}
-            <div className="grid grid-cols-6 gap-2 mb-4">
-              {category.colors.map((color, colorIndex) => (
-                <div
-                  key={colorIndex}
-                  className="aspect-square rounded-md shadow-sm border border-fashion-200 transition-transform hover:scale-105"
-                  style={{ backgroundColor: color }}
-                  title={color}
-                />
-              ))}
-            </div>
-            
-            {/* Explanation */}
-            <p className="text-sm text-fashion-700 mb-3 leading-relaxed">
-              {category.explanation}
-            </p>
-            
-            {/* Specific advice */}
-            <div className="space-y-1">
-              <h5 className="text-sm font-medium text-fashion-800 mb-2">
-                Styling Tips:
-              </h5>
-              <ul className="space-y-1">
-                {category.specificAdvice.map((advice, adviceIndex) => (
-                  <li 
-                    key={adviceIndex} 
-                    className="text-sm text-fashion-600 flex items-start gap-2"
-                  >
-                    <span className="text-fashion-400 mt-1">•</span>
-                    <span>{advice}</span>
-                  </li>
+            {/* Content overlay for detailed styling information */}
+            <ContentOverlay>
+              {/* Color swatches */}
+              <div className="grid grid-cols-6 gap-2 mb-4">
+                {category.colors.map((color, colorIndex) => (
+                  <div
+                    key={colorIndex}
+                    className="aspect-square rounded-md shadow-sm border border-fashion-200 transition-transform hover:scale-105"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
                 ))}
-              </ul>
-            </div>
+              </div>
+              
+              {/* Explanation */}
+              <p className="text-sm text-fashion-700 mb-3 leading-relaxed">
+                {category.explanation}
+              </p>
+              
+              {/* Specific advice */}
+              <div className="space-y-1">
+                <h5 className="text-sm font-medium text-fashion-800 mb-2">
+                  Styling Tips:
+                </h5>
+                <ul className="space-y-1">
+                  {category.specificAdvice.map((advice, adviceIndex) => (
+                    <li 
+                      key={adviceIndex} 
+                      className="text-sm text-fashion-600 flex items-start gap-2"
+                    >
+                      <span className="text-fashion-400 mt-1">•</span>
+                      <span>{advice}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ContentOverlay>
           </div>
         ))}
       </div>
