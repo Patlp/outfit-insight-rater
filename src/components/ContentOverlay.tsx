@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lock, Crown, Sparkles } from 'lucide-react';
+import { Lock, Crown, Sparkles, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ interface ContentOverlayProps {
 }
 
 const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '' }) => {
-  const { user, subscription, createCheckoutSession } = useAuth();
+  const { user, subscription, createCheckoutSession, checkSubscription } = useAuth();
   const navigate = useNavigate();
 
   // If user is subscribed, show content normally
@@ -36,6 +36,15 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
 
   const handleSignIn = () => {
     navigate('/auth');
+  };
+
+  const handleRefreshStatus = async () => {
+    try {
+      await checkSubscription();
+      toast.success('Subscription status refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh subscription status');
+    }
   };
 
   return (
@@ -66,24 +75,39 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
               <div className="text-xs text-fashion-600">Cancel anytime</div>
             </div>
 
-            {user ? (
-              <Button 
-                onClick={handleSubscribe}
-                size="sm"
-                className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
-              >
-                <Lock className="h-3 w-3 mr-2" />
-                Subscribe Now
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleSignIn}
-                size="sm"
-                className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
-              >
-                Sign In to Subscribe
-              </Button>
-            )}
+            <div className="space-y-2">
+              {user ? (
+                <Button 
+                  onClick={handleSubscribe}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
+                >
+                  <Lock className="h-3 w-3 mr-2" />
+                  Subscribe Now
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleSignIn}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
+                >
+                  Sign In to Subscribe
+                </Button>
+              )}
+              
+              {user && (
+                <Button 
+                  onClick={handleRefreshStatus}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={subscription.isChecking}
+                >
+                  <RefreshCw className={`h-3 w-3 mr-2 ${subscription.isChecking ? 'animate-spin' : ''}`} />
+                  {subscription.isChecking ? 'Checking...' : 'Refresh Status'}
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

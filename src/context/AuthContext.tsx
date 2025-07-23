@@ -7,6 +7,8 @@ interface SubscriptionInfo {
   subscribed: boolean;
   subscription_tier: string | null;
   subscription_end: string | null;
+  isChecking: boolean;
+  lastChecked: Date | null;
 }
 
 interface AuthContextType {
@@ -17,7 +19,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, requirePayment?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  checkSubscription: () => Promise<void>;
+  checkSubscription: (retryCount?: number) => Promise<boolean>;
   createCheckoutSession: () => Promise<void>;
   openCustomerPortal: () => Promise<void>;
 }
@@ -31,7 +33,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [subscription, setSubscription] = useState<SubscriptionInfo>({
     subscribed: false,
     subscription_tier: null,
-    subscription_end: null
+    subscription_end: null,
+    isChecking: false,
+    lastChecked: null
   });
 
   useEffect(() => {
@@ -68,12 +72,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Check for subscription status in URL params (for successful payments)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('subscription') === 'success') {
-      // Clear the URL parameter and check subscription status
-      window.history.replaceState({}, document.title, window.location.pathname);
-      toast.success('🎉 Welcome to Premium! Your Style Tips are now unlocked.');
-      setTimeout(() => {
-        checkSubscription();
-      }, 1000); // Give Stripe a moment to process
+      // Clear the URL parameter and redirect to payment success page
+      window.history.replaceState({}, document.title, '/payment-success');
+      window.location.href = '/payment-success';
     }
 
     return () => authSubscription.unsubscribe();
@@ -108,12 +109,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSubscription({
       subscribed: false,
       subscription_tier: null,
-      subscription_end: null
+      subscription_end: null,
+      isChecking: false,
+      lastChecked: null
     });
   };
 
-  const checkSubscription = async () => {
-    if (!session) return;
+  const checkSubscription = async (retryCount = 0): Promise<boolean> => {
+    if (!session) return false;
+
+    setSubscription(prev => ({ ...prev, isChecking: true }));
 
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription', {
@@ -124,16 +129,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) {
         console.error('Error checking subscription:', error);
-        return;
+        
+        // Retry logic for network errors
+        if (retryCount < 3 && error.message?.includes('network')) {
+          console.log(`Retrying subscription check (${retryCount + 1}/3)...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return checkSubscription(retryCount + 1);
+        }
+        
+        setSubscription(prev => ({ 
+          ...prev, 
+          isChecking: false,
+          lastChecked: new Date()
+        }));
+        return false;
       }
 
+      const isSubscribed = data.subscribed || false;
       setSubscription({
-        subscribed: data.subscribed || false,
+        subscribed: isSubscribed,
         subscription_tier: data.subscription_tier || null,
-        subscription_end: data.subscription_end || null
+        subscription_end: data.subscription_end || null,
+        isChecking: false,
+        lastChecked: new Date()
       });
+
+      return isSubscribed;
     } catch (error) {
       console.error('Error checking subscription:', error);
+      setSubscription(prev => ({ 
+        ...prev, 
+        isChecking: false,
+        lastChecked: new Date()
+      }));
+      return false;
     }
   };
 
