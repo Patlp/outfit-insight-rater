@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [justSignedUp, setJustSignedUp] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionInfo>({
     subscribed: false,
     subscription_tier: null,
@@ -38,94 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     lastChecked: null
   });
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        // Check subscription when user logs in
-        if (session?.user && event === 'SIGNED_IN') {
-          setTimeout(() => {
-            checkSubscription();
-          }, 0);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Check subscription for existing session
-      if (session?.user) {
-        setTimeout(() => {
-          checkSubscription();
-        }, 0);
-      }
-    });
-
-    // Check for subscription status in URL params (for successful payments)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('subscription') === 'success') {
-      // Clear the URL parameter and redirect to payment success page
-      window.history.replaceState({}, document.title, '/payment-success');
-      window.location.href = '/payment-success';
-    }
-
-    return () => authSubscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
-  };
-
-  const signUp = async (email: string, password: string, requirePayment = true) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
-    
-    // If signup is successful and payment is required, create checkout session
-    if (!error && requirePayment) {
-      setTimeout(async () => {
-        try {
-          await createCheckoutSession();
-        } catch (checkoutError) {
-          console.error('Failed to create checkout session:', checkoutError);
-          // Fallback: still allow user to continue without payment
-        }
-      }, 1000);
-    }
-    
-    return { error };
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setSubscription({
-      subscribed: false,
-      subscription_tier: null,
-      subscription_end: null,
-      isChecking: false,
-      lastChecked: null
-    });
-  };
-
-  const checkSubscription = async (retryCount = 0): Promise<boolean> => {
+  const checkSubscription = useCallback(async (retryCount = 0): Promise<boolean> => {
     if (!session) return false;
 
     setSubscription(prev => ({ ...prev, isChecking: true }));
@@ -174,9 +88,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }));
       return false;
     }
-  };
+  }, [session]);
 
-  const createCheckoutSession = async () => {
+  const createCheckoutSession = useCallback(async () => {
     if (!session) {
       throw new Error('User must be logged in to subscribe');
     }
@@ -198,7 +112,106 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('Error creating checkout session:', error);
       throw error;
     }
+  }, [session]);
+
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Check subscription when user logs in
+        if (session?.user && event === 'SIGNED_IN') {
+          setTimeout(() => {
+            checkSubscription();
+          }, 0);
+          
+          // For new users who just signed up, redirect to payment
+          if (justSignedUp) {
+            setTimeout(async () => {
+              try {
+                const hasSubscription = await checkSubscription();
+                if (!hasSubscription) {
+                  console.log('New user detected, redirecting to payment...');
+                  await createCheckoutSession();
+                }
+                setJustSignedUp(false); // Reset the flag
+              } catch (checkoutError) {
+                console.error('Failed to create checkout session after signup:', checkoutError);
+                setJustSignedUp(false); // Reset the flag even on error
+              }
+            }, 3000); // Wait longer to ensure session and subscription check are complete
+          }
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      // Check subscription for existing session
+      if (session?.user) {
+        setTimeout(() => {
+          checkSubscription();
+        }, 0);
+      }
+    });
+
+    // Check for subscription status in URL params (for successful payments)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('subscription') === 'success') {
+      // Clear the URL parameter and redirect to payment success page
+      window.history.replaceState({}, document.title, '/payment-success');
+      window.location.href = '/payment-success';
+    }
+
+    return () => authSubscription.unsubscribe();
+  }, [justSignedUp, checkSubscription, createCheckoutSession]); // Add functions as dependencies
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
   };
+
+  const signUp = async (email: string, password: string, requirePayment = true) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    });
+    
+    // If signup is successful and payment is required, set flag for payment redirect
+    if (!error && requirePayment) {
+      setJustSignedUp(true);
+      console.log('Signup successful, will redirect to payment once session is established');
+    }
+    
+    return { error };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSubscription({
+      subscribed: false,
+      subscription_tier: null,
+      subscription_end: null,
+      isChecking: false,
+      lastChecked: null
+    });
+  };
+
 
   const openCustomerPortal = async () => {
     if (!session) {
