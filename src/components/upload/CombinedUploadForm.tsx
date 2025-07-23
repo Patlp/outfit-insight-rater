@@ -107,10 +107,16 @@ const CombinedUploadForm: React.FC<CombinedUploadFormProps> = ({ onFileProcessed
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('File input change event triggered');
     
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0]);
     }
+    
+    // Clear the input value to allow selecting the same file again
+    e.target.value = '';
   };
 
   return (
@@ -186,30 +192,37 @@ const CombinedUploadForm: React.FC<CombinedUploadFormProps> = ({ onFileProcessed
               }
             </p>
             
-            <input
-              type="file"
-              id="file-upload"
-              accept="image/jpeg,image/jpg,image/png"
-              className="hidden"
-              onChange={handleChange}
-              disabled={isCompressing}
-            />
-            
-            <label htmlFor="file-upload" className={`fashion-button inline-block ${isCompressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-              <span className="flex items-center gap-2">
-                {isCompressing ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Compressing...
-                  </>
-                ) : (
-                  <>
-                    <Image className="h-5 w-5" />
-                    Upload or Take Photo
-                  </>
-                )}
-              </span>
-            </label>
+            <div>
+              <input
+                type="file"
+                id="file-upload"
+                accept="image/jpeg,image/jpg,image/png"
+                className="hidden"
+                onChange={handleChange}
+                disabled={isCompressing}
+                onClick={(e) => e.stopPropagation()}
+              />
+              
+              <label 
+                htmlFor="file-upload" 
+                className={`fashion-button inline-block ${isCompressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="flex items-center gap-2">
+                  {isCompressing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      Compressing...
+                    </>
+                  ) : (
+                    <>
+                      <Image className="h-5 w-5" />
+                      Upload or Take Photo
+                    </>
+                  )}
+                </span>
+              </label>
+            </div>
             
             <p className="mt-4 text-xs text-gray-500">
               Max file size: 50MB. Formats: JPG, PNG

@@ -53,10 +53,16 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFileProcessed }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('FileUploadZone: File input change event triggered');
     
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0]);
     }
+    
+    // Clear the input value to allow selecting the same file again
+    e.target.value = '';
   };
 
   return (
