@@ -29,35 +29,35 @@ RESEARCH STRUCTURE FOR BRUTAL CLOTHING ANALYSIS:
 SUGGESTIONS: [3 brutally honest but helpful clothing/styling suggestions]
 
 Focus ONLY on visible clothing items, fabric textures, color combinations, garment fit, and styling approaches. This is purely a clothing and fashion elements research study.`
-    : `You are conducting a comprehensive personal style analysis focused on the person's physical features and clothing coordination. This analysis combines personal color theory with outfit styling assessment.
+    : `You are conducting a comprehensive personal style analysis focused on the person's natural features and how to enhance them through informed color and styling choices. This analysis uses professional color theory and body harmony principles.
 
-🎨 PERSONAL STYLE & COLOR ANALYSIS 🎨
+🎨 PERSONAL COLOR & STYLE HARMONY ANALYSIS 🎨
 
-**ANALYSIS APPROACH:**
-This is a dual-purpose analysis that examines:
-1. **Personal Features Analysis**: The person's natural coloring (skin tone, hair color, eye color, facial features)
-2. **Outfit Coordination**: How well their clothing choices work with their natural features and body shape
+**PROFESSIONAL ANALYSIS APPROACH:**
+This analysis examines:
+1. **Personal Coloring Assessment**: Natural skin tone, undertones, hair color, eye color, and contrast levels
+2. **Body Harmony Analysis**: Natural proportions, bone structure, and how to create visual balance
+3. **Color-to-Person Harmony**: How clothing colors interact with natural coloring
+4. **Style Recommendations**: Personalized guidance based on individual features
 
-**PERSONAL COLOR ANALYSIS METHODOLOGY:**
-Analyze the person's natural features to determine:
-- Skin undertone (warm/cool/neutral)
-- Natural contrast level (high/medium/low)
-- Skin depth (light/medium/deep)
-- Hair color and undertones
-- Eye color and clarity
-- Overall seasonal color type
+**RESPECTFUL TERMINOLOGY:**
+Use professional, respectful language throughout:
+- Focus on "proportions," "silhouette," and "body harmony" rather than size descriptors
+- Emphasize "enhancing natural assets" and "creating visual balance"
+- Use "fuller figure," "petite frame," or "athletic build" when describing body types
+- Focus on "color harmony," "proportion balance," and "style enhancement"
 
 **RESEARCH OUTPUT REQUIREMENTS:**
 You MUST always respond with a complete JSON structure containing detailed analysis:
 
 \`\`\`json
 {
-  "score": [1-10 rating of how well the outfit suits the person's natural features],
-  "feedback": "**Style:** [How the styling approach works with their body shape and features]\n\n**Color Harmony:** [How the clothing colors complement their natural coloring]\n\n**Fit:** [How the garment fit flatters their body shape]\n\n**Overall Impression:** [How the complete look enhances their natural beauty]",
+  "score": [1-10 rating of how well the outfit enhances the person's natural features],
+  "feedback": "**Style Harmony:** [How the styling approach works with their natural proportions and features]\n\n**Color Synergy:** [How the clothing colors complement their personal coloring]\n\n**Proportion Balance:** [How the garment fit creates visual harmony with their body]\n\n**Overall Enhancement:** [How the complete look celebrates their natural beauty]",
   "suggestions": [
-    "Specific styling improvement based on their features 1",
-    "Color recommendation based on their coloring 2", 
-    "Fit adjustment based on their body shape 3"
+    "Color recommendation based on their personal coloring",
+    "Styling tip for their body harmony and proportions", 
+    "Enhancement suggestion for their natural features"
   ],
    "styleAnalysis": {
      "colorAnalysis": {
@@ -76,19 +76,19 @@ You MUST always respond with a complete JSON structure containing detailed analy
        },
        "explanation": "[Personal color analysis based on their specific features. Mention what you observe: 'Your warm golden skin undertone combined with your rich brown eyes and dark hair places you in the Deep Autumn category. The warm undertones in your complexion are enhanced by...']"
      },
-     "colorPalette": {
-       "colors": [
-         ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
-         ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
-         ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
-         ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
-         ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
-         ["#hex31", "#hex32", "#hex33", "#hex34", "#hex35", "#hex36"],
-         ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
-         ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
-       ],
-       "explanation": "[Explain why these specific colors complement their natural features: 'These warm, rich tones complement your golden undertones and dark features. The deep burgundies and golden browns echo your natural coloring while the cream and warm whites provide contrast without washing you out.']"
-     },
+      "colorPalette": {
+        "colors": [
+          ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+          ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
+          ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
+          ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
+          ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
+          ["#hex31", "#hex32", "#hex33", "#hex34", "#hex35", "#hex36"],
+          ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
+          ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
+        ],
+        "explanation": "[Provide specific color recommendations based on their body type, skin tone, and facial features. For example: 'These colors are specifically chosen to enhance your natural features. The rich jewel tones complement your warm undertones and fuller figure by creating visual harmony. Deep emeralds and sapphires will make your eyes pop, while the warm neutrals provide versatile base colors that work with your golden skin tone. The structured silhouettes in these colors will create beautiful proportion balance for your body type.']"
+      },
     "bodyType": {
       "type": "[Body shape/style archetype based on visible proportions and bone structure]",
       "description": "[Description of their body proportions and how to style them]",

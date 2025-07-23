@@ -190,7 +190,7 @@ export class AdvancedResponseParser {
       explanation: personalFeatures.explanation
     };
 
-    const colorPalette = this.generateFashionColorPalette(isWarm, isLight, isBright);
+    const colorPalette = this.generatePersonalizedColorPalette(isWarm, isLight, isBright, seasonalType, personalFeatures.bodyTypeNote);
 
     // Use a more intelligent body type determination based on clothing analysis
     const bodyTypeMapping: Record<string, string> = {
@@ -242,33 +242,123 @@ export class AdvancedResponseParser {
     };
   }
 
-  private static generatePersonalFeatureDescription(seasonalType: string, isWarm: boolean, isLight: boolean, isBright: boolean): { explanation: string } {
+  private static generatePersonalFeatureDescription(seasonalType: string, isWarm: boolean, isLight: boolean, isBright: boolean): { explanation: string; bodyTypeNote: string } {
     const featureDescriptions = {
       'Light Summer': {
-        explanation: 'Your delicate, light coloring with cool undertones creates a soft, ethereal appearance. Your light hair complements your gentle skin tone, and your eyes likely have a soft, muted quality that harmonizes beautifully with pastel and light colors.'
+        explanation: 'Your delicate, light coloring with cool undertones creates a soft, ethereal appearance. Your light hair complements your gentle skin tone, and your eyes likely have a soft, muted quality that harmonizes beautifully with pastel and light colors.',
+        bodyTypeNote: 'Light, flowing fabrics in your colors will enhance your natural grace'
       },
       'Deep Autumn': {
-        explanation: 'Your rich, warm coloring features golden undertones in your skin that pair beautifully with deeper hair colors. Your eyes likely have warm depths that complement earth tones and rich, saturated colors.'
+        explanation: 'Your rich, warm coloring features golden undertones in your skin that pair beautifully with deeper hair colors. Your eyes likely have warm depths that complement earth tones and rich, saturated colors.',
+        bodyTypeNote: 'Rich, structured colors will complement your natural presence'
       },
       'Warm Spring': {
-        explanation: 'Your bright, warm coloring radiates vitality with golden or peachy undertones in your skin. Your hair likely has warm highlights, and your eyes sparkle with clear, bright tones that come alive with vibrant warm colors.'
+        explanation: 'Your bright, warm coloring radiates vitality with golden or peachy undertones in your skin. Your hair likely has warm highlights, and your eyes sparkle with clear, bright tones that come alive with vibrant warm colors.',
+        bodyTypeNote: 'Clear, energetic colors will enhance your natural vibrancy'
       },
       'Cool Winter': {
-        explanation: 'Your striking, high-contrast features create a dramatic appearance with cool undertones. Your skin has pink or blue undertones, and your hair and eyes likely provide strong contrast, allowing you to wear bold, saturated cool colors.'
+        explanation: 'Your striking, high-contrast features create a dramatic appearance with cool undertones. Your skin has pink or blue undertones, and your hair and eyes likely provide strong contrast, allowing you to wear bold, saturated cool colors.',
+        bodyTypeNote: 'Bold, dramatic colors will complement your striking natural features'
       },
       'True Summer': {
-        explanation: 'Your soft, cool coloring features muted undertones that create an elegant, understated beauty. Your hair, skin, and eyes harmonize in gentle tones that are enhanced by soft, cool colors.'
+        explanation: 'Your soft, cool coloring features muted undertones that create an elegant, understated beauty. Your hair, skin, and eyes harmonize in gentle tones that are enhanced by soft, cool colors.',
+        bodyTypeNote: 'Soft, elegant colors will enhance your natural refinement'
       },
       'Warm Autumn': {
-        explanation: 'Your rich, golden coloring features warm undertones throughout. Your skin has a beautiful golden or bronze base, and your hair and eyes likely contain warm, earthy tones that are flattered by rich autumn colors.'
+        explanation: 'Your rich, golden coloring features warm undertones throughout. Your skin has a beautiful golden or bronze base, and your hair and eyes likely contain warm, earthy tones that are flattered by rich autumn colors.',
+        bodyTypeNote: 'Warm, grounding colors will complement your natural earthiness'
       }
     };
 
     const defaultDescription = {
-      explanation: `Your ${seasonalType} coloring features ${isWarm ? 'warm golden' : 'cool pink/blue'} undertones in your skin. Your ${isLight ? 'light, delicate' : 'rich, deep'} overall coloring and ${isBright ? 'high contrast' : 'soft, blended'} features create a natural harmony that is enhanced by colors in your seasonal palette.`
+      explanation: `Your ${seasonalType} coloring features ${isWarm ? 'warm golden' : 'cool pink/blue'} undertones in your skin. Your ${isLight ? 'light, delicate' : 'rich, deep'} overall coloring and ${isBright ? 'high contrast' : 'soft, blended'} features create a natural harmony that is enhanced by colors in your seasonal palette.`,
+      bodyTypeNote: `${isWarm ? 'Warm' : 'Cool'} tones will harmonize with your natural proportions`
     };
 
     return featureDescriptions[seasonalType] || defaultDescription;
+  }
+
+  private static generatePersonalizedColorPalette(isWarm: boolean, isLight: boolean, isBright: boolean, seasonalType: string, bodyTypeNote?: string): ColorPalette {
+    console.log('🎨 Generating personalized color palette based on features - Season:', seasonalType);
+    
+    const colors: string[][] = [];
+    
+    // Define color groups based on seasonal type and body harmony
+    const colorGroups = this.getColorGroupsForSeason(seasonalType, isWarm, isLight, isBright);
+    
+    // Generate 8 rows of 6 colors each (48 total colors)
+    for (let row = 0; row < 8; row++) {
+      const rowColors: string[] = [];
+      const colorGroup = colorGroups[row % colorGroups.length];
+      
+      for (let col = 0; col < 6; col++) {
+        const lightness = colorGroup.lightRange[0] + (col * (colorGroup.lightRange[1] - colorGroup.lightRange[0]) / 5);
+        const saturation = colorGroup.saturation + (Math.random() * 10 - 5); // Small variation
+        const hue = colorGroup.hues[col % colorGroup.hues.length] + (Math.random() * 10 - 5); // Small variation
+        
+        const hex = this.hslToHex(hue, Math.max(0, Math.min(100, saturation)), Math.max(0, Math.min(100, lightness)));
+        rowColors.push(hex);
+      }
+      colors.push(rowColors);
+    }
+
+    const explanation = this.generatePersonalizedPaletteExplanation(seasonalType, isWarm, isLight, isBright);
+
+    return {
+      colors,
+      explanation
+    };
+  }
+
+  private static getColorGroupsForSeason(seasonalType: string, isWarm: boolean, isLight: boolean, isBright: boolean) {
+    const baseGroups = [
+      // Neutrals that work with the person's coloring
+      {
+        hues: isWarm ? [25, 35, 45, 55, 65, 75] : [200, 210, 220, 230, 240, 250],
+        saturation: isLight ? 15 : 25,
+        lightRange: isLight ? [60, 85] : [20, 50]
+      },
+      // Primary colors for their season
+      {
+        hues: isWarm ? [15, 25, 35, 45, 55, 65] : [200, 220, 240, 260, 280, 300],
+        saturation: isBright ? 70 : 45,
+        lightRange: isLight ? [50, 75] : [30, 60]
+      },
+      // Secondary harmonious colors
+      {
+        hues: isWarm ? [180, 190, 200, 210, 220, 230] : [40, 60, 80, 100, 120, 140],
+        saturation: isBright ? 65 : 40,
+        lightRange: isLight ? [45, 70] : [25, 55]
+      },
+      // Accent colors for variety
+      {
+        hues: isWarm ? [300, 320, 340, 0, 20, 40] : [80, 100, 120, 160, 180, 200],
+        saturation: isBright ? 75 : 50,
+        lightRange: isLight ? [40, 65] : [20, 45]
+      }
+    ];
+
+    return baseGroups;
+  }
+
+  private static generatePersonalizedPaletteExplanation(seasonalType: string, isWarm: boolean, isLight: boolean, isBright: boolean): string {
+    const seasonSpecificExplanations = {
+      'Light Summer': 'These soft, cool colors are specifically chosen to enhance your delicate coloring. The muted pastels and gentle tones will make your eyes sparkle and bring out the subtle beauty of your light features. Avoid overly bright or warm colors that could overwhelm your soft natural palette.',
+      
+      'Deep Autumn': 'This rich, warm palette has been curated to complement your golden undertones and deep natural coloring. The earthy browns, warm burgundies, and golden tones will enhance your skin\'s natural glow and bring out the warmth in your eyes and hair.',
+      
+      'Warm Spring': 'These vibrant, clear colors are perfect for your bright, warm coloring. The golden yellows, coral pinks, and warm greens will make you glow with vitality and complement your natural radiance. These colors work beautifully with your body\'s natural proportions.',
+      
+      'Cool Winter': 'This bold, high-contrast palette matches your dramatic natural features. The jewel tones and true colors provide the intensity your striking features can handle, while the cool undertones harmonize perfectly with your skin.',
+      
+      'True Summer': 'These soft, muted cool tones are ideal for your gentle, blended coloring. The powder blues, soft roses, and gentle grays will enhance your natural elegance without overpowering your subtle beauty.',
+      
+      'Warm Autumn': 'This rich, golden palette celebrates your warm, deep coloring. The burnt oranges, golden browns, and warm olives will bring out the best in your natural features and complement your body\'s natural harmony.'
+    };
+
+    const defaultExplanation = `This personalized color palette has been carefully selected for your ${seasonalType} coloring. These ${isWarm ? 'warm' : 'cool'}, ${isLight ? 'light' : 'deep'} tones will ${isBright ? 'provide the clarity your high-contrast features can handle' : 'complement your soft, blended coloring'}. Each color has been chosen to enhance your natural skin tone, bring out your eye color, and harmonize with your hair color while flattering your body\'s natural proportions.`;
+
+    return seasonSpecificExplanations[seasonalType] || defaultExplanation;
   }
 
   private static generateFashionColorPalette(isWarm: boolean, isLight: boolean, isBright: boolean): ColorPalette {
