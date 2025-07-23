@@ -15,7 +15,7 @@ interface AuthContextType {
   loading: boolean;
   subscription: SubscriptionInfo;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, requirePayment?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
   createCheckoutSession: () => Promise<void>;
@@ -87,10 +87,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, requirePayment = true) => {
     // Use the current domain for redirect, ensuring it works in all environments
     const currentUrl = window.location.origin;
-    const redirectUrl = `${currentUrl}/auth?verified=true`;
+    const paymentParam = requirePayment ? '&payment=required' : '';
+    const redirectUrl = `${currentUrl}/auth?verified=true${paymentParam}`;
     
     const { error } = await supabase.auth.signUp({
       email,

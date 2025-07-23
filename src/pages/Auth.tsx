@@ -26,7 +26,17 @@ const Auth: React.FC = () => {
     if (urlParams.get('verified') === 'true') {
       // Clear the URL parameter
       window.history.replaceState({}, document.title, window.location.pathname);
-      toast.success('🎉 Email verified successfully! Welcome to RateMyFit!');
+      
+      // Check if payment is required
+      if (urlParams.get('payment') === 'required') {
+        toast.success('🎉 Email verified! Redirecting to complete your subscription...');
+        // Redirect to Stripe payment link
+        setTimeout(() => {
+          window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+        }, 2000);
+      } else {
+        toast.success('🎉 Email verified successfully! Welcome to RateMyFit!');
+      }
     }
   }, [user, navigate]);
 
