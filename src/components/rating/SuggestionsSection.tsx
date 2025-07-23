@@ -9,7 +9,18 @@ interface SuggestionsSectionProps {
 const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({ suggestions }) => {
   const validSuggestions = filterValidSuggestions(suggestions);
 
+  // Hide the section if no valid suggestions or if suggestions are empty/meaningless
   if (!validSuggestions || validSuggestions.length === 0) {
+    return null;
+  }
+
+  // Check if any suggestions have meaningful content
+  const hasMeaningfulSuggestions = validSuggestions.some(suggestion => {
+    const formatted = formatSuggestion(suggestion);
+    return formatted && formatted.trim().length > 0 && !formatted.includes('Recommendations:');
+  });
+
+  if (!hasMeaningfulSuggestions) {
     return null;
   }
 
