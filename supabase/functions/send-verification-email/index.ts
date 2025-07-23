@@ -26,9 +26,23 @@ serve(async (req) => {
   try {
     const payload = await req.text()
     const headers = Object.fromEntries(req.headers)
-    const wh = new Webhook(hookSecret)
     
-    console.log('Webhook received for verification email:', { payload: payload.substring(0, 200) })
+    console.log('Webhook received for verification email:', { 
+      payload: payload.substring(0, 500),
+      headers: headers,
+      hookSecret: hookSecret ? 'Present' : 'Missing'
+    })
+    
+    // Check if we have the hook secret
+    if (!hookSecret) {
+      console.error('SEND_EMAIL_HOOK_SECRET not found')
+      return new Response(JSON.stringify({ error: 'Hook secret not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      })
+    }
+    
+    const wh = new Webhook(hookSecret)
     
     const {
       user,
