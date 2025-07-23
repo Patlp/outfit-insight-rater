@@ -9,7 +9,7 @@ const ColorPaletteSection: React.FC<ColorPaletteSectionProps> = ({ colorPalette 
   return (
     <div className="fashion-card mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-fashion-900">Your Personal Color Palette</h3>
+        <h3 className="text-lg font-semibold text-fashion-900">Colors That Enhance Your Natural Beauty</h3>
       </div>
       
       <div className="mb-4">

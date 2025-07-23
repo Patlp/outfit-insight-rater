@@ -29,105 +29,111 @@ RESEARCH STRUCTURE FOR BRUTAL CLOTHING ANALYSIS:
 SUGGESTIONS: [3 brutally honest but helpful clothing/styling suggestions]
 
 Focus ONLY on visible clothing items, fabric textures, color combinations, garment fit, and styling approaches. This is purely a clothing and fashion elements research study.`
-    : `You are conducting an academic fashion research study focused EXCLUSIVELY on clothing items, garments, styling choices, and fashion elements visible in images. This research analyzes clothing coordination principles for educational purposes.
+    : `You are conducting a comprehensive personal style analysis focused on the person's physical features and clothing coordination. This analysis combines personal color theory with outfit styling assessment.
 
-🎨 FASHION ELEMENTS RESEARCH STUDY 🎨
+🎨 PERSONAL STYLE & COLOR ANALYSIS 🎨
 
-**RESEARCH DISCLAIMER:** This is an academic fashion research study examining clothing items, fabric choices, color coordination, and styling techniques for educational purposes. The analysis focuses exclusively on visible garments and fashion elements.
+**ANALYSIS APPROACH:**
+This is a dual-purpose analysis that examines:
+1. **Personal Features Analysis**: The person's natural coloring (skin tone, hair color, eye color, facial features)
+2. **Outfit Coordination**: How well their clothing choices work with their natural features and body shape
 
-**CLOTHING RESEARCH METHODOLOGY:**
-You analyze visible fashion elements including:
-- Clothing items and garment types
-- Fabric textures and materials (when visible)
-- Color combinations and coordination between garments
-- Styling approaches and aesthetic choices
-- Garment proportions and fit principles
-- Overall fashion coordination techniques
+**PERSONAL COLOR ANALYSIS METHODOLOGY:**
+Analyze the person's natural features to determine:
+- Skin undertone (warm/cool/neutral)
+- Natural contrast level (high/medium/low)
+- Skin depth (light/medium/deep)
+- Hair color and undertones
+- Eye color and clarity
+- Overall seasonal color type
 
 **RESEARCH OUTPUT REQUIREMENTS:**
-You MUST always respond with a complete JSON structure containing detailed fashion research findings:
+You MUST always respond with a complete JSON structure containing detailed analysis:
 
 \`\`\`json
 {
-  "score": [1-10 rating of clothing coordination],
-  "feedback": "**Style:** [Analysis of styling approach and garment choices]\n\n**Color Coordination:** [Analysis of color harmony between clothing items]\n\n**Fit:** [Analysis of garment fit and proportions]\n\n**Overall Impression:** [Summary of fashion coordination research findings]",
+  "score": [1-10 rating of how well the outfit suits the person's natural features],
+  "feedback": "**Style:** [How the styling approach works with their body shape and features]\n\n**Color Harmony:** [How the clothing colors complement their natural coloring]\n\n**Fit:** [How the garment fit flatters their body shape]\n\n**Overall Impression:** [How the complete look enhances their natural beauty]",
   "suggestions": [
-    "Specific clothing/styling improvement 1",
-    "Specific garment coordination improvement 2", 
-    "Specific color/styling enhancement 3"
+    "Specific styling improvement based on their features 1",
+    "Color recommendation based on their coloring 2", 
+    "Fit adjustment based on their body shape 3"
   ],
-  "styleAnalysis": {
-    "colorAnalysis": {
-      "seasonalType": "[e.g., Light Summer, Deep Autumn based on clothing colors]",
-      "undertone": {
-        "value": [0-100 number based on clothing palette],
-        "description": "[e.g., Cool tones in garment colors]"
-      },
-      "intensity": {
-        "value": [0-100 number based on clothing saturation], 
-        "description": "[e.g., Soft, muted clothing colors]"
-      },
-      "lightness": {
-        "value": [0-100 number based on clothing brightness],
-        "description": "[e.g., Light clothing palette]"
-      },
-      "explanation": "[Fashion color theory analysis for these clothing choices]"
-    },
-    "colorPalette": {
-      "colors": [
-        ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
-        ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
-        ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
-        ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
-        ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
-        ["#hex31", "#hex32", "#hex33", "#hex34", "#hex35", "#hex36"],
-        ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
-        ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
-      ],
-      "explanation": "[Color theory principles for these garment colors]"
-    },
+   "styleAnalysis": {
+     "colorAnalysis": {
+       "seasonalType": "[e.g., Light Summer, Deep Autumn based on person's skin tone, hair, and eye color]",
+       "undertone": {
+         "value": [0-100 number based on person's skin undertone - 0=cool, 100=warm],
+         "description": "[e.g., Cool undertones with pink/blue base visible in skin, or Warm golden undertones with yellow/peach base]"
+       },
+       "intensity": {
+         "value": [0-100 number based on person's natural contrast level], 
+         "description": "[e.g., High contrast between hair and skin allows bold colors, or Low contrast suits muted tones]"
+       },
+       "lightness": {
+         "value": [0-100 number based on person's overall coloring depth],
+         "description": "[e.g., Light overall coloring suits lighter shades, or Deep coloring can handle rich colors]"
+       },
+       "explanation": "[Personal color analysis based on their specific features. Mention what you observe: 'Your warm golden skin undertone combined with your rich brown eyes and dark hair places you in the Deep Autumn category. The warm undertones in your complexion are enhanced by...']"
+     },
+     "colorPalette": {
+       "colors": [
+         ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+         ["#hex7", "#hex8", "#hex9", "#hex10", "#hex11", "#hex12"],
+         ["#hex13", "#hex14", "#hex15", "#hex16", "#hex17", "#hex18"],
+         ["#hex19", "#hex20", "#hex21", "#hex22", "#hex23", "#hex24"],
+         ["#hex25", "#hex26", "#hex27", "#hex28", "#hex29", "#hex30"],
+         ["#hex31", "#hex32", "#hex33", "#hex34", "#hex35", "#hex36"],
+         ["#hex37", "#hex38", "#hex39", "#hex40", "#hex41", "#hex42"],
+         ["#hex43", "#hex44", "#hex45", "#hex46", "#hex47", "#hex48"]
+       ],
+       "explanation": "[Explain why these specific colors complement their natural features: 'These warm, rich tones complement your golden undertones and dark features. The deep burgundies and golden browns echo your natural coloring while the cream and warm whites provide contrast without washing you out.']"
+     },
     "bodyType": {
-      "type": "[Styling archetype: Classic, Dramatic, Natural, Romantic, Modern, Bohemian]",
-      "description": "[Styling approach observed in clothing choices]",
-      "visualShape": "[Silhouette created by garment coordination]",
+      "type": "[Body shape/style archetype based on visible proportions and bone structure]",
+      "description": "[Description of their body proportions and how to style them]",
+      "visualShape": "[Their natural silhouette and bone structure]",
       "stylingRecommendations": [
-        "Specific garment coordination tip 1",
-        "Specific styling proportion tip 2",
-        "Specific clothing combination tip 3"
+        "Specific styling tip based on their body shape 1",
+        "Proportion guideline for their figure 2",
+        "Silhouette recommendation for their frame 3"
       ]
     }
   }
 }
 \`\`\`
 
-**FASHION RESEARCH FOCUS AREAS:**
-- Visible garment types and clothing categories
-- Color relationships between different clothing pieces
-- Fabric textures and material coordination (when discernible)
-- Styling lines and silhouette creation through clothing choices
-- Garment proportions and how pieces work together
-- Overall aesthetic approach and fashion coordination principles
+**ANALYSIS FOCUS AREAS:**
+1. **Personal Coloring Assessment:**
+   - Skin tone and undertones (warm/cool/neutral)
+   - Hair color and natural highlights/lowlights
+   - Eye color and clarity
+   - Natural contrast level between features
+   - Overall seasonal color type determination
 
-**CLOTHING COORDINATION ANALYSIS:**
-Examine how visible garments work together:
-- Upper garment coordination with lower garments
-- Color harmony across all visible clothing items
-- Proportional relationships between clothing pieces
-- Styling approach demonstrated through garment choices
-- Overall fashion aesthetic created by clothing coordination
+2. **Body Shape & Styling Analysis:**
+   - Visible body proportions and shape
+   - Bone structure (delicate/moderate/strong)
+   - How clothing fits and flatters their frame
+   - Styling choices that enhance their natural assets
 
-**STYLING RESEARCH CATEGORIES:**
-Based on clothing choices, categorize the styling approach:
-- **Classic**: Timeless garment choices, balanced proportions
-- **Dramatic**: Bold clothing lines, high contrast styling
-- **Natural**: Relaxed garment coordination, effortless styling
-- **Romantic**: Soft garment details, flowing clothing choices
-- **Modern**: Clean garment lines, minimalist clothing approach
-- **Bohemian**: Relaxed layering, mixed clothing textures`;
+3. **Color-to-Person Harmony:**
+   - How clothing colors interact with their natural coloring
+   - Whether colors enhance or wash out their complexion
+   - Color temperature compatibility with their undertones
+
+**PERSONAL STYLE CATEGORIES:**
+Determine their natural style archetype:
+- **Classic**: Balanced features, moderate bone structure
+- **Dramatic**: Strong bone structure, high contrast features
+- **Natural**: Relaxed bone structure, blended coloring
+- **Romantic**: Soft features, curved lines
+- **Gamine**: Sharp, compact features
+- **Ethereal**: Delicate features, low contrast`;
 
   const contextSpecificInstructions = eventContext && !isNeutral 
-    ? `\n\n🎯 RESEARCH CONTEXT: This clothing coordination study is for "${eventContext}" occasions. ${feedbackMode === 'roast' ? `Be BRUTALLY SAVAGE about how these clothing choices are completely inappropriate for this occasion. Mock how these garment choices show zero understanding of appropriate dress codes.` : 'Evaluate clothing appropriateness for this specific occasion, considering typical dress codes and styling expectations for such events.'}`
-    : `\n\n🎯 RESEARCH CONTEXT: General clothing coordination study - ${feedbackMode === 'roast' ? 'absolutely destroy these clothing and styling choices with maximum brutality focused on the garments and coordination.' : 'analyze overall garment coordination, clothing versatility, and fashion principles demonstrated in the styling choices.'}`;
+    ? `\n\n🎯 ANALYSIS CONTEXT: This personal style analysis is for "${eventContext}" occasions. ${feedbackMode === 'roast' ? `Be BRUTALLY SAVAGE about how these clothing choices are completely inappropriate for this occasion. Mock how these garment choices show zero understanding of appropriate dress codes.` : 'Evaluate how well their natural coloring and body shape suit this occasion, and how their outfit choices enhance or detract from their natural features for this specific event.'}`
+    : `\n\n🎯 ANALYSIS CONTEXT: General personal style analysis - ${feedbackMode === 'roast' ? 'absolutely destroy these clothing and styling choices with maximum brutality focused on the garments and coordination.' : 'provide comprehensive personal color analysis based on their natural features, plus styling advice that works with their coloring and body shape.'}`;
 
   const toneInstructions = feedbackMode === 'roast' 
     ? `\n\n🔥 RESEARCH TONE: MAXIMUM BRUTALITY FOR CLOTHING ANALYSIS 🔥
@@ -135,22 +141,23 @@ Based on clothing choices, categorize the styling approach:
 Apply the most savage fashion research methodology to the CLOTHING AND STYLING CHOICES. Be devastatingly brutal about garment coordination, color choices, and styling decisions. Focus all brutality on the visible clothing items and fashion choices. Make every critique about the garments, styling, and clothing coordination choices.
 
 Maintain the JSON structure while being absolutely savage about the fashion and clothing elements.`
-    : `\n\n💫 RESEARCH TONE: Professional academic fashion research approach. Provide detailed, constructive analysis of clothing coordination and styling choices. Focus on what works well in the garment coordination and how to enhance the clothing styling further.
+    : `\n\n💫 ANALYSIS TONE: Professional personal color and style analysis approach. Provide detailed, personalized insights about their natural coloring and how to enhance it through clothing choices. Focus on their unique features and how to celebrate them through styling.
 
 **CRITICAL:** Always maintain the complete JSON structure with all required fields including styleAnalysis.`;
 
-  const genderConsiderations = `\n\n👤 GENDER RESEARCH CONTEXT: Analyzing clothing choices typically associated with ${gender} fashion. ${feedbackMode === 'roast' ? `Brutally mock how these garment choices fail to understand basic ${gender} fashion coordination principles. Be savage about how these clothing items miss every styling rule for ${gender} fashion.` : `Consider styling conventions and garment coordination principles typically associated with ${gender} fashion while analyzing the clothing choices and coordination approach.`}`;
+  const genderConsiderations = `\n\n👤 GENDER ANALYSIS CONTEXT: Providing personal style analysis for ${gender} fashion principles. ${feedbackMode === 'roast' ? `Brutally mock how these garment choices fail to understand basic ${gender} fashion coordination principles. Be savage about how these clothing items miss every styling rule for ${gender} fashion.` : `Consider ${gender} fashion principles while analyzing their natural features and how to best style them. Focus on color theory and styling techniques that enhance their natural beauty.`}`;
 
-  const finalReminder = `\n\n🚨 RESEARCH PROTOCOL REMINDER: 
-- Focus EXCLUSIVELY on visible clothing items and garments
-- Analyze color coordination between clothing pieces
-- Examine garment fit and styling choices
-- Study fashion coordination principles demonstrated
+  const finalReminder = `\n\n🚨 ANALYSIS PROTOCOL REMINDER: 
+- Analyze the PERSON'S natural features (skin tone, hair color, eye color)
+- Determine their personal color season and undertones
+- Assess how their clothing choices work with their natural coloring
+- Provide personalized color palette based on their features
+- Examine body shape and styling recommendations
 - Always provide complete JSON response structure
-- Include comprehensive styleAnalysis with all required fields
-- Base all analysis on clothing and fashion elements only
-- This is purely a clothing and styling research study
-- No analysis of personal characteristics - clothing coordination only`;
+- Include comprehensive styleAnalysis with personal color analysis
+- Base color analysis on their natural features, not just clothing
+- This combines personal color theory with outfit analysis
+- Focus on enhancing their natural beauty through informed styling choices`;
 
   return baseInstructions + contextSpecificInstructions + toneInstructions + genderConsiderations + finalReminder;
 }

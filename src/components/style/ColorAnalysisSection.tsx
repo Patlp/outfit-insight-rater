@@ -9,7 +9,7 @@ const ColorAnalysisSection: React.FC<ColorAnalysisSectionProps> = ({ colorAnalys
   return (
     <div className="fashion-card mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-fashion-900">Color Type</h3>
+        <h3 className="text-lg font-semibold text-fashion-900">Your Personal Color Type</h3>
       </div>
       
       <div className="mb-6">
@@ -22,8 +22,8 @@ const ColorAnalysisSection: React.FC<ColorAnalysisSectionProps> = ({ colorAnalys
       <div className="space-y-6">
         {/* Undertone Scale */}
         <div>
-          <h5 className="text-sm font-medium text-fashion-800 mb-2">UNDERTONE</h5>
-          <p className="text-xs text-fashion-600 mb-3">From cool to warm</p>
+          <h5 className="text-sm font-medium text-fashion-800 mb-2">YOUR SKIN UNDERTONE</h5>
+          <p className="text-xs text-fashion-600 mb-3">From cool to warm undertones in your natural skin tone</p>
           <div className="relative">
             <div className="h-12 rounded-lg overflow-hidden bg-gradient-to-r from-blue-400 via-gray-400 to-orange-400"></div>
             <div 
@@ -36,8 +36,8 @@ const ColorAnalysisSection: React.FC<ColorAnalysisSectionProps> = ({ colorAnalys
 
         {/* Intensity Scale */}
         <div>
-          <h5 className="text-sm font-medium text-fashion-800 mb-2">INTENSITY</h5>
-          <p className="text-xs text-fashion-600 mb-3">From strong and bright to soft and muted</p>
+          <h5 className="text-sm font-medium text-fashion-800 mb-2">YOUR NATURAL CONTRAST</h5>
+          <p className="text-xs text-fashion-600 mb-3">Based on the contrast between your hair, skin, and eyes</p>
           <div className="relative">
             <div className="h-12 rounded-lg overflow-hidden bg-gradient-to-r from-red-600 via-red-300 to-red-100"></div>
             <div 
@@ -50,8 +50,8 @@ const ColorAnalysisSection: React.FC<ColorAnalysisSectionProps> = ({ colorAnalys
 
         {/* Value/Lightness Scale */}
         <div>
-          <h5 className="text-sm font-medium text-fashion-800 mb-2">VALUE</h5>
-          <p className="text-xs text-fashion-600 mb-3">From light to deep and dark</p>
+          <h5 className="text-sm font-medium text-fashion-800 mb-2">YOUR NATURAL DEPTH</h5>
+          <p className="text-xs text-fashion-600 mb-3">The overall lightness or depth of your natural coloring</p>
           <div className="relative">
             <div className="h-12 rounded-lg overflow-hidden bg-gradient-to-r from-green-100 via-green-400 to-green-900"></div>
             <div 
