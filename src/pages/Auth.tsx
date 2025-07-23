@@ -20,6 +20,14 @@ const Auth: React.FC = () => {
     if (user) {
       navigate('/');
     }
+    
+    // Check if user was redirected here after email verification
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true') {
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+      toast.success('🎉 Email verified successfully! Welcome to RateMyFit!');
+    }
   }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
