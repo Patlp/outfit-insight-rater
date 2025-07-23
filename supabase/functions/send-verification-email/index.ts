@@ -49,12 +49,11 @@ serve(async (req) => {
     const originalRedirectTo = data.email_data?.redirect_to || 'https://ratemyfit.app';
     const emailActionType = data.email_data?.email_action_type || 'signup';
 
-    // Fix the redirect URL to use the actual application domain instead of localhost
+    // Redirect directly to Stripe payment after verification
     let redirectTo = originalRedirectTo;
-    if (redirectTo.includes('localhost:3000')) {
-      // Extract the payment parameter if it exists
-      const paymentParam = redirectTo.includes('payment=required') ? '&payment=required' : '';
-      redirectTo = `https://34608f81-40f2-4f2b-8203-91da7d176d20.lovableproject.com/auth?verified=true${paymentParam}`;
+    if (redirectTo.includes('localhost:3000') || redirectTo.includes('payment=required')) {
+      // Redirect directly to Stripe payment link after email verification
+      redirectTo = 'https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01';
     }
 
     console.log('Extracted values:', { userEmail, token, tokenHash, originalRedirectTo, redirectTo, emailActionType })
