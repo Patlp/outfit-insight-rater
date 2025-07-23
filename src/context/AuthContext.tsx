@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SubscriptionInfo {
   subscribed: boolean;
@@ -63,6 +64,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }, 0);
       }
     });
+
+    // Check for subscription status in URL params (for successful payments)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('subscription') === 'success') {
+      // Clear the URL parameter and check subscription status
+      window.history.replaceState({}, document.title, window.location.pathname);
+      toast.success('🎉 Welcome to Premium! Your Style Tips are now unlocked.');
+      setTimeout(() => {
+        checkSubscription();
+      }, 1000); // Give Stripe a moment to process
+    }
 
     return () => authSubscription.unsubscribe();
   }, []);
