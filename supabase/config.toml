@@ -23,6 +23,83 @@ port = 54324
 enabled = true
 port = 54325
 
+[auth]
+[auth.email]
+# Use our custom verification email function
+enable_signup = true
+double_confirm_changes = true
+secure_email_change_enabled = true
+
+[auth.external.google]
+enabled = false
+
+[auth.external.facebook]
+enabled = false
+
+[auth.external.twitter]
+enabled = false
+
+[auth.external.github]
+enabled = false
+
+[auth.external.apple]
+enabled = false
+
+[auth.external.azure]
+enabled = false
+
+[auth.external.bitbucket]
+enabled = false
+
+[auth.external.discord]
+enabled = false
+
+[auth.external.figma]
+enabled = false
+
+[auth.external.gitlab]
+enabled = false
+
+[auth.external.instagram]
+enabled = false
+
+[auth.external.kakao]
+enabled = false
+
+[auth.external.keycloak]
+enabled = false
+
+[auth.external.linkedin]
+enabled = false
+
+[auth.external.notion]
+enabled = false
+
+[auth.external.slack]
+enabled = false
+
+[auth.external.spotify]
+enabled = false
+
+[auth.external.twitch]
+enabled = false
+
+[auth.external.workos]
+enabled = false
+
+[auth.external.zoom]
+enabled = false
+
+[auth.hook.custom_access_token]
+enabled = false
+
+[auth.hook.send_sms]
+enabled = false
+
+[auth.hook.send_email]
+enabled = true
+uri = "http://host.docker.internal:54321/functions/v1/send-verification-email"
+
 [functions]
 [functions.analyze-outfit]
 verify_jwt = false
