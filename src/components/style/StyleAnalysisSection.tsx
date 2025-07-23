@@ -13,7 +13,7 @@ const StyleAnalysisSection: React.FC<StyleAnalysisSectionProps> = ({ styleAnalys
   return (
     <div className="mt-8 animate-fade-in">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-fashion-900 mb-2">Your Style Analysis</h2>
+        <h2 className="text-2xl font-bold text-fashion-900 mb-2">Specific style tips for your skin tone and body type</h2>
         <p className="text-fashion-600 text-sm">Personalized insights based on your features</p>
       </div>
 
