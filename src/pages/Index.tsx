@@ -1,12 +1,14 @@
 
 import React from 'react';
 import { RatingProvider } from '@/context/RatingContext';
+import { AuthProvider } from '@/context/AuthContext';
 import GenderToggle from '@/components/GenderToggle';
 import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
 import PrivacyNotice from '@/components/PrivacyNotice';
 import RoastModeToggle from '@/components/RoastModeToggle';
 import InviteWall from '@/components/InviteWall';
+import UserMenu from '@/components/UserMenu';
 import { useRating } from '@/context/RatingContext';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -31,7 +33,10 @@ const HomeContent: React.FC = () => {
   
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8 flex flex-col items-center">
-      <header className="text-center mb-8">
+      <header className="text-center mb-8 relative">
+        <div className="absolute top-4 right-4">
+          <UserMenu />
+        </div>
         <img 
           src="/lovable-uploads/3c887a45-fcd4-4fa5-8558-f2c9bbe856f9.png" 
           alt="RateMyFit Logo" 
@@ -61,12 +66,14 @@ const HomeContent: React.FC = () => {
 const Index: React.FC = () => {
   return (
     <ErrorBoundary>
-      <RatingProvider>
-        <div className="min-h-screen bg-warm-cream">
-          <HomeContent />
-          <Toaster position="bottom-center" />
-        </div>
-      </RatingProvider>
+      <AuthProvider>
+        <RatingProvider>
+          <div className="min-h-screen bg-warm-cream">
+            <HomeContent />
+            <Toaster position="bottom-center" />
+          </div>
+        </RatingProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 };
