@@ -17,7 +17,7 @@ interface AuthContextType {
   loading: boolean;
   subscription: SubscriptionInfo;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, requirePayment?: boolean) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fromPayment?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   checkSubscription: (retryCount?: number) => Promise<boolean>;
   createCheckoutSession: () => Promise<void>;
@@ -166,6 +166,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signUp = async (email: string, password: string, fromPayment = false) => {
+    // Only allow signup if it's from a payment verification
+    if (!fromPayment) {
+      return { error: { message: 'Account creation requires premium subscription. Please complete payment first.' } };
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -186,10 +191,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isChecking: false,
         lastChecked: new Date()
       });
-    } else if (!error && !fromPayment) {
-      // Regular signup - needs payment
-      setJustSignedUp(true);
-      console.log('Regular signup - will need subscription');
     }
     
     return { error };
