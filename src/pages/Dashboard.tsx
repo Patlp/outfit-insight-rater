@@ -12,14 +12,14 @@ import ColorAnalysisSection from '@/components/style/ColorAnalysisSection';
 import BodyTypeSection from '@/components/style/BodyTypeSection';
 
 const Dashboard: React.FC = () => {
-  const { user, subscription } = useAuth();
+  const { user, subscription, loading } = useAuth();
   const { currentUpload, analysisResult, clearSession } = useUploadSession();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to home if not authenticated
-    if (!user) {
-      navigate('/');
+    // Only redirect if user is not authenticated and we're not still loading auth state
+    if (!user && !loading) {
+      navigate('/auth');
       return;
     }
     
@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
     if (currentUpload && analysisResult) {
       console.log('Dashboard: User has session data from previous upload');
     }
-  }, [user, navigate, currentUpload, analysisResult]);
+  }, [user, loading, navigate, currentUpload, analysisResult]);
 
   const handleNewAnalysis = () => {
     clearSession();

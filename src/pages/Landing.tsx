@@ -171,7 +171,7 @@ const LandingContent: React.FC = () => {
   const { user, subscription } = useAuth();
   const navigate = useNavigate();
   
-  // No automatic redirects - let users stay on home page
+  // Allow users to navigate freely - don't auto-redirect
   
   // Initialize error recovery
   useErrorRecovery({
