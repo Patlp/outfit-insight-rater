@@ -91,28 +91,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [session, subscription.lastChecked, subscription.subscribed]);
 
   const createCheckoutSession = useCallback(async () => {
-    if (!session) {
-      throw new Error('User must be logged in to subscribe');
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      throw error;
-    }
-  }, [session]);
+    // Direct redirect to Stripe payment link
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener FIRST

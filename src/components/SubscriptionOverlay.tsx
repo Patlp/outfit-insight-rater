@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Lock, Crown, Sparkles, Loader2 } from 'lucide-react';
+import { Lock, Crown, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionOverlayProps {
   children: React.ReactNode;
@@ -14,46 +10,15 @@ interface SubscriptionOverlayProps {
 
 const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) => {
   const { subscription } = useAuth();
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   // If user is subscribed, show content normally
   if (subscription.subscribed) {
     return <>{children}</>;
   }
 
-  const handleSubscribe = async () => {
-    if (!email) {
-      toast.error('Please enter your email address');
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { email }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error('Failed to start subscription process. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSubscribe = () => {
+    // Direct redirect to Stripe payment link
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
   return (
@@ -99,41 +64,17 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
               <div className="text-sm text-fashion-600">Cancel anytime</div>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2 text-left">
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+            <Button 
+              onClick={handleSubscribe}
+              className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium py-3"
+            >
+              <Lock className="h-4 w-4 mr-2" />
+              Get Premium Access - £5.00/month • Cancel anytime
+            </Button>
 
-              <Button 
-                onClick={handleSubscribe}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium py-3"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="h-4 w-4 mr-2" />
-                    Get Premium Access - £5.00/month • Cancel anytime
-                  </>
-                )}
-              </Button>
-
-              <p className="text-xs text-fashion-500">
-                After payment, you'll create your account and get instant access
-              </p>
-            </div>
+            <p className="text-xs text-fashion-500 text-center">
+              After payment, you'll create your account and get instant access
+            </p>
           </CardContent>
         </Card>
       </div>

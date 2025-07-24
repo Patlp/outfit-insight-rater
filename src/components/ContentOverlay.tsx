@@ -20,18 +20,9 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
     return <>{children}</>;
   }
 
-  const handleSubscribe = async () => {
-    if (!user) {
-      toast.error('Please sign in to subscribe');
-      navigate('/auth');
-      return;
-    }
-
-    try {
-      await createCheckoutSession();
-    } catch (error) {
-      toast.error('Failed to start subscription process. Please try again.');
-    }
+  const handleSubscribe = () => {
+    // Direct redirect to Stripe payment link
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
   const handleSignIn = () => {

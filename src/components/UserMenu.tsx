@@ -11,12 +11,9 @@ const UserMenu: React.FC = () => {
   const { user, signOut, subscription, createCheckoutSession, openCustomerPortal, checkSubscription } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubscribe = async () => {
-    try {
-      await createCheckoutSession();
-    } catch (error) {
-      toast.error('Failed to start subscription process. Please try again.');
-    }
+  const handleSubscribe = () => {
+    // Direct redirect to Stripe payment link
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
   const handleManageSubscription = async () => {

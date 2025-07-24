@@ -21,12 +21,9 @@ import { CheckCircle, Sparkles, Palette, User, Crown } from 'lucide-react';
 const PremiumBenefitsSection: React.FC = () => {
   const { createCheckoutSession, subscription } = useAuth();
 
-  const handleSubscribe = async () => {
-    try {
-      await createCheckoutSession();
-    } catch (error) {
-      console.error('Subscription error:', error);
-    }
+  const handleSubscribe = () => {
+    // Direct redirect to Stripe payment link
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
   const benefits = [
