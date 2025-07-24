@@ -91,7 +91,7 @@ const PremiumBenefitsSection: React.FC = () => {
           </div>
           <div className="relative rounded-lg overflow-hidden shadow-md">
             <img 
-              src="/lovable-uploads/4d11b811-e398-4501-89fb-b7ae851058ec.png"
+              src="/lovable-uploads/1fbf3738-5ab6-4132-8122-a7e61640a9bc.png"
               alt="Color Analysis Example - Cool Winter type with undertone, contrast and depth analysis"
               className="w-full h-48 object-cover"
             />
@@ -116,7 +116,7 @@ const PremiumBenefitsSection: React.FC = () => {
           </div>
           <div className="relative rounded-lg overflow-hidden shadow-md">
             <img 
-              src="/lovable-uploads/3f5fb3a9-f064-4f46-b926-c09546a0779c.png"
+              src="/lovable-uploads/6562ad07-ebd6-4437-87b7-4bde9739a730.png"
               alt="Personal Wardrobe Color Guide with curated color palettes for different clothing categories"
               className="w-full h-48 object-cover"
             />
@@ -141,7 +141,7 @@ const PremiumBenefitsSection: React.FC = () => {
           </div>
           <div className="relative rounded-lg overflow-hidden shadow-md">
             <img 
-              src="/lovable-uploads/97ab9127-b5b6-4c69-a573-0f8e9c400dc3.png"
+              src="/lovable-uploads/a3a076fa-dd2b-45a6-b7e4-cec08d357d9e.png"
               alt="Body Type Analysis example showing Natural Ag type with physical analysis and styling recommendations"
               className="w-full h-48 object-cover"
             />
