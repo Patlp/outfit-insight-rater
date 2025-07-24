@@ -103,11 +103,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Check subscription when user logs in
+        // Check subscription when user logs in, but preserve premium state from payment
         if (session?.user && event === 'SIGNED_IN') {
-          setTimeout(() => {
-            checkSubscription();
-          }, 0);
+          // Check if this user was just created from payment (has premium flag in metadata)
+          const fromPayment = session.user.user_metadata?.fromPayment;
+          if (fromPayment) {
+            console.log('User signed in from payment - setting premium status');
+            setSubscription({
+              subscribed: true,
+              subscription_tier: 'Premium',
+              subscription_end: null,
+              isChecking: false,
+              lastChecked: new Date()
+            });
+          } else {
+            setTimeout(() => {
+              checkSubscription();
+            }, 0);
+          }
         }
       }
     );
@@ -160,21 +173,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        data: {
+          fromPayment: true // Add metadata to track payment users
+        }
       }
     });
-    
-    // If signup is from payment, the user already has premium access
-    if (!error && fromPayment) {
-      console.log('Account created from payment - automatically premium');
-      setSubscription({
-        subscribed: true,
-        subscription_tier: 'Premium',
-        subscription_end: null,
-        isChecking: false,
-        lastChecked: new Date()
-      });
-    }
     
     return { error };
   };

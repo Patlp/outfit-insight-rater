@@ -171,12 +171,7 @@ const LandingContent: React.FC = () => {
   const { user, subscription } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect premium users to Style Profile
-  useEffect(() => {
-    if (user && subscription?.subscribed) {
-      navigate('/style-profile');
-    }
-  }, [user, subscription, navigate]);
+  // No automatic redirects - let users stay on home page
   
   // Initialize error recovery
   useErrorRecovery({

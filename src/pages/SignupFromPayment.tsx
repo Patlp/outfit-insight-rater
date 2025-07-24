@@ -263,7 +263,8 @@ const SignupFromPayment = () => {
       const { error } = await signUp(email, password, true); // fromPayment = true
       if (error) throw error;
 
-      // Account created successfully - redirect to dashboard
+      // Account created successfully - clear session storage and redirect to dashboard
+      sessionStorage.removeItem(STORAGE_KEY);
       navigate("/dashboard");
     } catch (error: any) {
       setError(error.message || "Failed to create account");

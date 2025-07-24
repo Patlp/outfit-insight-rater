@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, Crown, RefreshCw } from 'lucide-react';
+import { User, LogOut, Settings, Crown, RefreshCw, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -73,6 +73,11 @@ const UserMenu: React.FC = () => {
         </div>
         
         <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+          <LayoutDashboard className="h-4 w-4 mr-2" />
+          Dashboard
+        </DropdownMenuItem>
         
         <DropdownMenuItem onClick={handleRefreshSubscription} disabled={subscription.isChecking}>
           <RefreshCw className={`h-4 w-4 mr-2 ${subscription.isChecking ? 'animate-spin' : ''}`} />
