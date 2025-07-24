@@ -68,7 +68,7 @@ const PremiumBenefitsSection: React.FC = () => {
           disabled={subscription.isChecking}
         >
           <Sparkles className="h-5 w-5 mr-2" />
-          {subscription.isChecking ? 'Loading...' : 'Get Premium Access - $7.99/month'}
+          {subscription.isChecking ? 'Loading...' : 'Get Premium Access - £5.00/month • Cancel anytime'}
         </Button>
       </div>
 
@@ -151,7 +151,7 @@ const PremiumBenefitsSection: React.FC = () => {
       </div>
 
       {/* Final CTA */}
-      <div className="text-center">
+      <div className="text-center mb-16">
         <p className="text-fashion-600 mb-4">
           Start with our free outfit rating below, then unlock your complete style profile
         </p>
@@ -161,7 +161,7 @@ const PremiumBenefitsSection: React.FC = () => {
           className="border-fashion-600 text-fashion-600 hover:bg-fashion-600 hover:text-white"
           disabled={subscription.isChecking}
         >
-          {subscription.isChecking ? 'Loading...' : 'Upgrade to Premium'}
+          {subscription.isChecking ? 'Loading...' : 'Upgrade to Premium - £5.00/month • Cancel anytime'}
         </Button>
       </div>
     </div>

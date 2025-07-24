@@ -45,12 +45,12 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: "gbp",
             product_data: { 
               name: "RateMyFit Style Tips - Monthly Subscription",
               description: "Unlock unlimited access to personalized color analysis, color palette recommendations, and body type styling tips."
             },
-            unit_amount: 997, // $9.97/month
+            unit_amount: 500, // £5.00/month
             recurring: { interval: "month" },
           },
           quantity: 1,

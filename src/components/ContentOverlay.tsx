@@ -71,7 +71,7 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
             </div>
 
             <div className="mb-4 text-center">
-              <div className="text-xl font-bold text-fashion-900">$9.97/month</div>
+              <div className="text-xl font-bold text-fashion-900">£5.00/month</div>
               <div className="text-xs text-fashion-600">Cancel anytime</div>
             </div>
 

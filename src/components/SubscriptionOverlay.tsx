@@ -95,7 +95,7 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
             </div>
 
             <div className="mb-6 p-4 bg-fashion-50 rounded-lg border border-fashion-200">
-              <div className="text-2xl font-bold text-fashion-900">$9.97/month</div>
+              <div className="text-2xl font-bold text-fashion-900">£5.00/month</div>
               <div className="text-sm text-fashion-600">Cancel anytime</div>
             </div>
 
@@ -125,7 +125,7 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
                 ) : (
                   <>
                     <Lock className="h-4 w-4 mr-2" />
-                    Get Premium Access
+                    Get Premium Access - £5.00/month • Cancel anytime
                   </>
                 )}
               </Button>
