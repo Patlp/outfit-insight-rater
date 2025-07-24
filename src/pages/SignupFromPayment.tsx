@@ -226,7 +226,7 @@ const SignupFromPayment = () => {
     if (!sessionId) {
       updateVerificationState({
         stage: "failed",
-        message: "No payment session found. Please try making a payment again.",
+        message: "No payment session found. Please make sure you came from a valid payment link.",
         errorType: "not-found"
       });
       return;

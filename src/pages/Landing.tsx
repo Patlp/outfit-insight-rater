@@ -23,8 +23,8 @@ const PremiumBenefitsSection: React.FC = () => {
   const { createCheckoutSession, subscription } = useAuth();
 
   const handleSubscribe = () => {
-    // Direct redirect to Stripe payment link
-    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+    // Use the proper checkout session flow
+    createCheckoutSession();
   };
 
   const benefits = [

@@ -91,9 +91,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [session, subscription.lastChecked, subscription.subscribed]);
 
   const createCheckoutSession = useCallback(async () => {
-    // Direct redirect to Stripe payment link
-    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
-  }, []);
+    try {
+      // For guests, we'll use a default email that they can change during signup
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { email: user?.email || 'guest@ratemyfit.app' }
+      });
+
+      if (error) throw error;
+
+      // Open Stripe checkout in the same tab (not new tab) for payment flow
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      toast.error('Failed to start payment process. Please try again.');
+    }
+  }, [user]);
 
   useEffect(() => {
     // Set up auth state listener FIRST

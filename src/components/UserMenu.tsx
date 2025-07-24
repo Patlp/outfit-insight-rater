@@ -12,8 +12,8 @@ const UserMenu: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubscribe = () => {
-    // Direct redirect to Stripe payment link
-    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+    // Use the proper checkout session flow
+    createCheckoutSession();
   };
 
   const handleManageSubscription = async () => {
