@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RatingProvider } from '@/context/RatingContext';
 import GenderToggle from '@/components/GenderToggle';
 import UploadArea from '@/components/UploadArea';
@@ -167,6 +168,15 @@ const PremiumBenefitsSection: React.FC = () => {
 
 const LandingContent: React.FC = () => {
   const { ratingResult } = useRating();
+  const { user, subscription } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect premium users to Style Profile
+  useEffect(() => {
+    if (user && subscription?.subscribed) {
+      navigate('/style-profile');
+    }
+  }, [user, subscription, navigate]);
   
   // Initialize error recovery
   useErrorRecovery({
