@@ -42,6 +42,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const checkSubscription = useCallback(async (retryCount = 0): Promise<boolean> => {
     if (!session) return false;
 
+    // Prevent too frequent checks - only check if last check was more than 30 seconds ago
+    const now = new Date();
+    if (subscription.lastChecked && (now.getTime() - subscription.lastChecked.getTime()) < 30000) {
+      return subscription.subscribed;
+    }
+
     setSubscription(prev => ({ ...prev, isChecking: true }));
 
     try {
@@ -54,13 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) {
         console.error('Error checking subscription:', error);
         
-        // Retry logic for network errors
-        if (retryCount < 3 && error.message?.includes('network')) {
-          console.log(`Retrying subscription check (${retryCount + 1}/3)...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          return checkSubscription(retryCount + 1);
-        }
-        
+        // Don't retry on errors - just fail silently for the homepage
         setSubscription(prev => ({ 
           ...prev, 
           isChecking: false,
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }));
       return false;
     }
-  }, [session]);
+  }, [session, subscription.lastChecked, subscription.subscribed]);
 
   const createCheckoutSession = useCallback(async () => {
     if (!session) {
@@ -167,7 +167,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (urlParams.get('subscription') === 'success') {
       // Clear the URL parameter and redirect to payment success page
       window.history.replaceState({}, document.title, '/payment-success');
-      window.location.href = '/payment-success';
+      // Use router navigation instead of direct window.location.href
+      setTimeout(() => {
+        window.location.href = '/payment-success';
+      }, 100);
     }
 
     return () => authSubscription.unsubscribe();
