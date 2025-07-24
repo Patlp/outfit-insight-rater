@@ -357,7 +357,6 @@ const SignupFromPayment = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  disabled
                 />
               </div>
               
