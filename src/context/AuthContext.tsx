@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [justSignedUp, setJustSignedUp] = useState(false);
+  
   const [subscription, setSubscription] = useState<SubscriptionInfo>({
     subscribed: false,
     subscription_tier: null,
@@ -108,23 +108,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setTimeout(() => {
             checkSubscription();
           }, 0);
-          
-          // For new users who just signed up, redirect to payment
-          if (justSignedUp) {
-            setTimeout(async () => {
-              try {
-                const hasSubscription = await checkSubscription();
-                if (!hasSubscription) {
-                  console.log('New user detected, redirecting to payment...');
-                  await createCheckoutSession();
-                }
-                setJustSignedUp(false); // Reset the flag
-              } catch (checkoutError) {
-                console.error('Failed to create checkout session after signup:', checkoutError);
-                setJustSignedUp(false); // Reset the flag even on error
-              }
-            }, 3000); // Wait longer to ensure session and subscription check are complete
-          }
         }
       }
     );
@@ -155,7 +138,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     return () => authSubscription.unsubscribe();
-  }, [justSignedUp, checkSubscription, createCheckoutSession]); // Add functions as dependencies
+  }, [checkSubscription]); // Add functions as dependencies
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
