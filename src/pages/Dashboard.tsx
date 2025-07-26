@@ -59,12 +59,10 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {subscription.subscribed && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                <Crown className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Premium Member</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+              <Crown className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-800">Premium Member</span>
+            </div>
           </div>
         </div>
 
@@ -140,8 +138,8 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Premium Style Analysis */}
-            {subscription.subscribed && analysisResult.styleAnalysis && (
+            {/* Premium Style Analysis - All logged-in users have access */}
+            {analysisResult.styleAnalysis && (
               <div className="space-y-6">
                 <StyleAnalysisSection styleAnalysis={analysisResult.styleAnalysis} />
                 <ColorAnalysisSection colorAnalysis={analysisResult.styleAnalysis.colorAnalysis} />
@@ -184,20 +182,6 @@ const Dashboard: React.FC = () => {
                     <div className="text-xs opacity-75">Upload another photo</div>
                   </div>
                 </Button>
-                
-                {!subscription.subscribed && (
-                  <Button
-                    variant="outline"
-                    className="h-auto py-4 border-fashion-200 hover:bg-fashion-50"
-                    onClick={() => navigate('/')}
-                  >
-                    <Crown className="h-5 w-5 mr-2 text-fashion-600" />
-                    <div className="text-left">
-                      <div className="font-medium">Upgrade to Premium</div>
-                      <div className="text-xs opacity-75">Unlock detailed insights</div>
-                    </div>
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>

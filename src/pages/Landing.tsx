@@ -18,14 +18,47 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Sparkles, Palette, User, Crown } from 'lucide-react';
+import { toast } from 'sonner';
+import EmailCollectionDialog from '@/components/EmailCollectionDialog';
+import PremiumAccessMessage from '@/components/PremiumAccessMessage';
 
 const PremiumBenefitsSection: React.FC = () => {
   const { user, createCheckoutSession, subscription } = useAuth();
+  const [showEmailDialog, setShowEmailDialog] = React.useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
 
-  const handleSubscribe = () => {
-    // This function should only be called for logged-in users in this context
-    if (user?.email) {
-      createCheckoutSession(user.email);
+  // Only show for anonymous users
+  if (user) {
+    return null;
+  }
+
+  const handleSubscribeClick = () => {
+    console.log('🔔 [DEBUG] Landing premium button clicked');
+    console.log('👤 [DEBUG] Current user:', user);
+    
+    if (user) {
+      console.log('✅ [DEBUG] User is logged in, using email:', user.email);
+      handleEmailSubmit(user.email!);
+    } else {
+      console.log('📧 [DEBUG] User not logged in, showing email dialog');
+      setShowEmailDialog(true);
+    }
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    console.log('📧 [DEBUG] Landing handleEmailSubmit called with:', email);
+    setIsProcessingPayment(true);
+    
+    try {
+      console.log('🚀 [DEBUG] Calling createCheckoutSession...');
+      await createCheckoutSession(email);
+      console.log('✅ [DEBUG] Checkout session created successfully');
+      setShowEmailDialog(false);
+    } catch (error) {
+      console.error('❌ [DEBUG] Landing checkout error:', error);
+      toast.error('Failed to create checkout session');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -62,13 +95,13 @@ const PremiumBenefitsSection: React.FC = () => {
         </div>
 
         <Button 
-          onClick={handleSubscribe}
+          onClick={handleSubscribeClick}
           size="lg"
           className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-8"
-          disabled={subscription.isChecking}
+          disabled={isProcessingPayment}
         >
           <Sparkles className="h-5 w-5 mr-2" />
-          {subscription.isChecking ? 'Loading...' : 'Get Premium Access - £5.00/month • Cancel anytime'}
+          {isProcessingPayment ? 'Processing...' : 'Get Premium Access - £5.00/month • Cancel anytime'}
         </Button>
       </div>
 
@@ -156,14 +189,21 @@ const PremiumBenefitsSection: React.FC = () => {
           Start with our free outfit rating below, then unlock your complete style profile
         </p>
         <Button 
-          onClick={handleSubscribe}
+          onClick={handleSubscribeClick}
           variant="outline"
           className="border-fashion-600 text-fashion-600 hover:bg-fashion-600 hover:text-white"
-          disabled={subscription.isChecking}
+          disabled={isProcessingPayment}
         >
-          {subscription.isChecking ? 'Loading...' : 'Upgrade to Premium - £5.00/month • Cancel anytime'}
+          {isProcessingPayment ? 'Processing...' : 'Upgrade to Premium - £5.00/month • Cancel anytime'}
         </Button>
       </div>
+      
+      <EmailCollectionDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        onEmailSubmit={handleEmailSubmit}
+        loading={isProcessingPayment}
+      />
     </div>
   );
 };
@@ -204,17 +244,23 @@ const LandingContent: React.FC = () => {
         </p>
       </header>
 
-      {/* Premium Benefits Section */}
+      {/* Premium Benefits Section - only for anonymous users */}
       <PremiumBenefitsSection />
       
-      {/* Free Upload Section */}
+      {/* Premium Access Message - only for logged-in users */}
+      <PremiumAccessMessage />
+      
+      {/* Upload Section */}
       <div className="w-full max-w-2xl mx-auto">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-semibold text-fashion-900 mb-2">
-            Try Our Free Outfit Rating
+            {user ? 'Upload Your Outfit' : 'Try Our Free Outfit Rating'}
           </h2>
           <p className="text-fashion-600">
-            Get started with a basic AI rating, then unlock detailed insights with Premium
+            {user 
+              ? 'Get detailed style analysis with your premium access'
+              : 'Get started with a basic AI rating, then unlock detailed insights with Premium'
+            }
           </p>
         </div>
 

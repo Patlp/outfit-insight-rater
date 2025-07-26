@@ -18,8 +18,8 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // If user is subscribed, show content normally
-  if (subscription.subscribed) {
+  // Business logic: All logged-in users have premium access
+  if (user) {
     return <>{children}</>;
   }
 

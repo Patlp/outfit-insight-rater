@@ -40,7 +40,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const checkSubscription = useCallback(async (retryCount = 0): Promise<boolean> => {
-    if (!session) return false;
+    // Business logic: All logged-in users are premium subscribers
+    if (!session) {
+      setSubscription({
+        subscribed: false,
+        subscription_tier: null,
+        subscription_end: null,
+        isChecking: false,
+        lastChecked: new Date()
+      });
+      return false;
+    }
 
     // Prevent too frequent checks - only check if last check was more than 30 seconds ago
     const now = new Date();
@@ -50,44 +60,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setSubscription(prev => ({ ...prev, isChecking: true }));
 
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+    // All logged-in users are premium
+    setSubscription({
+      subscribed: true,
+      subscription_tier: 'Premium',
+      subscription_end: null, // Premium for life while logged in
+      isChecking: false,
+      lastChecked: new Date()
+    });
 
-      if (error) {
-        console.error('Error checking subscription:', error);
-        
-        // Don't retry on errors - just fail silently for the homepage
-        setSubscription(prev => ({ 
-          ...prev, 
-          isChecking: false,
-          lastChecked: new Date()
-        }));
-        return false;
-      }
-
-      const isSubscribed = data.subscribed || false;
-      setSubscription({
-        subscribed: isSubscribed,
-        subscription_tier: data.subscription_tier || null,
-        subscription_end: data.subscription_end || null,
-        isChecking: false,
-        lastChecked: new Date()
-      });
-
-      return isSubscribed;
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      setSubscription(prev => ({ 
-        ...prev, 
-        isChecking: false,
-        lastChecked: new Date()
-      }));
-      return false;
-    }
+    return true;
   }, [session, subscription.lastChecked, subscription.subscribed]);
 
   const createCheckoutSession = useCallback(async (email: string) => {
@@ -136,24 +118,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Check subscription when user logs in, but preserve premium state from payment
+        // All logged-in users are premium subscribers
         if (session?.user && event === 'SIGNED_IN') {
-          // Check if this user was just created from payment (has premium flag in metadata)
-          const fromPayment = session.user.user_metadata?.fromPayment;
-          if (fromPayment) {
-            console.log('User signed in from payment - setting premium status');
-            setSubscription({
-              subscribed: true,
-              subscription_tier: 'Premium',
-              subscription_end: null,
-              isChecking: false,
-              lastChecked: new Date()
-            });
-          } else {
-            setTimeout(() => {
-              checkSubscription();
-            }, 0);
-          }
+          console.log('User signed in - automatically premium');
+          setSubscription({
+            subscribed: true,
+            subscription_tier: 'Premium',
+            subscription_end: null,
+            isChecking: false,
+            lastChecked: new Date()
+          });
         }
       }
     );
@@ -164,11 +138,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Check subscription for existing session
+      // Set premium status for existing session
       if (session?.user) {
-        setTimeout(() => {
-          checkSubscription();
-        }, 0);
+        setSubscription({
+          subscribed: true,
+          subscription_tier: 'Premium',
+          subscription_end: null,
+          isChecking: false,
+          lastChecked: new Date()
+        });
       }
     });
 
@@ -195,11 +173,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signUp = async (email: string, password: string, fromPayment = false) => {
-    // Only allow signup if it's from a payment verification
-    if (!fromPayment) {
-      return { error: { message: 'Account creation requires premium subscription. Please complete payment first.' } };
-    }
-
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -208,7 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          fromPayment: true // Add metadata to track payment users
+          fromPayment: fromPayment // Track payment users but allow regular signup too
         }
       }
     });

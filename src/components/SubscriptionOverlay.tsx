@@ -15,8 +15,8 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // If user is subscribed, show content normally
-  if (subscription.subscribed) {
+  // Business logic: Only show for anonymous users (logged-in users are premium)
+  if (user) {
     return <>{children}</>;
   }
 

@@ -50,16 +50,10 @@ const SubscriptionStatusIndicator: React.FC<SubscriptionStatusIndicatorProps> = 
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        {subscription.subscribed ? (
-          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-            <Crown className="h-3 w-3 mr-1" />
-            Premium
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-gray-600">
-            Free
-          </Badge>
-        )}
+        <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+          <Crown className="h-3 w-3 mr-1" />
+          Premium
+        </Badge>
         
         {showRefreshButton && (
           <Button
@@ -81,40 +75,26 @@ const SubscriptionStatusIndicator: React.FC<SubscriptionStatusIndicatorProps> = 
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-              subscription.subscribed ? 'bg-green-100' : 'bg-gray-100'
-            }`}>
-              {subscription.subscribed ? (
-                <Crown className="h-5 w-5 text-green-600" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-gray-500" />
-              )}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+              <Crown className="h-5 w-5 text-green-600" />
             </div>
             
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-gray-900">
-                  {subscription.subscribed ? 'Premium Account' : 'Free Account'}
+                  Premium Account
                 </h3>
                 <Badge 
-                  variant={subscription.subscribed ? "default" : "outline"}
-                  className={subscription.subscribed ? "bg-green-100 text-green-800 border-green-200" : ""}
+                  variant="default"
+                  className="bg-green-100 text-green-800 border-green-200"
                 >
-                  {subscription.subscription_tier || 'Free'}
+                  Premium
                 </Badge>
               </div>
               
-              {subscription.subscribed && subscription.subscription_end && (
-                <p className="text-sm text-gray-600">
-                  Renews on {formatDate(subscription.subscription_end)}
-                </p>
-              )}
-              
-              {!subscription.subscribed && (
-                <p className="text-sm text-gray-600">
-                  Upgrade to unlock premium features
-                </p>
-              )}
+              <p className="text-sm text-gray-600">
+                Premium access active while logged in
+              </p>
             </div>
           </div>
           
@@ -130,16 +110,14 @@ const SubscriptionStatusIndicator: React.FC<SubscriptionStatusIndicatorProps> = 
               </Button>
             )}
             
-            {subscription.subscribed && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManageSubscription}
-              >
-                <Settings className="h-4 w-4 mr-1" />
-                Manage
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManageSubscription}
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              Manage
+            </Button>
           </div>
         </div>
       </CardContent>

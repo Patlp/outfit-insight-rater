@@ -115,17 +115,10 @@ const UserMenu: React.FC = () => {
           Refresh Status
         </DropdownMenuItem>
         
-        {!subscription.subscribed ? (
-          <DropdownMenuItem onClick={handleSubscribeClick} disabled={isProcessingPayment}>
-            <Crown className="h-4 w-4 mr-2" />
-            {isProcessingPayment ? 'Processing...' : 'Upgrade to Premium'}
-          </DropdownMenuItem>
-        ) : (
-          <DropdownMenuItem onClick={handleManageSubscription}>
-            <Settings className="h-4 w-4 mr-2" />
-            Manage Subscription
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem onClick={handleManageSubscription}>
+          <Settings className="h-4 w-4 mr-2" />
+          Manage Subscription
+        </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         
