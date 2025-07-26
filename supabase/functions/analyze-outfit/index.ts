@@ -67,32 +67,62 @@ serve(async (req) => {
     console.log('📥 Request method:', req.method);
     console.log('📥 Request headers:', Object.fromEntries(req.headers.entries()));
     
-    // Parse request body with enhanced error handling and debugging
+    // Enhanced request body parsing with comprehensive validation
     let requestData: AnalyzeOutfitRequest;
     try {
       console.log('📥 Starting request body parsing...');
       console.log('📥 Content-Type:', req.headers.get('content-type'));
       console.log('📥 Content-Length:', req.headers.get('content-length'));
+      console.log('📥 Authorization present:', !!req.headers.get('authorization'));
       
-      // Try to read the body
-      const rawBody = await req.text();
-      const bodySizeMB = new Blob([rawBody]).size / (1024 * 1024);
+      // Try to read the body with better error handling
+      let rawBody: string;
+      try {
+        rawBody = await req.text();
+      } catch (bodyReadError: any) {
+        console.error('💥 Failed to read request body:', bodyReadError);
+        throw new Error(`Failed to read request body: ${bodyReadError.message}`);
+      }
       
-      console.log('📥 Raw body parsed successfully:');
-      console.log('📥 - Body length:', rawBody.length);
+      const bodySizeMB = rawBody ? new Blob([rawBody]).size / (1024 * 1024) : 0;
+      
+      console.log('📥 Raw body read successfully:');
+      console.log('📥 - Body length:', rawBody?.length || 0);
       console.log('📥 - Body size (MB):', bodySizeMB.toFixed(2));
-      console.log('📥 - Body preview (first 100 chars):', rawBody.substring(0, 100));
-      console.log('📥 - Body preview (last 50 chars):', rawBody.length > 50 ? rawBody.substring(rawBody.length - 50) : 'N/A');
+      console.log('📥 - Body preview (first 100 chars):', rawBody?.substring(0, 100) || 'EMPTY');
+      console.log('📥 - Body preview (last 50 chars):', 
+        rawBody && rawBody.length > 50 ? rawBody.substring(rawBody.length - 50) : 'N/A');
       
-      if (!rawBody || rawBody.trim() === '') {
-        console.error('💥 Request body is empty or contains only whitespace');
+      // Enhanced empty body detection
+      if (!rawBody || rawBody.trim() === '' || rawBody === 'undefined' || rawBody === 'null') {
+        console.error('💥 Request body is empty, null, undefined, or contains only whitespace');
+        console.error('💥 Raw body value:', JSON.stringify(rawBody));
         throw new Error('Request body is empty');
       }
       
-      // Try to parse JSON
+      // Additional size validation
+      if (rawBody.length < 50) {
+        console.error('💥 Request body is suspiciously small:', rawBody.length, 'characters');
+        console.error('💥 Body content:', JSON.stringify(rawBody));
+        throw new Error('Request body appears to be incomplete or corrupted');
+      }
+      
+      // Try to parse JSON with enhanced error reporting
       console.log('📥 Attempting JSON parse...');
-      requestData = JSON.parse(rawBody);
-      console.log('📥 JSON parse successful, object keys:', Object.keys(requestData));
+      try {
+        requestData = JSON.parse(rawBody);
+      } catch (parseError: any) {
+        console.error('💥 JSON parse failed:', parseError);
+        console.error('💥 Raw body that failed to parse:', rawBody.substring(0, 500));
+        throw new Error(`Failed to parse JSON: ${parseError.message}`);
+      }
+      
+      console.log('📥 JSON parse successful, object keys:', Object.keys(requestData || {}));
+      console.log('📥 Request data validation:');
+      console.log('📥 - Has gender:', !!requestData?.gender);
+      console.log('📥 - Has feedbackMode:', !!requestData?.feedbackMode);
+      console.log('📥 - Has imageBase64:', !!requestData?.imageBase64);
+      console.log('📥 - Image length:', requestData?.imageBase64?.length || 0);
       
       // Handle warmup requests
       if (requestData.warmup) {
