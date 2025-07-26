@@ -34,10 +34,12 @@ const PremiumBenefitsSection: React.FC = () => {
   };
 
   const benefits = [
-    'Personalized color analysis based on your unique features',
-    'Custom wardrobe color guide with specific recommendations', 
-    'Detailed body type analysis with styling tips',
-    'Professional fashion insights beyond basic rating'
+    '🎨 Discover your ideal color palette for glowing skin and sharper outfits',
+    '👕 Get a wardrobe guide tailored to your exact tone and proportions',
+    '🧍‍♀️ Learn your body type and get styling strategies that flatter, not fight, your shape',
+    '💾 Save every outfit, track what works, and watch your style evolve',
+    '🧠 See how each outfit aligns with your unique style fingerprint',
+    '🔁 Reduce decision fatigue, boost confidence, and walk out the door with certainty'
   ];
 
   return (
@@ -47,20 +49,19 @@ const PremiumBenefitsSection: React.FC = () => {
         <div className="flex items-center justify-center gap-2 mb-4">
           <Crown className="h-8 w-8 text-fashion-600" />
           <h1 className="text-4xl md:text-5xl font-bold text-fashion-900">
-            RateMyFit <span className="text-fashion-600">Premium</span>
+            RateMyFit <span className="text-fashion-600">Premium</span> — Look Better. Feel Better. Every Day.
           </h1>
         </div>
-        <p className="text-xl text-fashion-700 mb-6 max-w-3xl mx-auto">
-          Get personalized style insights that go beyond basic rating. Discover your unique color palette, 
-          body type, and receive professional styling recommendations tailored just for you.
+        <p className="text-xl text-fashion-700 mb-6 max-w-4xl mx-auto">
+          Unlock personalized fashion insights built around you—your unique colors, body type, and style DNA. 
+          No more guesswork. No more outfit anxiety. Just real confidence, built from the clothes you already own.
         </p>
         
         {/* Benefits List */}
-        <div className="grid md:grid-cols-2 gap-3 mb-8 max-w-2xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-3 mb-8 max-w-3xl mx-auto">
           {benefits.map((benefit, index) => (
-            <div key={index} className="flex items-center gap-3 text-left">
-              <CheckCircle className="h-5 w-5 text-fashion-600 flex-shrink-0" />
-              <span className="text-fashion-700">{benefit}</span>
+            <div key={index} className="flex items-start gap-3 text-left">
+              <span className="text-fashion-700 text-base">{benefit}</span>
             </div>
           ))}
         </div>
@@ -71,12 +72,19 @@ const PremiumBenefitsSection: React.FC = () => {
           className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-4"
         >
           <Sparkles className="h-5 w-5 mr-2" />
-          Get Premium Access - £5.00/month
+          Just £5/month
         </Button>
         
-        <p className="text-sm font-medium text-fashion-700 bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-8">
-          💯 100% Guaranteed to improve your fashion, or your money back
-        </p>
+        <div className="space-y-2 mb-8">
+          <div className="flex items-center justify-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-fashion-700 font-medium">Instant AI insights after your first upload</span>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-fashion-700 font-medium">100% guaranteed to improve how you look—and how you feel—or your money back</span>
+          </div>
+        </div>
       </div>
 
       {/* Premium Features Showcase */}
