@@ -50,10 +50,33 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         imageBase64 = imageSrc.substring(base64Start);
       }
       
-      console.log('AnalyzeButton: Image data prepared', {
+      // Validate the base64 data
+      if (!imageBase64 || imageBase64.length < 100) {
+        console.error('AnalyzeButton: Invalid image data - too small or empty', {
+          imageBase64Length: imageBase64?.length || 0,
+          imageSrcLength: imageSrc?.length || 0
+        });
+        toast.error('Invalid image data. Please try uploading the image again.');
+        return;
+      }
+      
+      // Test if it's valid base64
+      try {
+        atob(imageBase64.substring(0, 100));
+      } catch (e) {
+        console.error('AnalyzeButton: Invalid base64 format', {
+          error: e,
+          imageBase64Preview: imageBase64.substring(0, 100)
+        });
+        toast.error('Invalid image format. Please try uploading the image again.');
+        return;
+      }
+      
+      console.log('AnalyzeButton: Image data prepared and validated', {
         originalLength: imageSrc.length,
         base64Length: imageBase64.length,
-        isDataUrl: imageSrc.startsWith('data:')
+        isDataUrl: imageSrc.startsWith('data:'),
+        base64Preview: imageBase64.substring(0, 50) + '...'
       });
       
       const result = await analyzeOutfit(

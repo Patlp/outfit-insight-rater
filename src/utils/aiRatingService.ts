@@ -61,14 +61,39 @@ export const analyzeOutfit = async (
           controller.abort();
         }, 90000); // 90 second timeout (reduced from 120s)
         
+        // Validate imageBase64 before sending
+        if (!imageBase64 || imageBase64.length < 100) {
+          throw new Error('Invalid image data - image appears to be empty or too small');
+        }
+        
+        // Check if it's valid base64
+        try {
+          // Try to decode a small portion to validate it's proper base64
+          atob(imageBase64.substring(0, 100));
+        } catch (e) {
+          throw new Error('Invalid image data - not valid base64 format');
+        }
+        
+        const requestBody = {
+          gender,
+          feedbackMode,
+          imageBase64,
+          eventContext: occasionContext?.eventContext || null,
+          isNeutral: occasionContext?.isNeutral || false
+        };
+        
+        console.log('🤖 Sending request to analyze-outfit function:', {
+          gender,
+          feedbackMode,
+          imageBase64Length: imageBase64.length,
+          imageBase64Preview: imageBase64.substring(0, 50) + '...',
+          eventContext: occasionContext?.eventContext || null,
+          isNeutral: occasionContext?.isNeutral || false,
+          attempt
+        });
+        
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
-          body: {
-            gender,
-            feedbackMode,
-            imageBase64,
-            eventContext: occasionContext?.eventContext || null,
-            isNeutral: occasionContext?.isNeutral || false
-          },
+          body: requestBody,
           headers: {
             'Content-Type': 'application/json',
           }
@@ -77,7 +102,15 @@ export const analyzeOutfit = async (
         clearTimeout(timeoutId);
         
         if (analysisError) {
-          console.error(`❌ Supabase function error:`, analysisError);
+          console.error(`❌ Supabase function error (attempt ${attempt}):`, {
+            message: analysisError.message,
+            details: analysisError.details,
+            hint: analysisError.hint,
+            code: analysisError.code,
+            status: analysisError.status,
+            statusText: analysisError.statusText,
+            fullError: analysisError
+          });
           
           // Handle specific error types
           if (analysisError.message?.includes('timeout') || analysisError.message?.includes('Function timeout')) {
