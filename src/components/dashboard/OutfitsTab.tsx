@@ -320,24 +320,55 @@ const OutfitsTab: React.FC = () => {
                   
                   <CollapsibleContent>
                     <CardContent className="px-6 pb-6 pt-0">
-                      <div className="border-t border-fashion-100 pt-4">
-                        <div className="text-sm text-fashion-700 leading-relaxed">
-                          {outfit.feedback}
-                        </div>
-                        
-                        {outfit.suggestions && outfit.suggestions.length > 0 && (
-                          <div className="mt-4">
-                            <h5 className="font-medium text-fashion-900 mb-2 text-sm">Suggestions</h5>
-                            <ul className="space-y-1">
-                              {outfit.suggestions.map((suggestion, index) => (
-                                <li key={index} className="flex items-start gap-2 text-xs">
-                                  <span className="text-fashion-500 mt-0.5">•</span>
-                                  <span className="text-fashion-600">{suggestion}</span>
-                                </li>
-                              ))}
-                            </ul>
+                      <div className="border-t border-fashion-100 pt-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                          {/* Full Size Image and Score */}
+                          <div className="space-y-2">
+                            <div className="aspect-square rounded-lg overflow-hidden border border-fashion-200">
+                              <img
+                                src={outfit.image_url}
+                                alt="Outfit"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center gap-1 text-lg font-bold text-fashion-600">
+                                <Star className="h-4 w-4" />
+                                {outfit.rating_score}/10
+                              </div>
+                              <div className="flex items-center justify-center gap-1 text-xs text-fashion-500">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(outfit.created_at).toLocaleDateString()}
+                              </div>
+                              {outfit.occasion_context && (
+                                <p className="text-xs text-fashion-600 mt-1 capitalize">
+                                  {outfit.occasion_context}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        )}
+
+                          {/* Detailed Feedback */}
+                          <div className="lg:col-span-3">
+                            <div className="text-sm text-fashion-700 leading-relaxed">
+                              {outfit.feedback}
+                            </div>
+                            
+                            {outfit.suggestions && outfit.suggestions.length > 0 && (
+                              <div className="mt-3">
+                                <h5 className="font-medium text-fashion-900 mb-1 text-sm">Suggestions</h5>
+                                <ul className="space-y-1">
+                                  {outfit.suggestions.map((suggestion, index) => (
+                                    <li key={index} className="flex items-start gap-2 text-xs">
+                                      <span className="text-fashion-500 mt-0.5">•</span>
+                                      <span className="text-fashion-600">{suggestion}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </CollapsibleContent>
