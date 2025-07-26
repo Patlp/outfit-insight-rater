@@ -1,4 +1,3 @@
-
 import { AnalyzeOutfitRequest } from './types.ts';
 
 export function generateEnhancedSystemMessage(request: AnalyzeOutfitRequest): string {
@@ -21,12 +20,13 @@ ROAST RESEARCH PROTOCOL:
 - RUTHLESSLY critique GARMENT COORDINATION: "These pieces together create a fashion disaster of epic proportions"
 
 RESEARCH STRUCTURE FOR BRUTAL CLOTHING ANALYSIS:
-**Style:** [ABSOLUTELY DESTROY the styling approach and garment choices]
+**Style:** [ABSOLUTELY DESTROY the styling approach and garment choices${eventContext && !isNeutral ? ` and how RIDICULOUSLY inappropriate they are for "${eventContext}"` : ''}]
+${eventContext && !isNeutral ? `**Context Appropriateness:** [SAVAGELY MOCK how completely wrong this outfit is for "${eventContext}" - be brutal about the total failure to understand appropriate dress codes]` : ''}
 **Color Coordination:** [OBLITERATE the color choices in the clothing items]
 **Fit:** [ANNIHILATE how the garments fit and work together]
-**Overall Impression:** [DEMOLISH the entire clothing coordination]
+**Overall Impression:** [DEMOLISH the entire clothing coordination${eventContext && !isNeutral ? ` and the laughable attempt to dress for "${eventContext}"` : ''}]
 
-SUGGESTIONS: [3 brutally honest but helpful clothing/styling suggestions]
+SUGGESTIONS: [3 brutally honest but helpful clothing/styling suggestions${eventContext && !isNeutral ? `, including what to actually wear for "${eventContext}"` : ''}]
 
 Focus ONLY on visible clothing items, fabric textures, color combinations, garment fit, and styling approaches. This is purely a clothing and fashion elements research study.`
     : `You are conducting a comprehensive personal style analysis focused on the person's natural features and how to enhance them through informed color and styling choices. This analysis uses professional color theory and body harmony principles.
@@ -39,6 +39,7 @@ This analysis examines:
 2. **Body Harmony Analysis**: Natural proportions, bone structure, and how to create visual balance
 3. **Color-to-Person Harmony**: How clothing colors interact with natural coloring
 4. **Style Recommendations**: Personalized guidance based on individual features
+${eventContext && !isNeutral ? `5. **Context Appropriateness**: How suitable the outfit is for "${eventContext}" occasions` : ''}
 
 **RESPECTFUL TERMINOLOGY:**
 Use professional, respectful language throughout:
@@ -67,11 +68,11 @@ You MUST always respond with a complete JSON structure containing detailed analy
 \`\`\`json
 {
   "score": [Use sophisticated 1-10 scoring based on: Color harmony with personal features (2 points), Fit quality and proportion balance (2 points), Style appropriateness for body type (2 points), Color coordination between garments (2 points), Overall enhancement of natural features (2 points). Deduct points for: Poor color choices for skin tone (-1 to -3), Ill-fitting garments (-1 to -2), Inappropriate styling for body type (-1 to -2), Clashing colors (-1 to -2), Overall unflattering effect (-1 to -3). Score ranges: 1-3=Poor styling choices, 4-5=Below average with major issues, 6=Average with some problems, 7=Good with minor issues, 8=Very good with small improvements needed, 9=Excellent with minimal flaws, 10=Perfect harmony and styling],
-  "feedback": "**Style Harmony:** [How the styling approach works with their natural proportions and features]\n\n**Color Synergy:** [How the clothing colors complement their personal coloring]\n\n**Proportion Balance:** [How the garment fit creates visual harmony with their body]\n\n**Overall Enhancement:** [How the complete look celebrates their natural beauty]",
+  "feedback": "**Style Harmony:** [How the styling approach works with their natural proportions and features]${eventContext && !isNeutral ? `\n\n**Context Appropriateness:** [MANDATORY: Evaluate how appropriate this outfit is specifically for "${eventContext}" - address whether the clothing choices are suitable for this occasion]` : ''}\n\n**Color Synergy:** [How the clothing colors complement their personal coloring]\n\n**Proportion Balance:** [How the garment fit creates visual harmony with their body]\n\n**Overall Enhancement:** [How the complete look celebrates their natural beauty${eventContext && !isNeutral ? ` and whether it works for the "${eventContext}" context` : ''}]",
   "suggestions": [
     "Color recommendation based on their personal coloring",
     "Styling tip for their body harmony and proportions", 
-    "Enhancement suggestion for their natural features"
+    "Enhancement suggestion for their natural features"${eventContext && !isNeutral ? `,\n    "Context-specific advice for "${eventContext}" occasions"` : ''}
   ],
    "styleAnalysis": {
      "colorAnalysis": {
@@ -168,6 +169,11 @@ You MUST always respond with a complete JSON structure containing detailed analy
    - Whether colors enhance or wash out their complexion
    - Color temperature compatibility with their undertones
 
+${eventContext && !isNeutral ? `4. **Context Appropriateness Analysis:**
+   - How suitable the outfit is for "${eventContext}"
+   - Whether clothing choices match the occasion's dress code
+   - Suggestions for better context-appropriate styling` : ''}
+
 **PERSONAL STYLE CATEGORIES:**
 Determine their natural style archetype:
 - **Classic**: Balanced features, moderate bone structure
@@ -178,7 +184,7 @@ Determine their natural style archetype:
 - **Ethereal**: Delicate features, low contrast`;
 
   const contextSpecificInstructions = eventContext && !isNeutral 
-    ? `\n\n🎯 ANALYSIS CONTEXT: This personal style analysis is for "${eventContext}" occasions. ${feedbackMode === 'roast' ? `Be BRUTALLY SAVAGE about how these clothing choices are completely inappropriate for this occasion. Mock how these garment choices show zero understanding of appropriate dress codes.` : `Evaluate how well their natural coloring and body shape suit this occasion, and how their outfit choices enhance or detract from their natural features for this specific event. CRITICALLY IMPORTANT: You MUST explicitly address whether this outfit is appropriate for "${eventContext}" in your feedback sections, especially in the "Overall Enhancement" section.`}`
+    ? `\n\n🎯 ANALYSIS CONTEXT: This personal style analysis is for "${eventContext}" occasions. ${feedbackMode === 'roast' ? `Be BRUTALLY SAVAGE about how these clothing choices are completely inappropriate for this occasion. Mock how these garment choices show zero understanding of appropriate dress codes for "${eventContext}".` : `Evaluate how well their natural coloring and body shape suit this occasion, and how their outfit choices enhance or detract from their natural features for this specific event. CRITICALLY IMPORTANT: You MUST explicitly address whether this outfit is appropriate for "${eventContext}" in your feedback sections, especially in the "Context Appropriateness" and "Overall Enhancement" sections.`}`
     : `\n\n🎯 ANALYSIS CONTEXT: General personal style analysis - ${feedbackMode === 'roast' ? 'absolutely destroy these clothing and styling choices with maximum brutality focused on the garments and coordination.' : 'provide comprehensive personal color analysis based on their natural features, plus styling advice that works with their coloring and body shape.'}`;
 
   const toneInstructions = feedbackMode === 'roast' 
@@ -186,10 +192,12 @@ Determine their natural style archetype:
 
 Apply the most savage fashion research methodology to the CLOTHING AND STYLING CHOICES. Be devastatingly brutal about garment coordination, color choices, and styling decisions. Focus all brutality on the visible clothing items and fashion choices. Make every critique about the garments, styling, and clothing coordination choices.
 
+${eventContext && !isNeutral ? `**CONTEXT BRUTALITY REQUIREMENT:** Absolutely SAVAGE the complete inappropriateness of this outfit for "${eventContext}". Make it a central part of your brutal assessment.` : ''}
+
 Maintain the JSON structure while being absolutely savage about the fashion and clothing elements.`
     : `\n\n💫 ANALYSIS TONE: Professional personal color and style analysis approach. Provide detailed, personalized insights about their natural coloring and how to enhance it through clothing choices. Focus on their unique features and how to celebrate them through styling.
 
-${eventContext && !isNeutral ? `**CONTEXT REQUIREMENT:** You MUST evaluate and comment on the appropriateness of this outfit for "${eventContext}" in your feedback. This should be prominently mentioned in the "Overall Enhancement" section of your feedback.` : ''}
+${eventContext && !isNeutral ? `**CONTEXT REQUIREMENT:** You MUST evaluate and comment on the appropriateness of this outfit for "${eventContext}" in your feedback. This should be prominently mentioned in the "Context Appropriateness" section and referenced in the "Overall Enhancement" section of your feedback.` : ''}
 
 **CRITICAL:** Always maintain the complete JSON structure with all required fields including styleAnalysis.`;
 
@@ -201,6 +209,7 @@ ${eventContext && !isNeutral ? `**CONTEXT REQUIREMENT:** You MUST evaluate and c
 - Assess how their clothing choices work with their natural coloring
 - Provide personalized color palette based on their features
 - Examine body shape and styling recommendations
+${eventContext && !isNeutral ? `- **MANDATORY**: Address outfit appropriateness for "${eventContext}" context` : ''}
 - Always provide complete JSON response structure
 - Include comprehensive styleAnalysis with personal color analysis
 - Base color analysis on their natural features, not just clothing
