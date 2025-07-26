@@ -11,9 +11,7 @@ interface SubscriptionOverlayProps {
 }
 
 const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) => {
-  const { user, subscription, createCheckoutSession } = useAuth();
-  const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const { user } = useAuth();
 
   // Business logic: Only show for anonymous users (logged-in users are premium)
   if (user) {
@@ -21,37 +19,10 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
   }
 
   const handleSubscribeClick = () => {
-    console.log('🔔 [DEBUG] SubscriptionOverlay subscribe button clicked');
-    console.log('👤 [DEBUG] Current user:', user);
-    console.log('🎯 [DEBUG] Subscription status:', subscription);
-    
-    if (user) {
-      console.log('✅ [DEBUG] User is logged in, using email:', user.email);
-      // User is logged in, use their email
-      handleEmailSubmit(user.email!);
-    } else {
-      console.log('📧 [DEBUG] User not logged in, showing email dialog');
-      // User is not logged in, collect email
-      setShowEmailDialog(true);
-    }
+    console.log('🔔 [DEBUG] SubscriptionOverlay button clicked - redirecting to Stripe');
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
-  const handleEmailSubmit = async (email: string) => {
-    console.log('📧 [DEBUG] SubscriptionOverlay handleEmailSubmit called with:', email);
-    setIsProcessingPayment(true);
-    
-    try {
-      console.log('🚀 [DEBUG] Calling createCheckoutSession...');
-      await createCheckoutSession(email);
-      console.log('✅ [DEBUG] Checkout session created successfully');
-      setShowEmailDialog(false);
-    } catch (error) {
-      console.error('❌ [DEBUG] SubscriptionOverlay checkout error:', error);
-      toast.error('Failed to create checkout session');
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  };
 
   return (
     <div className="relative">
@@ -98,11 +69,10 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
 
             <Button 
               onClick={handleSubscribeClick}
-              disabled={isProcessingPayment}
               className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium py-3"
             >
               <Lock className="h-4 w-4 mr-2" />
-              {isProcessingPayment ? 'Processing...' : 'Get Premium Access - £5.00/month • Cancel anytime'}
+              Get Premium Access - £5.00/month
             </Button>
 
             <p className="text-xs text-fashion-500 text-center">
@@ -111,13 +81,6 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
           </CardContent>
         </Card>
       </div>
-
-      <EmailCollectionDialog
-        open={showEmailDialog}
-        onOpenChange={setShowEmailDialog}
-        onEmailSubmit={handleEmailSubmit}
-        loading={isProcessingPayment}
-      />
     </div>
   );
 };

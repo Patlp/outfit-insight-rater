@@ -13,10 +13,8 @@ interface ContentOverlayProps {
 }
 
 const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '' }) => {
-  const { user, subscription, createCheckoutSession, checkSubscription } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Business logic: All logged-in users have premium access
   if (user) {
@@ -24,49 +22,12 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
   }
 
   const handleSubscribeClick = () => {
-    console.log('🔔 [DEBUG] ContentOverlay subscribe button clicked');
-    console.log('👤 [DEBUG] Current user:', user);
-    console.log('🎯 [DEBUG] Subscription status:', subscription);
-    
-    if (user) {
-      console.log('✅ [DEBUG] User is logged in, using email:', user.email);
-      // User is logged in, use their email
-      handleEmailSubmit(user.email!);
-    } else {
-      console.log('📧 [DEBUG] User not logged in, showing email dialog');
-      // User is not logged in, collect email
-      setShowEmailDialog(true);
-    }
-  };
-
-  const handleEmailSubmit = async (email: string) => {
-    console.log('📧 [DEBUG] ContentOverlay handleEmailSubmit called with:', email);
-    setIsProcessingPayment(true);
-    
-    try {
-      console.log('🚀 [DEBUG] Calling createCheckoutSession...');
-      await createCheckoutSession(email);
-      console.log('✅ [DEBUG] Checkout session created successfully');
-      setShowEmailDialog(false);
-    } catch (error) {
-      console.error('❌ [DEBUG] ContentOverlay checkout error:', error);
-      toast.error('Failed to create checkout session');
-    } finally {
-      setIsProcessingPayment(false);
-    }
+    console.log('🔔 [DEBUG] ContentOverlay button clicked - redirecting to Stripe');
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
   const handleSignIn = () => {
     navigate('/auth');
-  };
-
-  const handleRefreshStatus = async () => {
-    try {
-      await checkSubscription();
-      toast.success('Subscription status refreshed');
-    } catch (error) {
-      toast.error('Failed to refresh subscription status');
-    }
   };
 
   return (
@@ -98,61 +59,26 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
             </div>
 
             <div className="space-y-2">
-              {user ? (
-                <Button 
-                  onClick={handleSubscribeClick}
-                  size="sm"
-                  disabled={isProcessingPayment}
-                  className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
-                >
-                  <Lock className="h-3 w-3 mr-2" />
-                  {isProcessingPayment ? 'Processing...' : 'Subscribe Now'}
-                </Button>
-              ) : (
-                <>
-                  <Button 
-                    onClick={handleSubscribeClick}
-                    size="sm"
-                    disabled={isProcessingPayment}
-                    className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium mb-2"
-                  >
-                    <Lock className="h-3 w-3 mr-2" />
-                    {isProcessingPayment ? 'Processing...' : 'Subscribe Now'}
-                  </Button>
-                  <Button 
-                    onClick={handleSignIn}
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Sign In
-                  </Button>
-                </>
-              )}
-              
-              {user && (
-                <Button 
-                  onClick={handleRefreshStatus}
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
-                  disabled={subscription.isChecking}
-                >
-                  <RefreshCw className={`h-3 w-3 mr-2 ${subscription.isChecking ? 'animate-spin' : ''}`} />
-                  {subscription.isChecking ? 'Checking...' : 'Refresh Status'}
-                </Button>
-              )}
+              <Button 
+                onClick={handleSubscribeClick}
+                size="sm"
+                className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium mb-2"
+              >
+                <Lock className="h-3 w-3 mr-2" />
+                Subscribe Now
+              </Button>
+              <Button 
+                onClick={handleSignIn}
+                size="sm"
+                variant="outline"
+                className="w-full"
+              >
+                Sign In
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <EmailCollectionDialog
-        open={showEmailDialog}
-        onOpenChange={setShowEmailDialog}
-        onEmailSubmit={handleEmailSubmit}
-        loading={isProcessingPayment}
-      />
     </div>
   );
 };

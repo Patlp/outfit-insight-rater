@@ -18,14 +18,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Sparkles, Palette, User, Crown } from 'lucide-react';
-import { toast } from 'sonner';
-import EmailCollectionDialog from '@/components/EmailCollectionDialog';
 import PremiumAccessMessage from '@/components/PremiumAccessMessage';
 
 const PremiumBenefitsSection: React.FC = () => {
-  const { user, createCheckoutSession, subscription } = useAuth();
-  const [showEmailDialog, setShowEmailDialog] = React.useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
+  const { user } = useAuth();
 
   // Only show for anonymous users
   if (user) {
@@ -33,33 +29,8 @@ const PremiumBenefitsSection: React.FC = () => {
   }
 
   const handleSubscribeClick = () => {
-    console.log('🔔 [DEBUG] Landing premium button clicked');
-    console.log('👤 [DEBUG] Current user:', user);
-    
-    if (user) {
-      console.log('✅ [DEBUG] User is logged in, using email:', user.email);
-      handleEmailSubmit(user.email!);
-    } else {
-      console.log('📧 [DEBUG] User not logged in, showing email dialog');
-      setShowEmailDialog(true);
-    }
-  };
-
-  const handleEmailSubmit = async (email: string) => {
-    console.log('📧 [DEBUG] Landing handleEmailSubmit called with:', email);
-    setIsProcessingPayment(true);
-    
-    try {
-      console.log('🚀 [DEBUG] Calling createCheckoutSession...');
-      await createCheckoutSession(email);
-      console.log('✅ [DEBUG] Checkout session created successfully');
-      setShowEmailDialog(false);
-    } catch (error) {
-      console.error('❌ [DEBUG] Landing checkout error:', error);
-      toast.error('Failed to create checkout session');
-    } finally {
-      setIsProcessingPayment(false);
-    }
+    console.log('🔔 [DEBUG] Landing premium button clicked - redirecting to Stripe');
+    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
   };
 
   const benefits = [
@@ -98,10 +69,9 @@ const PremiumBenefitsSection: React.FC = () => {
           onClick={handleSubscribeClick}
           size="lg"
           className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-8"
-          disabled={isProcessingPayment}
         >
           <Sparkles className="h-5 w-5 mr-2" />
-          {isProcessingPayment ? 'Processing...' : 'Get Premium Access - £5.00/month • Cancel anytime'}
+          Get Premium Access - £5.00/month
         </Button>
       </div>
 
@@ -192,18 +162,10 @@ const PremiumBenefitsSection: React.FC = () => {
           onClick={handleSubscribeClick}
           variant="outline"
           className="border-fashion-600 text-fashion-600 hover:bg-fashion-600 hover:text-white"
-          disabled={isProcessingPayment}
         >
-          {isProcessingPayment ? 'Processing...' : 'Upgrade to Premium - £5.00/month • Cancel anytime'}
+          Upgrade to Premium - £5.00/month
         </Button>
       </div>
-      
-      <EmailCollectionDialog
-        open={showEmailDialog}
-        onOpenChange={setShowEmailDialog}
-        onEmailSubmit={handleEmailSubmit}
-        loading={isProcessingPayment}
-      />
     </div>
   );
 };
