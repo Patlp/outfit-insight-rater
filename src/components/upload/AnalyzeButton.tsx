@@ -133,7 +133,27 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         stack: error instanceof Error ? error.stack : undefined,
         duration: analysisTime.toFixed(2) + 'ms'
       });
-      toast({ description: 'Failed to analyze your outfit. Please try again.' });
+      
+      // Provide specific error messages based on error type
+      let errorMessage = 'Failed to analyze your outfit. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('timeout') || error.message.includes('longer than expected')) {
+          errorMessage = 'Analysis is taking longer than expected. Try uploading a smaller image or try again later.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error occurred. Please check your connection and try again.';
+        } else if (error.message.includes('temporarily unavailable')) {
+          errorMessage = 'AI service is temporarily busy. Please try again in a moment.';
+        } else if (error.message.includes('Invalid response')) {
+          errorMessage = 'Unable to process the image. Please try with a different photo.';
+        }
+      }
+      
+      toast({ 
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 5000 
+      });
     } finally {
       setIsAnalyzing(false);
     }

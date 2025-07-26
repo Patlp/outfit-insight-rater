@@ -9,6 +9,47 @@ import { callOpenAI, createOpenAIRequest } from './openai-client.ts';
 import { handleCORS, createResponse, createErrorResponse } from './cors.ts';
 import { validateResponse } from './response-validator.ts';
 
+// Performance monitoring interface
+interface PerformanceMetrics {
+  requestStartTime: number;
+  validationTime?: number;
+  openaiTime?: number;
+  parsingTime?: number;
+  totalTime?: number;
+}
+
+// Helper function to optimize image data
+function optimizeImageData(imageBase64: string): string {
+  // Remove data URL prefix if present for smaller payload
+  if (imageBase64.startsWith('data:')) {
+    const base64Start = imageBase64.indexOf(',') + 1;
+    console.log('🧹 Cleaned base64 data URL prefix');
+    return imageBase64.substring(base64Start);
+  }
+  return imageBase64;
+}
+
+// Enhanced error handler with specific timeout detection
+function handleAnalysisError(error: any, metrics: PerformanceMetrics): Response {
+  const totalTime = Date.now() - metrics.requestStartTime;
+  console.error(`💥 Analysis failed after ${totalTime}ms:`, error);
+  
+  // Detect timeout scenarios
+  if (totalTime > 110000) { // > 110 seconds indicates likely timeout
+    console.error('⏰ TIMEOUT DETECTED - Request exceeded expected duration');
+    return createErrorResponse('Analysis timeout - Please try with a smaller image or try again later.');
+  }
+  
+  // Detect OpenAI API issues
+  if (error.message?.includes('OpenAI') || error.message?.includes('API')) {
+    console.error('🤖 OpenAI API Error');
+    return createErrorResponse('AI service temporarily unavailable. Please try again in a moment.');
+  }
+  
+  // Generic error with helpful message
+  return createErrorResponse(error.message || 'Analysis failed. Please try again.');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   const corsResponse = handleCORS(req);
@@ -16,18 +57,30 @@ serve(async (req) => {
     return corsResponse;
   }
 
+  // Initialize performance metrics
+  const metrics: PerformanceMetrics = {
+    requestStartTime: Date.now()
+  };
+
   try {
     console.log('🚀 Starting outfit analysis...');
     
     const requestData: AnalyzeOutfitRequest = await req.json();
-    const { imageBase64, gender, feedbackMode, eventContext, isNeutral } = requestData;
+    let { imageBase64, gender, feedbackMode, eventContext, isNeutral } = requestData;
     
     if (!imageBase64) {
       throw new Error('No image provided');
     }
 
+    // Early validation and optimization
+    const validationStart = Date.now();
     console.log(`📸 Analyzing ${gender} outfit in ${feedbackMode} mode...`);
-    console.log(`📸 Image data length: ${imageBase64.length}`);
+    console.log(`📸 Original image data length: ${imageBase64.length}`);
+    
+    // Optimize image data for faster transfer
+    imageBase64 = optimizeImageData(imageBase64);
+    console.log(`📸 Optimized image data length: ${imageBase64.length}`);
+    metrics.validationTime = Date.now() - validationStart;
     
     if (feedbackMode === 'roast') {
       console.log('🔥🔥🔥 ROAST MODE ACTIVATED - PREPARING MAXIMUM BRUTALITY 🔥🔥🔥');
@@ -65,12 +118,12 @@ serve(async (req) => {
       console.log(`🎨 Using temperature ${openaiRequest.temperature} for comprehensive analysis`);
     }
 
-    // Call OpenAI API
+    // Call OpenAI API with performance tracking
     console.log('🤖 Calling OpenAI API...');
-    const startTime = Date.now();
+    const openaiStart = Date.now();
     const aiResponse = await callOpenAI(openaiRequest);
-    const apiDuration = Date.now() - startTime;
-    console.log(`🤖 AI response received in ${apiDuration}ms`);
+    metrics.openaiTime = Date.now() - openaiStart;
+    console.log(`🤖 AI response received in ${metrics.openaiTime}ms`);
     
     if (feedbackMode === 'roast') {
       console.log('🔥 Processing roast response with specialized brutal parser...');
@@ -78,12 +131,12 @@ serve(async (req) => {
       console.log('🎨 Processing with enhanced parser for style analysis...');
     }
 
-    // Parse AI response with enhanced parser
+    // Parse AI response with enhanced parser and performance tracking
     console.log('📊 Starting response parsing...');
     const parseStartTime = Date.now();
     const result = parseAIResponse(aiResponse, requestData);
-    const parseDuration = Date.now() - parseStartTime;
-    console.log(`📊 Response parsed in ${parseDuration}ms`);
+    metrics.parsingTime = Date.now() - parseStartTime;
+    console.log(`📊 Response parsed in ${metrics.parsingTime}ms`);
     
     // Detailed logging of results
     console.log('📊 ANALYSIS RESULTS:');
@@ -128,14 +181,16 @@ serve(async (req) => {
       }
     }
 
-    const totalDuration = Date.now() - (Date.now() - apiDuration - parseDuration);
-    console.log(`🏁 Analysis completed in ${totalDuration}ms total`);
+    // Final performance summary
+    metrics.totalTime = Date.now() - metrics.requestStartTime;
+    console.log(`🏁 Analysis completed in ${metrics.totalTime}ms total`);
+    console.log(`📊 Performance breakdown: validation=${metrics.validationTime}ms, openai=${metrics.openaiTime}ms, parsing=${metrics.parsingTime}ms`);
 
     return createResponse(result);
     
   } catch (error) {
     console.error("💥 Error in analyze-outfit function:", error);
     console.error("💥 Error stack:", error.stack);
-    return createErrorResponse(error.message || 'An unknown error occurred');
+    return handleAnalysisError(error, metrics);
   }
 });

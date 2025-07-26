@@ -4,6 +4,28 @@ import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
 import { performanceMonitor } from '@/utils/performanceMonitor';
 
+// Enhanced error types for better user feedback
+class AnalysisTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AnalysisTimeoutError';
+  }
+}
+
+class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+class ServiceUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+
 export const analyzeOutfit = async (
   gender: Gender, 
   feedbackMode: FeedbackMode, 
@@ -26,27 +48,65 @@ export const analyzeOutfit = async (
       hasOccasionContext: !!occasionContext
     });
 
-    // First, analyze the outfit
-    const startTime = Date.now();
-    console.log('🤖 Calling analyze-outfit function...');
-    
-    const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
-      body: {
-        gender,
-        feedbackMode,
-        imageBase64,
-        eventContext: occasionContext?.eventContext || null,
-        isNeutral: occasionContext?.isNeutral || false
+    // Retry logic with exponential backoff
+    const retryWithBackoff = async (attempt: number = 1): Promise<any> => {
+      const startTime = Date.now();
+      console.log(`🤖 Calling analyze-outfit function (attempt ${attempt})...`);
+      
+      try {
+        // Create AbortController for timeout handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+        
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
+          body: {
+            gender,
+            feedbackMode,
+            imageBase64,
+            eventContext: occasionContext?.eventContext || null,
+            isNeutral: occasionContext?.isNeutral || false
+          },
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        clearTimeout(timeoutId);
+        
+        if (analysisError) {
+          throw new Error(analysisError.message || 'Analysis failed');
+        }
+        
+        return analysisData;
+      } catch (error: any) {
+        const duration = Date.now() - startTime;
+        console.error(`❌ Attempt ${attempt} failed after ${duration}ms:`, error);
+        
+        // Check if it's a timeout or network error that we should retry
+        const isRetryableError = 
+          error.name === 'AbortError' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('network') ||
+          error.message?.includes('fetch') ||
+          (error.status && error.status >= 500);
+        
+        if (attempt < 3 && isRetryableError) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+          console.log(`⏳ Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return retryWithBackoff(attempt + 1);
+        }
+        
+        // Format error message for user
+        if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+          throw new Error('Analysis is taking longer than expected. Please try with a smaller image or try again later.');
+        }
+        
+        throw error;
       }
-    });
+    };
 
-    const apiDuration = Date.now() - startTime;
-    console.log(`🤖 API call completed in ${apiDuration}ms`);
-
-    if (analysisError) {
-      console.error('💥 AI Analysis error:', analysisError);
-      throw new Error(analysisError.message || 'Failed to analyze outfit');
-    }
+    const analysisData = await retryWithBackoff();
 
     if (!analysisData || !analysisData.score) {
       console.error('💥 Invalid response structure:', analysisData);
@@ -98,8 +158,7 @@ export const analyzeOutfit = async (
     }
     */
 
-    const totalDuration = Date.now() - startTime;
-    console.log(`🏁 Total analysis completed in ${totalDuration}ms`);
+    console.log(`🏁 Analysis completed successfully`);
     
     performanceMonitor.end(analysisId);
     performanceMonitor.logMemoryUsage('analysis-complete');
