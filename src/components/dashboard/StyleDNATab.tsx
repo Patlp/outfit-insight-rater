@@ -1,16 +1,74 @@
-import React from 'react';
-import { useUploadSession } from '@/context/UploadSessionContext';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Palette, User, Eye } from 'lucide-react';
 import StyleAnalysisSection from '@/components/style/StyleAnalysisSection';
 import ColorAnalysisSection from '@/components/style/ColorAnalysisSection';
 import ColorPaletteSection from '@/components/style/ColorPaletteSection';
 import BodyTypeSection from '@/components/style/BodyTypeSection';
+import { StyleAnalysis } from '@/context/RatingContext';
+
+interface StoredOutfit {
+  id: string;
+  extracted_clothing_items: any;
+}
 
 const StyleDNATab: React.FC = () => {
-  const { analysisResult } = useUploadSession();
+  const { user } = useAuth();
+  const [styleAnalysis, setStyleAnalysis] = useState<StyleAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!analysisResult?.styleAnalysis) {
+  useEffect(() => {
+    if (user) {
+      fetchStyleAnalysis();
+    }
+  }, [user]);
+
+  const fetchStyleAnalysis = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('wardrobe_items')
+        .select('extracted_clothing_items')
+        .eq('user_id', user!.id)
+        .not('extracted_clothing_items', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const outfit = data[0] as StoredOutfit;
+        const extractedData = outfit.extracted_clothing_items as any;
+        
+        if (extractedData?.styleAnalysis) {
+          setStyleAnalysis(extractedData.styleAnalysis);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching style analysis:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-8 bg-fashion-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-fashion-200 rounded w-full mb-2"></div>
+              <div className="h-4 bg-fashion-200 rounded w-2/3"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!styleAnalysis) {
     return (
       <div className="space-y-6">
         <Card className="text-center py-12">
@@ -43,7 +101,7 @@ const StyleDNATab: React.FC = () => {
       </div>
 
       {/* Style Analysis Components */}
-      <StyleAnalysisSection styleAnalysis={analysisResult.styleAnalysis} />
+      <StyleAnalysisSection styleAnalysis={styleAnalysis} />
       
       {/* Individual Sections for Direct Access */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -55,7 +113,7 @@ const StyleDNATab: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ColorAnalysisSection colorAnalysis={analysisResult.styleAnalysis.colorAnalysis} />
+            <ColorAnalysisSection colorAnalysis={styleAnalysis.colorAnalysis} />
           </CardContent>
         </Card>
 
@@ -67,12 +125,12 @@ const StyleDNATab: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ColorPaletteSection colorPalette={analysisResult.styleAnalysis.colorPalette} />
+            <ColorPaletteSection colorPalette={styleAnalysis.colorPalette} />
           </CardContent>
         </Card>
       </div>
 
-      {analysisResult.styleAnalysis.bodyType && (
+      {styleAnalysis.bodyType && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -81,7 +139,7 @@ const StyleDNATab: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BodyTypeSection bodyType={analysisResult.styleAnalysis.bodyType} />
+            <BodyTypeSection bodyType={styleAnalysis.bodyType} />
           </CardContent>
         </Card>
       )}

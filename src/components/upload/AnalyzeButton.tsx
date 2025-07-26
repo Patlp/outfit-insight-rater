@@ -71,6 +71,38 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         suggestions: result.suggestions || [],
         styleAnalysis: result.styleAnalysis
       });
+
+      // Save to database for authenticated users
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { error: saveError } = await supabase
+            .from('wardrobe_items')
+            .insert({
+              user_id: user.id,
+              image_url: imageSrc,
+              rating_score: result.score,
+              feedback: result.feedback,
+              suggestions: result.suggestions || [],
+              occasion_context: occasionContext?.eventContext || null,
+              gender: selectedGender,
+              feedback_mode: feedbackMode,
+              extracted_clothing_items: result.styleAnalysis ? JSON.parse(JSON.stringify({ styleAnalysis: result.styleAnalysis })) : null
+            });
+
+          if (saveError) {
+            console.error('Error saving outfit to database:', saveError);
+          } else {
+            console.log('Outfit saved to database successfully');
+            // Trigger refresh of outfits list
+            window.dispatchEvent(new CustomEvent('outfitSaved'));
+          }
+        }
+      } catch (saveError) {
+        console.error('Failed to save outfit:', saveError);
+      }
       
       toast.success('Analysis complete!');
     } catch (error) {

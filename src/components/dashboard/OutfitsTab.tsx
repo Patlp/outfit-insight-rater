@@ -29,12 +29,6 @@ const OutfitsTab: React.FC<OutfitsTabProps> = ({ onNewAnalysis }) => {
   const [storedOutfits, setStoredOutfits] = useState<StoredOutfit[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchStoredOutfits();
-    }
-  }, [user]);
-
   const fetchStoredOutfits = async () => {
     try {
       const { data, error } = await supabase
@@ -52,6 +46,23 @@ const OutfitsTab: React.FC<OutfitsTabProps> = ({ onNewAnalysis }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchStoredOutfits();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleOutfitSaved = () => {
+      if (user) {
+        fetchStoredOutfits();
+      }
+    };
+
+    window.addEventListener('outfitSaved', handleOutfitSaved);
+    return () => window.removeEventListener('outfitSaved', handleOutfitSaved);
+  }, [user]);
 
   if (loading) {
     return (
