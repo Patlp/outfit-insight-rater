@@ -112,6 +112,15 @@ const OutfitsTab: React.FC = () => {
       <div>
         <h2 className="text-2xl font-bold text-fashion-900">Your Outfits</h2>
         <p className="text-fashion-600">All your style analyses and ratings</p>
+        {storedOutfits.length > 0 && (
+          <Button 
+            onClick={() => window.location.href = '/'} 
+            className="mt-4 bg-fashion-600 hover:bg-fashion-700"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload New Outfit
+          </Button>
+        )}
       </div>
 
       {/* Current Session Outfit (if exists) */}
