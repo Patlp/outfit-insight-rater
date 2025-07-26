@@ -102,33 +102,6 @@ const StyleDNATab: React.FC = () => {
 
       {/* Style Analysis Components */}
       <StyleAnalysisSection styleAnalysis={styleAnalysis} />
-      
-      {/* Individual Sections for Direct Access */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Your Color Analysis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ColorAnalysisSection colorAnalysis={styleAnalysis.colorAnalysis} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Your Color Palette
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ColorPaletteSection colorPalette={styleAnalysis.colorPalette} />
-          </CardContent>
-        </Card>
-      </div>
 
       {styleAnalysis.bodyType && (
         <Card>
