@@ -15,7 +15,7 @@ const SubscriptionStatusIndicator: React.FC<SubscriptionStatusIndicatorProps> = 
   showRefreshButton = true, 
   compact = false 
 }) => {
-  const { user, subscription, checkSubscription, openCustomerPortal } = useAuth();
+  const { user, subscription, checkSubscription } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -30,12 +30,10 @@ const SubscriptionStatusIndicator: React.FC<SubscriptionStatusIndicatorProps> = 
     }
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      await openCustomerPortal();
-    } catch (error) {
-      toast.error('Failed to open customer portal');
-    }
+  const handleManageSubscription = () => {
+    // This will be handled by the parent component (UserMenu)
+    // or we can navigate directly here
+    window.location.href = '/manage-subscription';
   };
 
   const formatDate = (dateString: string | null) => {
