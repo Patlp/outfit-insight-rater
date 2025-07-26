@@ -34,12 +34,12 @@ const PremiumBenefitsSection: React.FC = () => {
   };
 
   const benefits = [
-    'Discover your ideal color palette for glowing skin and sharper outfits',
-    'Get a wardrobe guide tailored to your exact tone and proportions',
-    'Learn your body type and get styling strategies that flatter, not fight, your shape',
-    'Save every outfit, track what works, and watch your style evolve',
-    'See how each outfit aligns with your unique style fingerprint',
-    'Reduce decision fatigue, boost confidence, and walk out the door with certainty'
+    '🎨 Discover your ideal color palette for glowing skin and sharper outfits',
+    '👕 Get a wardrobe guide tailored to your exact tone and proportions',
+    '🧍‍♀️ Learn your body type and get styling strategies that flatter, not fight, your shape',
+    '💾 Save every outfit, track what works, and watch your style evolve',
+    '🧠 See how each outfit aligns with your unique style fingerprint',
+    '🔁 Reduce decision fatigue, boost confidence, and walk out the door with certainty'
   ];
 
   return (
@@ -88,8 +88,8 @@ const PremiumBenefitsSection: React.FC = () => {
               Instant AI insights after your first upload
             </span>
           </div>
-          <div className="flex items-center justify-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <div className="flex items-start justify-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <span className="text-fashion-700 font-medium">
               100% guaranteed to improve how you look—and how you feel—or your money back
             </span>
