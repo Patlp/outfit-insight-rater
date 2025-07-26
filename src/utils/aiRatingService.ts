@@ -56,7 +56,10 @@ export const analyzeOutfit = async (
       try {
         // Create AbortController for timeout handling
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+        const timeoutId = setTimeout(() => {
+          console.warn(`⏰ Analysis timeout after 90 seconds (attempt ${attempt})`);
+          controller.abort();
+        }, 90000); // 90 second timeout (reduced from 120s)
         
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
           body: {
@@ -74,6 +77,17 @@ export const analyzeOutfit = async (
         clearTimeout(timeoutId);
         
         if (analysisError) {
+          console.error(`❌ Supabase function error:`, analysisError);
+          
+          // Handle specific error types
+          if (analysisError.message?.includes('timeout') || analysisError.message?.includes('Function timeout')) {
+            throw new AnalysisTimeoutError('Analysis is taking longer than expected. Please try with a smaller image or try again later.');
+          } else if (analysisError.message?.includes('network') || analysisError.message?.includes('fetch')) {
+            throw new NetworkError('Network error occurred. Please check your connection and try again.');
+          } else if (analysisError.message?.includes('503') || analysisError.message?.includes('temporarily unavailable')) {
+            throw new ServiceUnavailableError('AI service is temporarily busy. Please try again in a moment.');
+          }
+          
           throw new Error(analysisError.message || 'Analysis failed');
         }
         
@@ -97,9 +111,13 @@ export const analyzeOutfit = async (
           return retryWithBackoff(attempt + 1);
         }
         
-        // Format error message for user
+        // Format error message for user based on error type
         if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-          throw new Error('Analysis is taking longer than expected. Please try with a smaller image or try again later.');
+          throw new AnalysisTimeoutError('Analysis is taking longer than expected. Please try with a smaller image or try again later.');
+        } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+          throw new NetworkError('Network error occurred. Please check your connection and try again.');
+        } else if (error.message?.includes('503') || error.message?.includes('temporarily unavailable')) {
+          throw new ServiceUnavailableError('AI service is temporarily busy. Please try again in a moment.');
         }
         
         throw error;

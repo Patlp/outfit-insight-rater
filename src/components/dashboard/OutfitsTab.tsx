@@ -30,39 +30,64 @@ const OutfitsTab: React.FC<OutfitsTabProps> = ({ onNewAnalysis }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchStoredOutfits = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    console.log('OutfitsTab: Fetching stored outfits for user:', user.id, new Date().toISOString());
+    
     try {
       const { data, error } = await supabase
         .from('wardrobe_items')
         .select('*')
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('OutfitsTab: Database error:', error);
+        throw error;
+      }
+      
+      console.log('OutfitsTab: Fetched outfits count:', data?.length || 0);
       setStoredOutfits(data || []);
     } catch (error) {
-      console.error('Error fetching outfits:', error);
+      console.error('OutfitsTab: Error fetching outfits:', error);
       toast.error('Failed to load your outfits');
     } finally {
       setLoading(false);
     }
   };
 
+  // Single useEffect to handle initial load and user changes
   useEffect(() => {
-    if (user) {
+    let mounted = true;
+    
+    if (user && mounted) {
       fetchStoredOutfits();
     }
-  }, [user]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]); // Only depend on user.id to prevent infinite loops
 
+  // Separate useEffect for outfit saved events
   useEffect(() => {
     const handleOutfitSaved = () => {
+      console.log('OutfitsTab: Outfit saved event received');
       if (user) {
-        fetchStoredOutfits();
+        // Small delay to ensure database has been updated
+        setTimeout(() => {
+          fetchStoredOutfits();
+        }, 500);
       }
     };
 
     window.addEventListener('outfitSaved', handleOutfitSaved);
     return () => window.removeEventListener('outfitSaved', handleOutfitSaved);
-  }, [user]);
+  }, [user?.id]);
 
   if (loading) {
     return (

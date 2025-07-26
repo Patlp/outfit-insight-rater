@@ -11,6 +11,8 @@ import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
 import StyleDNATab from '@/components/dashboard/StyleDNATab';
 import OutfitsTab from '@/components/dashboard/OutfitsTab';
+import DebugUploadFlow from '@/components/DebugUploadFlow';
+import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper';
 
 interface UploadModalContentProps {
   onUploadSuccess: () => void;
@@ -147,6 +149,11 @@ const Dashboard: React.FC = () => {
           <SubscriptionStatusIndicator showRefreshButton={true} compact={false} />
         </div>
 
+        {/* Debug Panel - Remove this in production */}
+        <div className="mb-8">
+          <DebugUploadFlow />
+        </div>
+
         {/* Upload Interface Overlay */}
         {showUpload && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -163,9 +170,11 @@ const Dashboard: React.FC = () => {
                 </Button>
               </div>
               <div className="p-6">
-                <RatingProvider>
-                  <UploadModalContent onUploadSuccess={handleUploadSuccess} uploadComplete={uploadComplete} onClose={handleCloseUpload} />
-                </RatingProvider>
+                <ErrorBoundaryWrapper>
+                  <RatingProvider>
+                    <UploadModalContent onUploadSuccess={handleUploadSuccess} uploadComplete={uploadComplete} onClose={handleCloseUpload} />
+                  </RatingProvider>
+                </ErrorBoundaryWrapper>
               </div>
             </div>
           </div>
@@ -189,7 +198,9 @@ const Dashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="outfits" className="mt-6">
-            <OutfitsTab onNewAnalysis={handleNewAnalysis} />
+            <ErrorBoundaryWrapper>
+              <OutfitsTab onNewAnalysis={handleNewAnalysis} />
+            </ErrorBoundaryWrapper>
           </TabsContent>
         </Tabs>
       </div>

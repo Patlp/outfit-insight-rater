@@ -3,7 +3,7 @@ import React from 'react';
 import { useRating } from '@/context/RatingContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import { analyzeOutfit } from '@/utils/aiRatingService';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AnalyzeButtonProps {
   imageFile: File | null;
@@ -25,7 +25,7 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
   const handleAnalyze = async () => {
     if (!imageFile || !imageSrc) {
       console.error('AnalyzeButton: Missing required data', { hasImageFile: !!imageFile, hasImageSrc: !!imageSrc });
-      toast({ description: 'Image data is missing. Please upload an image again.' });
+      toast.error('Image data is missing. Please upload an image again.');
       return;
     }
     
@@ -125,7 +125,7 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         console.error('Failed to save outfit:', saveError);
       }
       
-      toast({ description: 'Analysis complete!' });
+      toast.success('Analysis complete!');
     } catch (error) {
       const analysisTime = performance.now() - analysisStartTime;
       console.error('AnalyzeButton: Analysis failed', {
@@ -138,22 +138,25 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
       let errorMessage = 'Failed to analyze your outfit. Please try again.';
       
       if (error instanceof Error) {
-        if (error.message.includes('timeout') || error.message.includes('longer than expected')) {
+        // Use the error message directly if it's already user-friendly
+        if (error.name === 'AnalysisTimeoutError' || 
+            error.name === 'NetworkError' || 
+            error.name === 'ServiceUnavailableError') {
+          errorMessage = error.message;
+        } else if (error.message.includes('timeout') || error.message.includes('longer than expected')) {
           errorMessage = 'Analysis is taking longer than expected. Try uploading a smaller image or try again later.';
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           errorMessage = 'Network error occurred. Please check your connection and try again.';
-        } else if (error.message.includes('temporarily unavailable')) {
+        } else if (error.message.includes('temporarily unavailable') || error.message.includes('temporarily busy')) {
           errorMessage = 'AI service is temporarily busy. Please try again in a moment.';
         } else if (error.message.includes('Invalid response')) {
           errorMessage = 'Unable to process the image. Please try with a different photo.';
+        } else if (error.message.includes('Authentication required') || error.message.includes('unauthorized')) {
+          errorMessage = 'Authentication error. Please try logging out and back in.';
         }
       }
       
-      toast({ 
-        description: errorMessage,
-        variant: 'destructive',
-        duration: 5000 
-      });
+      toast.error(errorMessage, { duration: 5000 });
     } finally {
       setIsAnalyzing(false);
     }
