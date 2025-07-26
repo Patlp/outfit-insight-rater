@@ -20,9 +20,12 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
     return <>{children}</>;
   }
 
-  const handleSubscribe = () => {
-    // Direct redirect to Stripe payment link
-    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+  const handleSubscribe = async () => {
+    try {
+      await createCheckoutSession();
+    } catch (error) {
+      toast.error('Failed to create checkout session');
+    }
   };
 
   const handleSignIn = () => {

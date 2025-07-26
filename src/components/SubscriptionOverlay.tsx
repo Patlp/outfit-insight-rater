@@ -3,22 +3,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Lock, Crown, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface SubscriptionOverlayProps {
   children: React.ReactNode;
 }
 
 const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) => {
-  const { subscription } = useAuth();
+  const { subscription, createCheckoutSession } = useAuth();
 
   // If user is subscribed, show content normally
   if (subscription.subscribed) {
     return <>{children}</>;
   }
 
-  const handleSubscribe = () => {
-    // Direct redirect to Stripe payment link
-    window.open('https://buy.stripe.com/9B6cN5cVQ7KlgWd5mV3cc01', '_blank');
+  const handleSubscribe = async () => {
+    try {
+      await createCheckoutSession();
+    } catch (error) {
+      toast.error('Failed to create checkout session');
+    }
   };
 
   return (
