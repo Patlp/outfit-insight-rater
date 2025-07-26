@@ -205,9 +205,16 @@ const LandingContent: React.FC = () => {
           alt="RateMyFit Logo" 
           className="h-72 sm:h-80 md:h-96 mx-auto mb-4" 
         />
-        <p className="text-gray-600 max-w-md mx-auto">
+        <p className="text-gray-600 max-w-md mx-auto mb-4">
           Upload your outfit photo and get instant AI-powered style feedback and improvement suggestions
         </p>
+        <Button 
+          onClick={() => document.getElementById('free-rating-tool')?.scrollIntoView({ behavior: 'smooth' })}
+          variant="outline"
+          className="border-fashion-600 text-fashion-600 hover:bg-fashion-600 hover:text-white"
+        >
+          Try Free AI Rating Now
+        </Button>
       </header>
 
       {/* Premium Benefits Section - only for anonymous users */}
@@ -217,7 +224,7 @@ const LandingContent: React.FC = () => {
       <PremiumAccessMessage />
       
       {/* Upload Section */}
-      <div className="w-full max-w-2xl mx-auto">
+      <div id="free-rating-tool" className="w-full max-w-2xl mx-auto">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-semibold text-fashion-900 mb-2">
             {user ? 'Upload Your Outfit' : 'Try Our Free Outfit Rating'}
