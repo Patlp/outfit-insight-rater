@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useImageComparison } from './useImageComparison';
 
 interface OutfitData {
   imageBase64: string;
@@ -15,6 +16,7 @@ interface OutfitData {
 export const useOutfitSaver = () => {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const { compareImages, findSimilarImages } = useImageComparison();
 
   const saveOutfit = async (outfitData: OutfitData): Promise<boolean> => {
     if (!user) {
@@ -37,29 +39,63 @@ export const useOutfitSaver = () => {
       console.log('🎯 - Suggestions count:', outfitData.suggestions?.length || 0);
       console.log('🎯 - Has structured feedback:', outfitData.feedback?.includes('**') || false);
 
-      // Check if we already have this exact outfit saved recently (within 5 minutes)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      // Enhanced duplicate detection: Check for recent similar outfits (within 15 minutes)
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
       
       const { data: recentOutfits, error: checkError } = await supabase
         .from('wardrobe_items')
-        .select('id, image_url, rating_score, feedback')
+        .select('id, image_url, rating_score, feedback, created_at, suggestions')
         .eq('user_id', user.id)
-        .gte('created_at', fiveMinutesAgo)
+        .gte('created_at', fifteenMinutesAgo)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (checkError) {
         console.error('Error checking for recent outfits:', checkError);
       } else if (recentOutfits && recentOutfits.length > 0) {
-        // Check if we have a very similar outfit (same score and similar feedback)
-        const similarOutfit = recentOutfits.find(existing => 
-          existing.rating_score === outfitData.score &&
-          existing.feedback?.length === outfitData.feedback?.length &&
-          existing.image_url === outfitData.imageBase64
-        );
+        // Multi-factor duplicate detection
+        let duplicateFound = false;
+        let duplicateReason = '';
 
-        if (similarOutfit) {
-          console.log('🎯 Found identical recent outfit, skipping save to prevent duplicate');
+        for (const existing of recentOutfits) {
+          // Check for exact image match
+          if (existing.image_url === outfitData.imageBase64) {
+            duplicateFound = true;
+            duplicateReason = 'exact image match';
+            break;
+          }
+
+          // Check for image similarity using advanced comparison
+          const imageComparison = compareImages(outfitData.imageBase64, existing.image_url, 0.95);
+          if (imageComparison.isSimilar) {
+            // If images are very similar, check other factors
+            const scoreMatch = existing.rating_score === outfitData.score;
+            const feedbackLengthSimilar = Math.abs((existing.feedback?.length || 0) - (outfitData.feedback?.length || 0)) < 50;
+            const suggestionCountSimilar = Math.abs((existing.suggestions?.length || 0) - (outfitData.suggestions?.length || 0)) <= 1;
+            
+            if (scoreMatch && feedbackLengthSimilar && suggestionCountSimilar) {
+              duplicateFound = true;
+              duplicateReason = `similar image (${(imageComparison.similarity * 100).toFixed(1)}% similar) with matching analysis`;
+              break;
+            }
+          }
+
+          // Check for exact analysis match (even with different images - could be re-upload)
+          const exactAnalysisMatch = 
+            existing.rating_score === outfitData.score &&
+            existing.feedback === outfitData.feedback &&
+            JSON.stringify(existing.suggestions) === JSON.stringify(outfitData.suggestions);
+
+          if (exactAnalysisMatch) {
+            duplicateFound = true;
+            duplicateReason = 'identical analysis results';
+            break;
+          }
+        }
+
+        if (duplicateFound) {
+          console.log('🎯 Duplicate outfit detected, skipping save to prevent duplicate:', duplicateReason);
+          toast.info('This outfit was recently analyzed - displaying previous results');
           setIsSaving(false);
           return true; // Return true as this is not an error condition
         }

@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useRating } from '@/context/RatingContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import { analyzeOutfit } from '@/utils/aiRatingService';
 import { toast } from 'sonner';
+import { useRequestDeduplication } from '@/hooks/useRequestDeduplication';
+import { useImageComparison } from '@/hooks/useImageComparison';
 
 interface AnalyzeButtonProps {
   imageFile: File | null;
@@ -21,34 +23,70 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
   } = useRating();
   
   const { setCurrentUpload, setAnalysisResult } = useUploadSession();
+  const { 
+    isDuplicateRequest, 
+    startRequest, 
+    completeRequest, 
+    failRequest, 
+    canMakeRequest,
+    pendingRequestCount 
+  } = useRequestDeduplication({ dedupWindowMs: 45000 }); // 45 second window
+  const { findSimilarImages } = useImageComparison();
+  const lastAnalysisRef = useRef<{ imageBase64: string; timestamp: number } | null>(null);
 
-  const handleAnalyze = async () => {
+  // Debounced analyze function to prevent rapid consecutive calls
+  const handleAnalyze = useCallback(async () => {
     if (!imageFile || !imageSrc) {
       console.error('AnalyzeButton: Missing required data', { hasImageFile: !!imageFile, hasImageSrc: !!imageSrc });
       toast.error('Image data is missing. Please upload an image again.');
       return;
     }
+
+    // Check if we can make a new request
+    if (!canMakeRequest()) {
+      toast.warning('Please wait for the current analysis to complete');
+      console.log('🚫 Request blocked: too many concurrent requests');
+      return;
+    }
     
+    // Prepare image data first for validation and deduplication
+    let imageBase64 = imageSrc;
+    
+    // If it's a data URL, extract just the base64 part
+    if (imageSrc.startsWith('data:')) {
+      const base64Start = imageSrc.indexOf(',') + 1;
+      imageBase64 = imageSrc.substring(base64Start);
+    }
+
+    // Check for duplicate requests early
+    if (isDuplicateRequest(imageBase64, selectedGender, feedbackMode)) {
+      toast.info('This analysis is already in progress or was recently completed');
+      return;
+    }
+
+    // Check against last analysis to prevent immediate re-analysis of same image
+    if (lastAnalysisRef.current) {
+      const timeSinceLastAnalysis = Date.now() - lastAnalysisRef.current.timestamp;
+      if (timeSinceLastAnalysis < 10000 && lastAnalysisRef.current.imageBase64 === imageBase64) {
+        toast.info('Please wait before analyzing the same image again');
+        console.log('🚫 Request blocked: same image analyzed recently');
+        return;
+      }
+    }
+
     console.log('AnalyzeButton: Starting analysis', {
       gender: selectedGender,
       feedbackMode,
       imageSrcLength: imageSrc.length,
       occasionContext,
+      pendingRequests: pendingRequestCount,
       timestamp: new Date().toISOString()
     });
     
+    // Start request tracking
+    const requestId = startRequest(imageBase64, selectedGender, feedbackMode);
     setIsAnalyzing(true);
     const analysisStartTime = performance.now();
-    
-    try {
-      // Ensure we have valid base64 data
-      let imageBase64 = imageSrc;
-      
-      // If it's a data URL, extract just the base64 part
-      if (imageSrc.startsWith('data:')) {
-        const base64Start = imageSrc.indexOf(',') + 1;
-        imageBase64 = imageSrc.substring(base64Start);
-      }
       
       // Validate the base64 data
       if (!imageBase64 || imageBase64.length < 100) {
@@ -56,18 +94,20 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
           imageBase64Length: imageBase64?.length || 0,
           imageSrcLength: imageSrc?.length || 0
         });
+        failRequest(requestId);
         toast.error('Invalid image data. Please try uploading the image again.');
         return;
       }
       
       // Test if it's valid base64
-      try {
+    try {
         atob(imageBase64.substring(0, 100));
       } catch (e) {
         console.error('AnalyzeButton: Invalid base64 format', {
           error: e,
           imageBase64Preview: imageBase64.substring(0, 100)
         });
+        failRequest(requestId);
         toast.error('Invalid image format. Please try uploading the image again.');
         return;
       }
@@ -92,6 +132,15 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         hasResult: !!result,
         score: result?.score
       });
+
+      // Update last analysis reference
+      lastAnalysisRef.current = {
+        imageBase64,
+        timestamp: Date.now()
+      };
+
+      // Complete request tracking
+      completeRequest(requestId);
       
       setRatingResult(result);
       
@@ -196,13 +245,20 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         console.error('Failed to save outfit:', saveError);
       }
       
-      toast.success('Analysis complete!');
+      toast.success('Analysis complete!', {
+        description: 'Your outfit has been analyzed and saved to your wardrobe'
+      });
     } catch (error) {
       const analysisTime = performance.now() - analysisStartTime;
+      
+      // Mark request as failed
+      failRequest(requestId);
+      
       console.error('AnalyzeButton: Analysis failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
-        duration: analysisTime.toFixed(2) + 'ms'
+        duration: analysisTime.toFixed(2) + 'ms',
+        requestId: requestId.substring(0, 50) + '...'
       });
       
       // Provide specific error messages based on error type
@@ -227,11 +283,14 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         }
       }
       
-      toast.error(errorMessage, { duration: 5000 });
+      toast.error(errorMessage, { 
+        duration: 5000,
+        description: 'Please try again or contact support if the issue persists'
+      });
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [imageFile, imageSrc, selectedGender, feedbackMode, occasionContext, isDuplicateRequest, startRequest, completeRequest, failRequest, canMakeRequest, pendingRequestCount]);
 
   return (
     <button
@@ -245,6 +304,9 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         <>
           <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           <span>Analyzing outfit...</span>
+          {pendingRequestCount > 1 && (
+            <span className="text-xs opacity-75">({pendingRequestCount} in queue)</span>
+          )}
         </>
       ) : (
         <span>{feedbackMode === 'roast' ? 'Roast My Outfit' : 'Rate My Outfit'}</span>
