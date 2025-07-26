@@ -34,34 +34,40 @@ const PremiumBenefitsSection: React.FC = () => {
   };
 
   const benefits = [
-    '🎨 Discover your ideal color palette for glowing skin and sharper outfits',
-    '👕 Get a wardrobe guide tailored to your exact tone and proportions',
-    '🧍‍♀️ Learn your body type and get styling strategies that flatter, not fight, your shape',
-    '💾 Save every outfit, track what works, and watch your style evolve',
-    '🧠 See how each outfit aligns with your unique style fingerprint',
-    '🔁 Reduce decision fatigue, boost confidence, and walk out the door with certainty'
+    'Discover your ideal color palette for glowing skin and sharper outfits',
+    'Get a wardrobe guide tailored to your exact tone and proportions',
+    'Learn your body type and get styling strategies that flatter, not fight, your shape',
+    'Save every outfit, track what works, and watch your style evolve',
+    'See how each outfit aligns with your unique style fingerprint',
+    'Reduce decision fatigue, boost confidence, and walk out the door with certainty'
   ];
 
   return (
     <div className="w-full max-w-6xl mx-auto mb-12">
       {/* Premium Hero Section */}
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <Crown className="h-8 w-8 text-fashion-600" />
           <h1 className="text-4xl md:text-5xl font-bold text-fashion-900">
-            RateMyFit <span className="text-fashion-600">Premium</span> — Look Better. Feel Better. Every Day.
+            RateMyFit <span className="text-fashion-600">Premium</span>
           </h1>
         </div>
-        <p className="text-xl text-fashion-700 mb-6 max-w-4xl mx-auto">
+        <h2 className="text-2xl md:text-3xl font-semibold text-fashion-700 mb-6">
+          Look Better. Feel Better. Every Day.
+        </h2>
+        <p className="text-lg text-fashion-700 mb-8 max-w-4xl mx-auto leading-relaxed">
           Unlock personalized fashion insights built around you—your unique colors, body type, and style DNA. 
           No more guesswork. No more outfit anxiety. Just real confidence, built from the clothes you already own.
         </p>
         
         {/* Benefits List */}
-        <div className="grid md:grid-cols-2 gap-3 mb-8 max-w-3xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-4 mb-8 max-w-4xl mx-auto">
           {benefits.map((benefit, index) => (
             <div key={index} className="flex items-start gap-3 text-left">
-              <span className="text-fashion-700 text-base">{benefit}</span>
+              <span className="flex-shrink-0 w-6 h-6 bg-fashion-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                {index + 1}
+              </span>
+              <span className="text-fashion-700 leading-relaxed">{benefit}</span>
             </div>
           ))}
         </div>
@@ -69,20 +75,24 @@ const PremiumBenefitsSection: React.FC = () => {
         <Button 
           onClick={handleSubscribeClick}
           size="lg"
-          className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-4"
+          className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-6"
         >
           <Sparkles className="h-5 w-5 mr-2" />
           Just £5/month
         </Button>
         
-        <div className="space-y-2 mb-8">
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-fashion-700 font-medium">Instant AI insights after your first upload</span>
+        <div className="space-y-3 mb-8 max-w-2xl mx-auto">
+          <div className="flex items-center justify-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <span className="text-fashion-700 font-medium">
+              Instant AI insights after your first upload
+            </span>
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-fashion-700 font-medium">100% guaranteed to improve how you look—and how you feel—or your money back</span>
+          <div className="flex items-center justify-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <span className="text-fashion-700 font-medium">
+              100% guaranteed to improve how you look—and how you feel—or your money back
+            </span>
           </div>
         </div>
       </div>
