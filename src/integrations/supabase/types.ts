@@ -1105,6 +1105,72 @@ export type Database = {
         }
         Relationships: []
       }
+      style_profiles: {
+        Row: {
+          analysis_date: string | null
+          body_type: string | null
+          body_type_confidence: number | null
+          body_type_manual_override: boolean | null
+          color_analysis_manual_override: boolean | null
+          contrast_value: number | null
+          created_at: string
+          depth_value: number | null
+          eye_color: string | null
+          full_style_analysis: Json | null
+          hair_color: string | null
+          id: string
+          seasonal_type: string | null
+          skin_tone: string | null
+          source_image_url: string | null
+          undertone: string | null
+          undertone_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_date?: string | null
+          body_type?: string | null
+          body_type_confidence?: number | null
+          body_type_manual_override?: boolean | null
+          color_analysis_manual_override?: boolean | null
+          contrast_value?: number | null
+          created_at?: string
+          depth_value?: number | null
+          eye_color?: string | null
+          full_style_analysis?: Json | null
+          hair_color?: string | null
+          id?: string
+          seasonal_type?: string | null
+          skin_tone?: string | null
+          source_image_url?: string | null
+          undertone?: string | null
+          undertone_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_date?: string | null
+          body_type?: string | null
+          body_type_confidence?: number | null
+          body_type_manual_override?: boolean | null
+          color_analysis_manual_override?: boolean | null
+          contrast_value?: number | null
+          created_at?: string
+          depth_value?: number | null
+          eye_color?: string | null
+          full_style_analysis?: Json | null
+          hair_color?: string | null
+          id?: string
+          seasonal_type?: string | null
+          skin_tone?: string | null
+          source_image_url?: string | null
+          undertone?: string | null
+          undertone_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string
