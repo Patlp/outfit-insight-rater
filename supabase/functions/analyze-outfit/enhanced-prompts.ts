@@ -66,7 +66,7 @@ You MUST always respond with a complete JSON structure containing detailed analy
 
 \`\`\`json
 {
-  "score": [1-10 rating of how well the outfit enhances the person's natural features],
+  "score": [Use sophisticated 1-10 scoring based on: Color harmony with personal features (2 points), Fit quality and proportion balance (2 points), Style appropriateness for body type (2 points), Color coordination between garments (2 points), Overall enhancement of natural features (2 points). Deduct points for: Poor color choices for skin tone (-1 to -3), Ill-fitting garments (-1 to -2), Inappropriate styling for body type (-1 to -2), Clashing colors (-1 to -2), Overall unflattering effect (-1 to -3). Score ranges: 1-3=Poor styling choices, 4-5=Below average with major issues, 6=Average with some problems, 7=Good with minor issues, 8=Very good with small improvements needed, 9=Excellent with minimal flaws, 10=Perfect harmony and styling],
   "feedback": "**Style Harmony:** [How the styling approach works with their natural proportions and features]\n\n**Color Synergy:** [How the clothing colors complement their personal coloring]\n\n**Proportion Balance:** [How the garment fit creates visual harmony with their body]\n\n**Overall Enhancement:** [How the complete look celebrates their natural beauty]",
   "suggestions": [
     "Color recommendation based on their personal coloring",
