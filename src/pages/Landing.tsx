@@ -141,7 +141,7 @@ const PremiumBenefitsSection: React.FC = () => {
           </div>
           <div className="relative rounded-lg overflow-hidden shadow-md">
             <img 
-              src="/lovable-uploads/6562ad07-ebd6-4437-87b7-4bde9739a730.png"
+              src="/lovable-uploads/03c33d46-71c6-464d-a5e4-d897dc3d284c.png"
               alt="Personal Wardrobe Color Guide with curated color palettes for different clothing categories"
               className="w-full h-48 object-cover"
             />
