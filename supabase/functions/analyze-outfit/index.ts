@@ -67,7 +67,23 @@ serve(async (req) => {
     console.log('📥 Request method:', req.method);
     console.log('📥 Request headers:', Object.fromEntries(req.headers.entries()));
     
-    const requestData: AnalyzeOutfitRequest = await req.json();
+    // Parse request body with better error handling
+    let requestData: AnalyzeOutfitRequest;
+    try {
+      const rawBody = await req.text();
+      console.log('📥 Raw body length:', rawBody.length);
+      console.log('📥 Raw body preview:', rawBody.substring(0, 100));
+      
+      if (!rawBody || rawBody.trim() === '') {
+        throw new Error('Request body is empty');
+      }
+      
+      requestData = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('💥 Failed to parse request body:', parseError);
+      throw new Error(`Invalid request body: ${parseError.message}`);
+    }
+    
     console.log('📥 Request data received:', {
       hasImageBase64: !!requestData.imageBase64,
       imageLength: requestData.imageBase64?.length || 0,

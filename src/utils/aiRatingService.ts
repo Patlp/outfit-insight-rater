@@ -93,10 +93,7 @@ export const analyzeOutfit = async (
         });
         
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
-          body: JSON.stringify(requestBody),
-          headers: {
-            'Content-Type': 'application/json',
-          }
+          body: requestBody
         });
 
         clearTimeout(timeoutId);
