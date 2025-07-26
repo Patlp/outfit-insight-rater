@@ -48,21 +48,21 @@ export const compressImage = async (
       timestamp: new Date().toISOString()
     });
     
-    // Only compress if file is larger than 2MB
-    if (file.size <= 2 * 1024 * 1024) {
+    // Only compress if file is larger than 1MB (more aggressive for API limits)
+    if (file.size <= 1 * 1024 * 1024) {
       console.log('File is already small enough, skipping compression');
       return file;
     }
 
     console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
     
-    // More conservative compression options for stability
+    // More aggressive compression for API compatibility
     const options = {
-      maxSizeMB: 3, // More conservative target size
-      maxWidthOrHeight: 1600, // Reduced max dimensions
+      maxSizeMB: 2, // Smaller target size for better API compatibility
+      maxWidthOrHeight: 1200, // Further reduced max dimensions
       useWebWorker: false, // Disable web worker for better compatibility
       fileType: file.type,
-      initialQuality: 0.7,
+      initialQuality: 0.6, // Lower quality for smaller files
       alwaysKeepResolution: false,
     };
 

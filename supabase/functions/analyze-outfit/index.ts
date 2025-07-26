@@ -67,18 +67,32 @@ serve(async (req) => {
     console.log('📥 Request method:', req.method);
     console.log('📥 Request headers:', Object.fromEntries(req.headers.entries()));
     
-    // Parse request body with better error handling
+    // Parse request body with enhanced error handling and debugging
     let requestData: AnalyzeOutfitRequest;
     try {
+      console.log('📥 Starting request body parsing...');
+      console.log('📥 Content-Type:', req.headers.get('content-type'));
+      console.log('📥 Content-Length:', req.headers.get('content-length'));
+      
+      // Try to read the body
       const rawBody = await req.text();
-      console.log('📥 Raw body length:', rawBody.length);
-      console.log('📥 Raw body preview:', rawBody.substring(0, 100));
+      const bodySizeMB = new Blob([rawBody]).size / (1024 * 1024);
+      
+      console.log('📥 Raw body parsed successfully:');
+      console.log('📥 - Body length:', rawBody.length);
+      console.log('📥 - Body size (MB):', bodySizeMB.toFixed(2));
+      console.log('📥 - Body preview (first 100 chars):', rawBody.substring(0, 100));
+      console.log('📥 - Body preview (last 50 chars):', rawBody.length > 50 ? rawBody.substring(rawBody.length - 50) : 'N/A');
       
       if (!rawBody || rawBody.trim() === '') {
+        console.error('💥 Request body is empty or contains only whitespace');
         throw new Error('Request body is empty');
       }
       
+      // Try to parse JSON
+      console.log('📥 Attempting JSON parse...');
       requestData = JSON.parse(rawBody);
+      console.log('📥 JSON parse successful, object keys:', Object.keys(requestData));
       
       // Handle warmup requests
       if (requestData.warmup) {

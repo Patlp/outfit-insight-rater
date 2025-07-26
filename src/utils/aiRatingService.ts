@@ -94,6 +94,16 @@ export const analyzeOutfit = async (
           throw new Error('Invalid image data - not valid base64 format');
         }
         
+        // Check image size and implement size limits
+        const imageSizeMB = imageBase64.length * 0.75 / (1024 * 1024); // Approximate MB size
+        const maxSizeMB = 10; // Maximum size limit
+        
+        console.log(`📏 Image size analysis: ${imageSizeMB.toFixed(2)}MB (limit: ${maxSizeMB}MB)`);
+        
+        if (imageSizeMB > maxSizeMB) {
+          throw new Error(`Image too large (${imageSizeMB.toFixed(1)}MB). Please use an image smaller than ${maxSizeMB}MB.`);
+        }
+        
         const requestBody = {
           gender,
           feedbackMode,
@@ -102,22 +112,63 @@ export const analyzeOutfit = async (
           isNeutral: occasionContext?.isNeutral || false
         };
         
-        console.log('🤖 Sending request to analyze-outfit function:', {
+        // Calculate and log request body size for debugging
+        const requestBodyString = JSON.stringify(requestBody);
+        const requestSizeMB = new Blob([requestBodyString]).size / (1024 * 1024);
+        
+        console.log('🤖 Preparing request to analyze-outfit function:', {
           gender,
           feedbackMode,
           imageBase64Length: imageBase64.length,
           imageBase64Preview: imageBase64.substring(0, 50) + '...',
+          requestBodySizeMB: requestSizeMB.toFixed(2),
           eventContext: occasionContext?.eventContext || null,
           isNeutral: occasionContext?.isNeutral || false,
           attempt
         });
         
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
-          body: requestBody,
-          headers: {
-            'Content-Type': 'application/json'
+        // Try primary method first
+        let analysisData, analysisError;
+        
+        try {
+          const result = await supabase.functions.invoke('analyze-outfit', {
+            body: requestBody,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          analysisData = result.data;
+          analysisError = result.error;
+        } catch (invokeError: any) {
+          console.error('📡 Primary invoke method failed:', invokeError);
+          
+          // If primary method fails, try alternative approach with explicit serialization
+          try {
+            console.log('🔄 Trying alternative request method with explicit JSON serialization...');
+            const SUPABASE_URL = "https://frfvrgarcwmpviimsenu.supabase.co";
+            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyZnZyZ2FyY3dtcHZpaW1zZW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NDY5NzUsImV4cCI6MjA2MzMyMjk3NX0.wKAEtuHhZVyVfCwuh9hJSDB3CeSgssZ7QTiPf9_xZSE";
+            
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-outfit`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY
+              },
+              body: requestBodyString
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            analysisData = await response.json();
+            analysisError = null;
+          } catch (fetchError: any) {
+            console.error('📡 Alternative fetch method also failed:', fetchError);
+            throw new Error(`Both request methods failed. Primary: ${invokeError.message}, Secondary: ${fetchError.message}`);
           }
-        });
+        }
 
         clearTimeout(timeoutId);
         
