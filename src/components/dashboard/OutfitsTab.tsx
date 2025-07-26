@@ -4,7 +4,8 @@ import { useUploadSession } from '@/context/UploadSessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, Calendar, Star } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Upload, Calendar, Star, ChevronDown } from 'lucide-react';
 import FeedbackSection from '@/components/rating/FeedbackSection';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ const OutfitsTab: React.FC = () => {
   const { currentUpload, analysisResult } = useUploadSession();
   const [storedOutfits, setStoredOutfits] = useState<StoredOutfit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOutfits, setExpandedOutfits] = useState<Set<string>>(new Set());
 
   const fetchStoredOutfits = async () => {
     if (!user) {
@@ -257,60 +259,92 @@ const OutfitsTab: React.FC = () => {
       {/* Stored Outfits */}
       {storedOutfits.length > 0 ? (
         <div className="space-y-4">
-          {storedOutfits.map((outfit) => (
-            <Card key={outfit.id}>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                  {/* Image and Score */}
-                  <div className="space-y-2">
-                    <div className="aspect-square rounded-lg overflow-hidden border border-fashion-200">
-                      <img
-                        src={outfit.image_url}
-                        alt="Outfit"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-lg font-bold text-fashion-600">
-                        <Star className="h-4 w-4" />
-                        {outfit.rating_score}/10
+          {storedOutfits.map((outfit) => {
+            const isExpanded = expandedOutfits.has(outfit.id);
+            
+            return (
+              <Collapsible 
+                key={outfit.id}
+                open={isExpanded}
+                onOpenChange={(open) => {
+                  const newExpandedOutfits = new Set(expandedOutfits);
+                  if (open) {
+                    newExpandedOutfits.add(outfit.id);
+                  } else {
+                    newExpandedOutfits.delete(outfit.id);
+                  }
+                  setExpandedOutfits(newExpandedOutfits);
+                }}
+              >
+                <Card>
+                  <CollapsibleTrigger asChild>
+                    <CardContent className="p-6 cursor-pointer hover:bg-fashion-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          {/* Image and Score */}
+                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-fashion-200 flex-shrink-0">
+                            <img
+                              src={outfit.image_url}
+                              alt="Outfit"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 text-lg font-bold text-fashion-600">
+                                <Star className="h-4 w-4" />
+                                {outfit.rating_score}/10
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-fashion-500">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(outfit.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            {outfit.occasion_context && (
+                              <p className="text-sm text-fashion-600 capitalize">
+                                {outfit.occasion_context}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <ChevronDown 
+                          className={`h-5 w-5 text-fashion-400 transition-transform duration-200 ${
+                            isExpanded ? 'rotate-180' : ''
+                          }`} 
+                        />
                       </div>
-                      <div className="flex items-center justify-center gap-1 text-xs text-fashion-500">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(outfit.created_at).toLocaleDateString()}
+                    </CardContent>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <CardContent className="px-6 pb-6 pt-0">
+                      <div className="border-t border-fashion-100 pt-4">
+                        <div className="text-sm text-fashion-700 leading-relaxed">
+                          {outfit.feedback}
+                        </div>
+                        
+                        {outfit.suggestions && outfit.suggestions.length > 0 && (
+                          <div className="mt-4">
+                            <h5 className="font-medium text-fashion-900 mb-2 text-sm">Suggestions</h5>
+                            <ul className="space-y-1">
+                              {outfit.suggestions.map((suggestion, index) => (
+                                <li key={index} className="flex items-start gap-2 text-xs">
+                                  <span className="text-fashion-500 mt-0.5">•</span>
+                                  <span className="text-fashion-600">{suggestion}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
-                      {outfit.occasion_context && (
-                        <p className="text-xs text-fashion-600 mt-1 capitalize">
-                          {outfit.occasion_context}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Feedback */}
-                  <div className="lg:col-span-3">
-                    <div className="text-sm text-fashion-700 leading-relaxed">
-                      {outfit.feedback}
-                    </div>
-                    
-                    {outfit.suggestions && outfit.suggestions.length > 0 && (
-                      <div className="mt-3">
-                        <h5 className="font-medium text-fashion-900 mb-1 text-sm">Suggestions</h5>
-                        <ul className="space-y-1">
-                          {outfit.suggestions.map((suggestion, index) => (
-                            <li key={index} className="flex items-start gap-2 text-xs">
-                              <span className="text-fashion-500 mt-0.5">•</span>
-                              <span className="text-fashion-600">{suggestion}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            );
+          })}
         </div>
       ) : (
         <Card className="text-center py-12">
