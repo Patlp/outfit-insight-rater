@@ -13,7 +13,7 @@ export function createOpenAIRequest(
   console.log('🤖 Making OpenAI API call with enhanced fashion research configuration...');
   
   // Enhanced model and parameter configuration for fashion research
-  const model = 'gpt-4.1-2025-04-14';
+  const model = 'gpt-4o';
   const maxTokens = feedbackMode === 'roast' ? 800 : 1200;
   const temperature = feedbackMode === 'roast' ? 0.9 : 0.7;
   

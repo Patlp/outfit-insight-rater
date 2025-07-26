@@ -71,13 +71,29 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         suggestions: result.suggestions || [],
         styleAnalysis: result.styleAnalysis
       });
-
+      
       // Save to database for authenticated users
       try {
         const { supabase } = await import('@/integrations/supabase/client');
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
+          // Check if this is the user's first upload to determine if we should save style analysis
+          const { data: existingUploads, error: countError } = await supabase
+            .from('wardrobe_items')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
+
+          const isFirstUpload = !countError && (!existingUploads || existingUploads.length === 0);
+          
+          console.log('Upload info:', { isFirstUpload, existingCount: existingUploads?.length || 0 });
+
+          // Only include style analysis for the first upload
+          const styleAnalysisToSave = isFirstUpload && result.styleAnalysis 
+            ? JSON.parse(JSON.stringify({ styleAnalysis: result.styleAnalysis })) 
+            : null;
+
           const { error: saveError } = await supabase
             .from('wardrobe_items')
             .insert({
@@ -89,13 +105,18 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
               occasion_context: occasionContext?.eventContext || null,
               gender: selectedGender,
               feedback_mode: feedbackMode,
-              extracted_clothing_items: result.styleAnalysis ? JSON.parse(JSON.stringify({ styleAnalysis: result.styleAnalysis })) : null
+              extracted_clothing_items: styleAnalysisToSave
             });
 
           if (saveError) {
             console.error('Error saving outfit to database:', saveError);
           } else {
             console.log('Outfit saved to database successfully');
+            if (isFirstUpload) {
+              console.log('Style analysis saved (first upload)');
+            } else {
+              console.log('Style analysis skipped (not first upload)');
+            }
             // Trigger refresh of outfits list
             window.dispatchEvent(new CustomEvent('outfitSaved'));
           }
