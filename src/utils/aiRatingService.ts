@@ -31,7 +31,7 @@ const warmupEdgeFunction = async (): Promise<void> => {
   try {
     console.log('🔥 Warming up edge function...');
     await supabase.functions.invoke('analyze-outfit', {
-      body: { warmup: true },
+      body: JSON.stringify({ warmup: true }),
       headers: { 'Content-Type': 'application/json' }
     });
     console.log('✅ Edge function warmed up');
@@ -113,7 +113,7 @@ export const analyzeOutfit = async (
         });
         
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
-          body: requestBody,
+          body: JSON.stringify(requestBody),
           headers: {
             'Content-Type': 'application/json'
           }
