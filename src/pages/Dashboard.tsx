@@ -8,7 +8,7 @@ import SubscriptionStatusIndicator from '@/components/SubscriptionStatusIndicato
 import { RatingProvider } from '@/context/RatingContext';
 import StyleDNATab from '@/components/dashboard/StyleDNATab';
 import OutfitsTab from '@/components/dashboard/OutfitsTab';
-import DebugUploadFlow from '@/components/DebugUploadFlow';
+
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper';
 
 const Dashboard: React.FC = () => {
@@ -61,10 +61,6 @@ const Dashboard: React.FC = () => {
             <SubscriptionStatusIndicator showRefreshButton={true} compact={false} />
           </div>
 
-          {/* Debug Panel - Remove this in production */}
-          <div className="mb-8">
-            <DebugUploadFlow />
-          </div>
 
 
           {/* Main Dashboard Content */}
