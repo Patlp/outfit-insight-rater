@@ -17,6 +17,8 @@ interface StoredOutfit {
   created_at: string;
   occasion_context?: string;
   gender?: string;
+  original_image_url?: string;
+  render_image_url?: string;
 }
 
 const OutfitsTab: React.FC = () => {
@@ -47,13 +49,51 @@ const OutfitsTab: React.FC = () => {
       }
       
       console.log('OutfitsTab: Fetched outfits count:', data?.length || 0);
-      setStoredOutfits(data || []);
+      
+      // Filter out duplicates and bad versions - keep only the properly formatted ones
+      const filteredOutfits = data ? filterGoodVersions(data) : [];
+      console.log('OutfitsTab: Filtered outfits count:', filteredOutfits.length);
+      
+      setStoredOutfits(filteredOutfits);
     } catch (error) {
       console.error('OutfitsTab: Error fetching outfits:', error);
       toast.error('Failed to load your outfits');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter function to keep only the good versions of outfits
+  const filterGoodVersions = (outfits: StoredOutfit[]) => {
+    const seenImages = new Map<string, StoredOutfit>();
+    
+    // Group by image URL and keep the best version
+    outfits.forEach(outfit => {
+      const imageKey = outfit.image_url || outfit.original_image_url;
+      if (!imageKey) return;
+      
+      const existing = seenImages.get(imageKey);
+      if (!existing) {
+        seenImages.set(imageKey, outfit);
+      } else {
+        // Keep the version with better quality indicators
+        const shouldReplace = 
+          // Prefer outfits with proper feedback structure
+          (outfit.feedback && outfit.feedback.length > existing.feedback?.length) ||
+          // Prefer outfits with suggestions
+          (outfit.suggestions?.length > 0 && !existing.suggestions?.length) ||
+          // Prefer more recent if same quality
+          (outfit.created_at > existing.created_at);
+          
+        if (shouldReplace) {
+          seenImages.set(imageKey, outfit);
+        }
+      }
+    });
+    
+    return Array.from(seenImages.values()).sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   };
 
   // Single useEffect to handle initial load and user changes
