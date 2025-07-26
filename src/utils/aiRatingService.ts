@@ -54,12 +54,15 @@ export const analyzeOutfit = async (
       console.log(`🤖 Calling analyze-outfit function (attempt ${attempt})...`);
       
       try {
+        // Longer timeout for the first attempt to account for cold starts
+        const timeoutDuration = attempt === 1 ? 120000 : 90000; // 2 mins for first attempt, 90s for retries
+        
         // Create AbortController for timeout handling
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
-          console.warn(`⏰ Analysis timeout after 90 seconds (attempt ${attempt})`);
+          console.warn(`⏰ Analysis timeout after ${timeoutDuration/1000} seconds (attempt ${attempt})`);
           controller.abort();
-        }, 90000); // 90 second timeout (reduced from 120s)
+        }, timeoutDuration);
         
         // Validate imageBase64 before sending
         if (!imageBase64 || imageBase64.length < 100) {
@@ -93,7 +96,10 @@ export const analyzeOutfit = async (
         });
         
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-outfit', {
-          body: requestBody
+          body: requestBody,
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
 
         clearTimeout(timeoutId);
@@ -132,6 +138,8 @@ export const analyzeOutfit = async (
           error.message?.includes('timeout') ||
           error.message?.includes('network') ||
           error.message?.includes('fetch') ||
+          error.message?.includes('Failed to send a request to the Edge Function') ||
+          error.message?.includes('Load failed') ||
           (error.status && error.status >= 500);
         
         if (attempt < 3 && isRetryableError) {
