@@ -64,8 +64,18 @@ serve(async (req) => {
 
   try {
     console.log('🚀 Starting outfit analysis...');
+    console.log('📥 Request method:', req.method);
+    console.log('📥 Request headers:', Object.fromEntries(req.headers.entries()));
     
     const requestData: AnalyzeOutfitRequest = await req.json();
+    console.log('📥 Request data received:', {
+      hasImageBase64: !!requestData.imageBase64,
+      imageLength: requestData.imageBase64?.length || 0,
+      gender: requestData.gender,
+      feedbackMode: requestData.feedbackMode,
+      eventContext: requestData.eventContext,
+      isNeutral: requestData.isNeutral
+    });
     let { imageBase64, gender, feedbackMode, eventContext, isNeutral } = requestData;
     
     if (!imageBase64) {
