@@ -71,7 +71,13 @@ const SignupFromPayment = () => {
     };
   });
   
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => {
+    // Pre-fill with payment email if available
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('payment_email') || '';
+    }
+    return '';
+  });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
@@ -358,7 +364,13 @@ const SignupFromPayment = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
+                  className={sessionStorage.getItem('payment_email') ? 'bg-muted' : ''}
                 />
+                {sessionStorage.getItem('payment_email') && (
+                  <p className="text-xs text-muted-foreground">
+                    Using email from payment: {sessionStorage.getItem('payment_email')}
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Lock, Crown, Sparkles, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import EmailCollectionDialog from './EmailCollectionDialog';
 
 interface ContentOverlayProps {
   children: React.ReactNode;
@@ -14,17 +15,33 @@ interface ContentOverlayProps {
 const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '' }) => {
   const { user, subscription, createCheckoutSession, checkSubscription } = useAuth();
   const navigate = useNavigate();
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // If user is subscribed, show content normally
   if (subscription.subscribed) {
     return <>{children}</>;
   }
 
-  const handleSubscribe = async () => {
+  const handleSubscribeClick = () => {
+    if (user) {
+      // User is logged in, use their email
+      handleEmailSubmit(user.email!);
+    } else {
+      // User is not logged in, collect email
+      setShowEmailDialog(true);
+    }
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    setIsProcessingPayment(true);
     try {
-      await createCheckoutSession();
+      await createCheckoutSession(email);
+      setShowEmailDialog(false);
     } catch (error) {
       toast.error('Failed to create checkout session');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -72,21 +89,34 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
             <div className="space-y-2">
               {user ? (
                 <Button 
-                  onClick={handleSubscribe}
+                  onClick={handleSubscribeClick}
                   size="sm"
+                  disabled={isProcessingPayment}
                   className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
                 >
                   <Lock className="h-3 w-3 mr-2" />
-                  Subscribe Now
+                  {isProcessingPayment ? 'Processing...' : 'Subscribe Now'}
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleSignIn}
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium"
-                >
-                  Sign In to Subscribe
-                </Button>
+                <>
+                  <Button 
+                    onClick={handleSubscribeClick}
+                    size="sm"
+                    disabled={isProcessingPayment}
+                    className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium mb-2"
+                  >
+                    <Lock className="h-3 w-3 mr-2" />
+                    {isProcessingPayment ? 'Processing...' : 'Subscribe Now'}
+                  </Button>
+                  <Button 
+                    onClick={handleSignIn}
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Sign In
+                  </Button>
+                </>
               )}
               
               {user && (
@@ -105,6 +135,13 @@ const ContentOverlay: React.FC<ContentOverlayProps> = ({ children, className = '
           </CardContent>
         </Card>
       </div>
+
+      <EmailCollectionDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        onEmailSubmit={handleEmailSubmit}
+        loading={isProcessingPayment}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Settings, Crown, RefreshCw, LayoutDashboard } from 'lucide-react';
@@ -6,14 +6,34 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import SubscriptionStatusIndicator from '@/components/SubscriptionStatusIndicator';
+import EmailCollectionDialog from './EmailCollectionDialog';
 
 const UserMenu: React.FC = () => {
   const { user, signOut, subscription, createCheckoutSession, openCustomerPortal, checkSubscription } = useAuth();
   const navigate = useNavigate();
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  const handleSubscribe = () => {
-    // Use the proper checkout session flow
-    createCheckoutSession();
+  const handleSubscribeClick = () => {
+    if (user) {
+      // User is logged in, use their email
+      handleEmailSubmit(user.email!);
+    } else {
+      // User is not logged in, collect email
+      setShowEmailDialog(true);
+    }
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    setIsProcessingPayment(true);
+    try {
+      await createCheckoutSession(email);
+      setShowEmailDialog(false);
+    } catch (error) {
+      toast.error('Failed to create checkout session');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleManageSubscription = async () => {
@@ -85,9 +105,9 @@ const UserMenu: React.FC = () => {
         </DropdownMenuItem>
         
         {!subscription.subscribed ? (
-          <DropdownMenuItem onClick={handleSubscribe}>
+          <DropdownMenuItem onClick={handleSubscribeClick} disabled={isProcessingPayment}>
             <Crown className="h-4 w-4 mr-2" />
-            Upgrade to Premium
+            {isProcessingPayment ? 'Processing...' : 'Upgrade to Premium'}
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem onClick={handleManageSubscription}>
@@ -103,6 +123,13 @@ const UserMenu: React.FC = () => {
           Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <EmailCollectionDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        onEmailSubmit={handleEmailSubmit}
+        loading={isProcessingPayment}
+      />
     </DropdownMenu>
   );
 };

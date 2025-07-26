@@ -20,11 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Sparkles, Palette, User, Crown } from 'lucide-react';
 
 const PremiumBenefitsSection: React.FC = () => {
-  const { createCheckoutSession, subscription } = useAuth();
+  const { user, createCheckoutSession, subscription } = useAuth();
 
   const handleSubscribe = () => {
-    // Use the proper checkout session flow
-    createCheckoutSession();
+    // This function should only be called for logged-in users in this context
+    if (user?.email) {
+      createCheckoutSession(user.email);
+    }
   };
 
   const benefits = [

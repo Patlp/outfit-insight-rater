@@ -1,27 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Lock, Crown, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import EmailCollectionDialog from './EmailCollectionDialog';
 
 interface SubscriptionOverlayProps {
   children: React.ReactNode;
 }
 
 const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) => {
-  const { subscription, createCheckoutSession } = useAuth();
+  const { user, subscription, createCheckoutSession } = useAuth();
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // If user is subscribed, show content normally
   if (subscription.subscribed) {
     return <>{children}</>;
   }
 
-  const handleSubscribe = async () => {
+  const handleSubscribeClick = () => {
+    if (user) {
+      // User is logged in, use their email
+      handleEmailSubmit(user.email!);
+    } else {
+      // User is not logged in, collect email
+      setShowEmailDialog(true);
+    }
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    setIsProcessingPayment(true);
     try {
-      await createCheckoutSession();
+      await createCheckoutSession(email);
+      setShowEmailDialog(false);
     } catch (error) {
       toast.error('Failed to create checkout session');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -69,11 +86,12 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
             </div>
 
             <Button 
-              onClick={handleSubscribe}
+              onClick={handleSubscribeClick}
+              disabled={isProcessingPayment}
               className="w-full bg-gradient-to-r from-fashion-600 to-fashion-800 hover:from-fashion-700 hover:to-fashion-900 text-white font-medium py-3"
             >
               <Lock className="h-4 w-4 mr-2" />
-              Get Premium Access - £5.00/month • Cancel anytime
+              {isProcessingPayment ? 'Processing...' : 'Get Premium Access - £5.00/month • Cancel anytime'}
             </Button>
 
             <p className="text-xs text-fashion-500 text-center">
@@ -82,6 +100,13 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
           </CardContent>
         </Card>
       </div>
+
+      <EmailCollectionDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        onEmailSubmit={handleEmailSubmit}
+        loading={isProcessingPayment}
+      />
     </div>
   );
 };

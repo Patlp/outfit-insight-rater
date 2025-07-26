@@ -20,7 +20,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fromPayment?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   checkSubscription: (retryCount?: number) => Promise<boolean>;
-  createCheckoutSession: () => Promise<void>;
+  createCheckoutSession: (email: string) => Promise<void>;
   openCustomerPortal: () => Promise<void>;
 }
 
@@ -90,11 +90,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [session, subscription.lastChecked, subscription.subscribed]);
 
-  const createCheckoutSession = useCallback(async () => {
+  const createCheckoutSession = useCallback(async (email: string) => {
+    if (!email || !email.trim()) {
+      throw new Error('Email is required for checkout');
+    }
+
     try {
-      // For guests, we'll use a default email that they can change during signup
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { email: user?.email || 'guest@ratemyfit.app' }
+        body: { email: email.trim() }
       });
 
       if (error) throw error;
@@ -104,8 +107,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Error creating checkout session:', error);
       toast.error('Failed to start payment process. Please try again.');
+      throw error;
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener FIRST
