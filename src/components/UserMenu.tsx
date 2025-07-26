@@ -47,12 +47,8 @@ const UserMenu: React.FC = () => {
     }
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      await openCustomerPortal();
-    } catch (error) {
-      toast.error('Failed to open customer portal. Please try again.');
-    }
+  const handleManageSubscription = () => {
+    navigate('/manage-subscription');
   };
 
   const handleRefreshSubscription = async () => {

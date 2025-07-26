@@ -13,6 +13,7 @@ import SignupFromPayment from "./pages/SignupFromPayment";
 import Dashboard from "./pages/Dashboard";
 import StyleProfile from "./pages/StyleProfile";
 import NotFound from "./pages/NotFound";
+import ManageSubscription from "./pages/ManageSubscription";
 
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/signup-from-payment" element={<SignupFromPayment />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/style-profile" element={<StyleProfile />} />
+              <Route path="/manage-subscription" element={<ManageSubscription />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
