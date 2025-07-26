@@ -13,6 +13,7 @@ import SignupFromPayment from "./pages/SignupFromPayment";
 import Dashboard from "./pages/Dashboard";
 import StyleProfile from "./pages/StyleProfile";
 import NotFound from "./pages/NotFound";
+import DebugPanel from "./components/DebugPanel";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <DebugPanel />
           </BrowserRouter>
         </UploadSessionProvider>
       </AuthProvider>

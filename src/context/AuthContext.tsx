@@ -91,21 +91,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [session, subscription.lastChecked, subscription.subscribed]);
 
   const createCheckoutSession = useCallback(async (email: string) => {
+    console.log('🚀 [DEBUG] createCheckoutSession called with email:', email);
+    
     if (!email || !email.trim()) {
+      console.error('❌ [DEBUG] Email validation failed:', email);
       throw new Error('Email is required for checkout');
     }
 
     try {
+      console.log('📡 [DEBUG] Invoking create-checkout edge function...');
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { email: email.trim() }
       });
 
-      if (error) throw error;
+      console.log('📡 [DEBUG] Edge function response:', { data, error });
 
+      if (error) {
+        console.error('❌ [DEBUG] Edge function returned error:', error);
+        throw error;
+      }
+
+      if (!data?.url) {
+        console.error('❌ [DEBUG] No checkout URL returned from edge function:', data);
+        throw new Error('No checkout URL received');
+      }
+
+      console.log('✅ [DEBUG] Redirecting to checkout URL:', data.url);
+      
       // Open Stripe checkout in the same tab (not new tab) for payment flow
       window.location.href = data.url;
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('❌ [DEBUG] Error in createCheckoutSession:', error);
       toast.error('Failed to start payment process. Please try again.');
       throw error;
     }

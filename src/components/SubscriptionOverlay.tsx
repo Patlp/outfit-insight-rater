@@ -21,21 +21,32 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
   }
 
   const handleSubscribeClick = () => {
+    console.log('🔔 [DEBUG] SubscriptionOverlay subscribe button clicked');
+    console.log('👤 [DEBUG] Current user:', user);
+    console.log('🎯 [DEBUG] Subscription status:', subscription);
+    
     if (user) {
+      console.log('✅ [DEBUG] User is logged in, using email:', user.email);
       // User is logged in, use their email
       handleEmailSubmit(user.email!);
     } else {
+      console.log('📧 [DEBUG] User not logged in, showing email dialog');
       // User is not logged in, collect email
       setShowEmailDialog(true);
     }
   };
 
   const handleEmailSubmit = async (email: string) => {
+    console.log('📧 [DEBUG] SubscriptionOverlay handleEmailSubmit called with:', email);
     setIsProcessingPayment(true);
+    
     try {
+      console.log('🚀 [DEBUG] Calling createCheckoutSession...');
       await createCheckoutSession(email);
+      console.log('✅ [DEBUG] Checkout session created successfully');
       setShowEmailDialog(false);
     } catch (error) {
+      console.error('❌ [DEBUG] SubscriptionOverlay checkout error:', error);
       toast.error('Failed to create checkout session');
     } finally {
       setIsProcessingPayment(false);
