@@ -41,10 +41,25 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
     const analysisStartTime = performance.now();
     
     try {
+      // Ensure we have valid base64 data
+      let imageBase64 = imageSrc;
+      
+      // If it's a data URL, extract just the base64 part
+      if (imageSrc.startsWith('data:')) {
+        const base64Start = imageSrc.indexOf(',') + 1;
+        imageBase64 = imageSrc.substring(base64Start);
+      }
+      
+      console.log('AnalyzeButton: Image data prepared', {
+        originalLength: imageSrc.length,
+        base64Length: imageBase64.length,
+        isDataUrl: imageSrc.startsWith('data:')
+      });
+      
       const result = await analyzeOutfit(
         selectedGender, 
         feedbackMode, 
-        imageSrc, 
+        imageBase64, 
         occasionContext
       );
       
