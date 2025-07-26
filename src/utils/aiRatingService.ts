@@ -182,6 +182,13 @@ export const analyzeOutfit = async (
       console.warn('⚠️ No style analysis in response - this should not happen!');
     }
 
+    // Log the quality metrics for tracking
+    console.log('📊 ANALYSIS QUALITY METRICS:');
+    console.log('📊 - Feedback has markdown formatting:', ratingResult.feedback?.includes('**') || false);
+    console.log('📊 - Feedback character count:', ratingResult.feedback?.length || 0);
+    console.log('📊 - Suggestions count:', ratingResult.suggestions?.length || 0);
+    console.log('📊 - Score value:', ratingResult.score || 0);
+
     // Temporarily commented out product recommendations
     /*
     // Then, generate product recommendations based on the feedback

@@ -110,7 +110,7 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         styleAnalysis: result.styleAnalysis
       });
       
-      // Save to database for authenticated users
+      // Save to database for authenticated users with enhanced duplicate detection
       try {
         const { supabase } = await import('@/integrations/supabase/client');
         const { data: { user } } = await supabase.auth.getUser();
@@ -125,38 +125,71 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
 
           const isFirstUpload = !countError && (!existingUploads || existingUploads.length === 0);
           
-          console.log('Upload info:', { isFirstUpload, existingCount: existingUploads?.length || 0 });
+          console.log('🎯 Upload info:', { isFirstUpload, existingCount: existingUploads?.length || 0 });
 
-          // Only include style analysis for the first upload
-          const styleAnalysisToSave = isFirstUpload && result.styleAnalysis 
-            ? JSON.parse(JSON.stringify({ styleAnalysis: result.styleAnalysis })) 
-            : null;
-
-          const { error: saveError } = await supabase
+          // Enhanced duplicate detection: Check for recent similar saves (within 10 minutes)
+          const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+          
+          const { data: recentOutfits, error: checkError } = await supabase
             .from('wardrobe_items')
-            .insert({
-              user_id: user.id,
-              image_url: imageSrc,
-              rating_score: result.score,
-              feedback: result.feedback,
-              suggestions: result.suggestions || [],
-              occasion_context: occasionContext?.eventContext || null,
-              gender: selectedGender,
-              feedback_mode: feedbackMode,
-              extracted_clothing_items: styleAnalysisToSave
-            });
+            .select('id, image_url, rating_score, feedback, created_at')
+            .eq('user_id', user.id)
+            .gte('created_at', tenMinutesAgo)
+            .order('created_at', { ascending: false })
+            .limit(3);
 
-          if (saveError) {
-            console.error('Error saving outfit to database:', saveError);
+          // Check if we already have this exact outfit saved recently
+          const isDuplicate = recentOutfits && recentOutfits.some(existing => 
+            existing.rating_score === result.score &&
+            existing.feedback?.length === result.feedback?.length &&
+            Math.abs((existing.image_url?.length || 0) - imageSrc.length) < 100 // Similar image size
+          );
+
+          if (isDuplicate) {
+            console.log('🎯 Duplicate outfit detected, skipping database save to prevent duplicate entry');
           } else {
-            console.log('Outfit saved to database successfully');
-            if (isFirstUpload) {
-              console.log('Style analysis saved (first upload)');
+            // Only include style analysis for the first upload
+            const styleAnalysisToSave = isFirstUpload && result.styleAnalysis 
+              ? JSON.parse(JSON.stringify({ styleAnalysis: result.styleAnalysis })) 
+              : null;
+
+            console.log('🎯 Saving new outfit analysis with quality metrics:');
+            console.log('🎯 - Has structured feedback:', result.feedback?.includes('**') || false);
+            console.log('🎯 - Feedback length:', result.feedback?.length || 0);
+            console.log('🎯 - Suggestions count:', result.suggestions?.length || 0);
+
+            const { error: saveError } = await supabase
+              .from('wardrobe_items')
+              .insert({
+                user_id: user.id,
+                image_url: imageSrc,
+                rating_score: result.score,
+                feedback: result.feedback,
+                suggestions: result.suggestions || [],
+                occasion_context: occasionContext?.eventContext || null,
+                gender: selectedGender,
+                feedback_mode: feedbackMode,
+                extracted_clothing_items: styleAnalysisToSave
+              });
+
+            if (saveError) {
+              console.error('Error saving outfit to database:', saveError);
             } else {
-              console.log('Style analysis skipped (not first upload)');
+              console.log('🎯 Outfit saved to database successfully');
+              if (isFirstUpload) {
+                console.log('🎯 Style analysis saved (first upload)');
+              } else {
+                console.log('🎯 Style analysis skipped (not first upload)');
+              }
+              // Trigger refresh of outfits list with enhanced event data
+              window.dispatchEvent(new CustomEvent('outfitSaved', { 
+                detail: { 
+                  timestamp: Date.now(), 
+                  isFirstUpload,
+                  qualityScore: (result.feedback?.includes('**') ? 10 : 0) + (result.suggestions?.length || 0) * 2
+                } 
+              }));
             }
-            // Trigger refresh of outfits list
-            window.dispatchEvent(new CustomEvent('outfitSaved'));
           }
         }
       } catch (saveError) {

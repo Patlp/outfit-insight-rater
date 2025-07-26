@@ -63,9 +63,45 @@ const OutfitsTab: React.FC = () => {
     }
   };
 
-  // Filter function to keep only the good versions of outfits
+  // Enhanced filter function to keep only the best versions of outfits
   const filterGoodVersions = (outfits: StoredOutfit[]) => {
+    console.log('OutfitsTab: Filtering outfits, total count:', outfits.length);
+    
     const seenImages = new Map<string, StoredOutfit>();
+    
+    // Helper function to score outfit quality
+    const scoreOutfit = (outfit: StoredOutfit): number => {
+      let score = 0;
+      
+      // Score based on feedback quality (higher weight for structured feedback)
+      if (outfit.feedback) {
+        if (outfit.feedback.includes('**') && outfit.feedback.includes('Style')) {
+          score += 10; // Well-structured feedback with markdown formatting
+        } else if (outfit.feedback.length > 100) {
+          score += 5; // Decent length feedback
+        } else if (outfit.feedback.length > 20) {
+          score += 2; // Basic feedback
+        }
+      }
+      
+      // Score based on suggestions
+      if (outfit.suggestions?.length > 0) {
+        score += outfit.suggestions.length * 2; // More suggestions = better analysis
+      }
+      
+      // Score based on rating quality
+      if (outfit.rating_score > 0) {
+        score += 3;
+      }
+      
+      // Prefer recent outfits (slight boost)
+      const hoursSinceCreated = (Date.now() - new Date(outfit.created_at).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceCreated < 24) {
+        score += 1;
+      }
+      
+      return score;
+    };
     
     // Group by image URL and keep the best version
     outfits.forEach(outfit => {
@@ -76,24 +112,25 @@ const OutfitsTab: React.FC = () => {
       if (!existing) {
         seenImages.set(imageKey, outfit);
       } else {
-        // Keep the version with better quality indicators
-        const shouldReplace = 
-          // Prefer outfits with proper feedback structure
-          (outfit.feedback && outfit.feedback.length > existing.feedback?.length) ||
-          // Prefer outfits with suggestions
-          (outfit.suggestions?.length > 0 && !existing.suggestions?.length) ||
-          // Prefer more recent if same quality
-          (outfit.created_at > existing.created_at);
-          
-        if (shouldReplace) {
+        const outfitScore = scoreOutfit(outfit);
+        const existingScore = scoreOutfit(existing);
+        
+        console.log(`Comparing outfits for image ${imageKey.substring(0, 50)}...`);
+        console.log(`Existing score: ${existingScore}, New score: ${outfitScore}`);
+        
+        if (outfitScore > existingScore) {
           seenImages.set(imageKey, outfit);
+          console.log('Replaced with better version');
         }
       }
     });
     
-    return Array.from(seenImages.values()).sort((a, b) => 
+    const filteredOutfits = Array.from(seenImages.values()).sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+    
+    console.log('OutfitsTab: After filtering, count:', filteredOutfits.length);
+    return filteredOutfits;
   };
 
   // Single useEffect to handle initial load and user changes
