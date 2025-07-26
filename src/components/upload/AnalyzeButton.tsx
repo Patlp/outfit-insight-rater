@@ -264,10 +264,16 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
       
       // Provide specific error messages based on error type
       let errorMessage = 'Failed to analyze your outfit. Please try again.';
+      let shouldSuggestRetry = true;
       
       if (error instanceof Error) {
-        // Use the error message directly if it's already user-friendly
-        if (error.name === 'AnalysisTimeoutError' || 
+        // Check for specific error patterns that indicate cold start issues
+        if (error.message.includes('Failed to send a request to the Edge Function') ||
+            error.message.includes('Load failed') ||
+            error.message.includes('Network request failed')) {
+          errorMessage = 'Service is starting up. Click "Rate My Outfit" again to try once more.';
+          shouldSuggestRetry = true;
+        } else if (error.name === 'AnalysisTimeoutError' || 
             error.name === 'NetworkError' || 
             error.name === 'ServiceUnavailableError') {
           errorMessage = error.message;
@@ -284,9 +290,13 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         }
       }
       
+      const description = shouldSuggestRetry 
+        ? 'The first attempt often requires an extra click to wake up the service. Please try again!' 
+        : 'Please try again or contact support if the issue persists';
+      
       toast.error(errorMessage, { 
-        duration: 5000,
-        description: 'Please try again or contact support if the issue persists'
+        duration: 6000,
+        description
       });
     } finally {
       setIsAnalyzing(false);

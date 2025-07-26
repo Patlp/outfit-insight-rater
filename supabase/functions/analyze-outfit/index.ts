@@ -79,6 +79,16 @@ serve(async (req) => {
       }
       
       requestData = JSON.parse(rawBody);
+      
+      // Handle warmup requests
+      if (requestData.warmup) {
+        console.log('🔥 Warmup request received');
+        return createResponse({ 
+          success: true, 
+          message: 'Edge function warmed up successfully',
+          timestamp: new Date().toISOString() 
+        });
+      }
     } catch (parseError) {
       console.error('💥 Failed to parse request body:', parseError);
       throw new Error(`Invalid request body: ${parseError.message}`);

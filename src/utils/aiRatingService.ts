@@ -26,6 +26,20 @@ class ServiceUnavailableError extends Error {
   }
 }
 
+// Warmup function to wake up the edge function
+const warmupEdgeFunction = async (): Promise<void> => {
+  try {
+    console.log('🔥 Warming up edge function...');
+    await supabase.functions.invoke('analyze-outfit', {
+      body: { warmup: true },
+      headers: { 'Content-Type': 'application/json' }
+    });
+    console.log('✅ Edge function warmed up');
+  } catch (error) {
+    console.log('🔥 Warmup failed (expected for cold start):', error);
+  }
+};
+
 export const analyzeOutfit = async (
   gender: Gender, 
   feedbackMode: FeedbackMode, 
@@ -40,6 +54,9 @@ export const analyzeOutfit = async (
     console.log('📸 Feedback mode:', feedbackMode);
     console.log('📸 Image data length:', imageBase64.length);
     console.log('🎯 Occasion context:', occasionContext);
+
+    // Warmup the edge function first
+    await warmupEdgeFunction();
 
     performanceMonitor.start(analysisId, {
       gender,
