@@ -178,7 +178,7 @@ Determine their natural style archetype:
 - **Ethereal**: Delicate features, low contrast`;
 
   const contextSpecificInstructions = eventContext && !isNeutral 
-    ? `\n\n🎯 ANALYSIS CONTEXT: This personal style analysis is for "${eventContext}" occasions. ${feedbackMode === 'roast' ? `Be BRUTALLY SAVAGE about how these clothing choices are completely inappropriate for this occasion. Mock how these garment choices show zero understanding of appropriate dress codes.` : 'Evaluate how well their natural coloring and body shape suit this occasion, and how their outfit choices enhance or detract from their natural features for this specific event.'}`
+    ? `\n\n🎯 ANALYSIS CONTEXT: This personal style analysis is for "${eventContext}" occasions. ${feedbackMode === 'roast' ? `Be BRUTALLY SAVAGE about how these clothing choices are completely inappropriate for this occasion. Mock how these garment choices show zero understanding of appropriate dress codes.` : `Evaluate how well their natural coloring and body shape suit this occasion, and how their outfit choices enhance or detract from their natural features for this specific event. CRITICALLY IMPORTANT: You MUST explicitly address whether this outfit is appropriate for "${eventContext}" in your feedback sections, especially in the "Overall Enhancement" section.`}`
     : `\n\n🎯 ANALYSIS CONTEXT: General personal style analysis - ${feedbackMode === 'roast' ? 'absolutely destroy these clothing and styling choices with maximum brutality focused on the garments and coordination.' : 'provide comprehensive personal color analysis based on their natural features, plus styling advice that works with their coloring and body shape.'}`;
 
   const toneInstructions = feedbackMode === 'roast' 
@@ -188,6 +188,8 @@ Apply the most savage fashion research methodology to the CLOTHING AND STYLING C
 
 Maintain the JSON structure while being absolutely savage about the fashion and clothing elements.`
     : `\n\n💫 ANALYSIS TONE: Professional personal color and style analysis approach. Provide detailed, personalized insights about their natural coloring and how to enhance it through clothing choices. Focus on their unique features and how to celebrate them through styling.
+
+${eventContext && !isNeutral ? `**CONTEXT REQUIREMENT:** You MUST evaluate and comment on the appropriateness of this outfit for "${eventContext}" in your feedback. This should be prominently mentioned in the "Overall Enhancement" section of your feedback.` : ''}
 
 **CRITICAL:** Always maintain the complete JSON structure with all required fields including styleAnalysis.`;
 
