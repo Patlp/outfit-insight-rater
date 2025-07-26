@@ -19,11 +19,7 @@ interface StoredOutfit {
   gender?: string;
 }
 
-interface OutfitsTabProps {
-  onNewAnalysis: () => void;
-}
-
-const OutfitsTab: React.FC<OutfitsTabProps> = ({ onNewAnalysis }) => {
+const OutfitsTab: React.FC = () => {
   const { user } = useAuth();
   const { currentUpload, analysisResult } = useUploadSession();
   const [storedOutfits, setStoredOutfits] = useState<StoredOutfit[]>([]);
@@ -113,15 +109,9 @@ const OutfitsTab: React.FC<OutfitsTabProps> = ({ onNewAnalysis }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-fashion-900">Your Outfits</h2>
-          <p className="text-fashion-600">All your style analyses and ratings</p>
-        </div>
-        <Button onClick={onNewAnalysis}>
-          <Upload className="h-4 w-4 mr-2" />
-          New Analysis
-        </Button>
+      <div>
+        <h2 className="text-2xl font-bold text-fashion-900">Your Outfits</h2>
+        <p className="text-fashion-600">All your style analyses and ratings</p>
       </div>
 
       {/* Current Session Outfit (if exists) */}
@@ -246,7 +236,7 @@ const OutfitsTab: React.FC<OutfitsTabProps> = ({ onNewAnalysis }) => {
             <p className="text-fashion-600 mb-6">
               Start building your style profile by uploading your first outfit
             </p>
-            <Button onClick={onNewAnalysis}>
+            <Button onClick={() => window.location.href = '/'}>
               Upload Your First Outfit
             </Button>
           </CardContent>
