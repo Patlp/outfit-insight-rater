@@ -3,7 +3,7 @@ import React from 'react';
 import { useRating } from '@/context/RatingContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import { analyzeOutfit } from '@/utils/aiRatingService';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 interface AnalyzeButtonProps {
   imageFile: File | null;
@@ -25,7 +25,7 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
   const handleAnalyze = async () => {
     if (!imageFile || !imageSrc) {
       console.error('AnalyzeButton: Missing required data', { hasImageFile: !!imageFile, hasImageSrc: !!imageSrc });
-      toast.error('Image data is missing. Please upload an image again.');
+      toast({ description: 'Image data is missing. Please upload an image again.' });
       return;
     }
     
@@ -104,7 +104,7 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         console.error('Failed to save outfit:', saveError);
       }
       
-      toast.success('Analysis complete!');
+      toast({ description: 'Analysis complete!' });
     } catch (error) {
       const analysisTime = performance.now() - analysisStartTime;
       console.error('AnalyzeButton: Analysis failed', {
@@ -112,7 +112,7 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
         stack: error instanceof Error ? error.stack : undefined,
         duration: analysisTime.toFixed(2) + 'ms'
       });
-      toast.error('Failed to analyze your outfit. Please try again.');
+      toast({ description: 'Failed to analyze your outfit. Please try again.' });
     } finally {
       setIsAnalyzing(false);
     }

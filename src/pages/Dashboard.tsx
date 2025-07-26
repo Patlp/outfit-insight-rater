@@ -4,18 +4,87 @@ import { useUploadSession } from '@/context/UploadSessionContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Crown, ArrowLeft, X, Palette, Image } from 'lucide-react';
+import { Crown, ArrowLeft, X, Palette, Image, CheckCircle } from 'lucide-react';
 import SubscriptionStatusIndicator from '@/components/SubscriptionStatusIndicator';
-import { RatingProvider } from '@/context/RatingContext';
+import { RatingProvider, useRating } from '@/context/RatingContext';
 import UploadArea from '@/components/UploadArea';
 import RatingDisplay from '@/components/RatingDisplay';
 import StyleDNATab from '@/components/dashboard/StyleDNATab';
 import OutfitsTab from '@/components/dashboard/OutfitsTab';
 
+interface UploadModalContentProps {
+  onUploadSuccess: () => void;
+  uploadComplete: boolean;
+  onClose: () => void;
+}
+
+const UploadModalContent: React.FC<UploadModalContentProps> = ({ onUploadSuccess, uploadComplete, onClose }) => {
+  const { ratingResult } = useRating();
+
+  // Listen for successful analysis to trigger success callback
+  useEffect(() => {
+    if (ratingResult && !uploadComplete) {
+      onUploadSuccess();
+    }
+  }, [ratingResult, uploadComplete, onUploadSuccess]);
+
+  if (uploadComplete && ratingResult) {
+    return (
+      <div className="text-center space-y-6">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+            <CheckCircle className="h-10 w-10 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-fashion-900 mb-2">
+              Analysis Complete!
+            </h3>
+            <p className="text-fashion-600">
+              Your outfit has been analyzed and saved to your collection.
+            </p>
+          </div>
+        </div>
+        
+        <div className="bg-fashion-50 p-4 rounded-lg">
+          <div className="flex items-center justify-center gap-2 text-2xl font-bold text-fashion-600 mb-2">
+            <span>Score: {ratingResult.score}/10</span>
+          </div>
+          <p className="text-sm text-fashion-500">
+            Check your Outfits tab to view the full analysis and suggestions.
+          </p>
+        </div>
+        
+        <Button 
+          onClick={() => {
+            onClose();
+            // Switch to outfits tab to show the new outfit
+            const outfitsTab = document.querySelector('[data-value="outfits"]') as HTMLElement;
+            if (outfitsTab) {
+              outfitsTab.click();
+            }
+          }} 
+          className="w-full"
+          variant="default"
+        >
+          View in Outfits Tab
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <UploadArea />
+      <RatingDisplay />
+    </div>
+  );
+};
+
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [showUpload, setShowUpload] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   useEffect(() => {
     // Only redirect if user is not authenticated and we're not still loading auth state
@@ -27,10 +96,18 @@ const Dashboard: React.FC = () => {
 
   const handleNewAnalysis = () => {
     setShowUpload(true);
+    setUploadComplete(false);
   };
 
   const handleCloseUpload = () => {
     setShowUpload(false);
+    setUploadComplete(false);
+  };
+
+  const handleUploadSuccess = () => {
+    setUploadComplete(true);
+    // Refresh the outfits tab
+    window.dispatchEvent(new CustomEvent('outfitSaved'));
   };
 
   if (!user) {
@@ -87,10 +164,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="p-6">
                 <RatingProvider>
-                  <div className="space-y-6">
-                    <UploadArea />
-                    <RatingDisplay />
-                  </div>
+                  <UploadModalContent onUploadSuccess={handleUploadSuccess} uploadComplete={uploadComplete} onClose={handleCloseUpload} />
                 </RatingProvider>
               </div>
             </div>
@@ -100,11 +174,11 @@ const Dashboard: React.FC = () => {
         {/* Main Dashboard Content */}
         <Tabs defaultValue="style-dna" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="style-dna" className="flex items-center gap-2">
+            <TabsTrigger value="style-dna" className="flex items-center gap-2" data-value="style-dna">
               <Palette className="h-4 w-4" />
               Style DNA
             </TabsTrigger>
-            <TabsTrigger value="outfits" className="flex items-center gap-2">
+            <TabsTrigger value="outfits" className="flex items-center gap-2" data-value="outfits">
               <Image className="h-4 w-4" />
               Outfits
             </TabsTrigger>
