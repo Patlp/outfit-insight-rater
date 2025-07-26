@@ -87,7 +87,8 @@ const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ imageFile, imageSrc }) =>
     const requestId = startRequest(imageBase64, selectedGender, feedbackMode);
     setIsAnalyzing(true);
     const analysisStartTime = performance.now();
-      
+    
+    try {
       // Validate the base64 data
       if (!imageBase64 || imageBase64.length < 100) {
         console.error('AnalyzeButton: Invalid image data - too small or empty', {
