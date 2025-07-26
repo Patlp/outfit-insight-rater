@@ -68,11 +68,15 @@ const PremiumBenefitsSection: React.FC = () => {
         <Button 
           onClick={handleSubscribeClick}
           size="lg"
-          className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-8"
+          className="bg-fashion-600 hover:bg-fashion-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 mb-4"
         >
           <Sparkles className="h-5 w-5 mr-2" />
           Get Premium Access - £5.00/month
         </Button>
+        
+        <p className="text-sm font-medium text-fashion-700 bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-8">
+          💯 100% Guaranteed to improve your fashion, or your money back
+        </p>
       </div>
 
       {/* Premium Features Showcase */}
