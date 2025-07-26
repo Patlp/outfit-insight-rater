@@ -75,9 +75,14 @@ const SubscriptionOverlay: React.FC<SubscriptionOverlayProps> = ({ children }) =
               Get Premium Access - £5.00/month
             </Button>
 
-            <p className="text-xs text-fashion-500 text-center">
-              After payment, you'll create your account and get instant access
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium text-fashion-700 bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                💯 100% Guaranteed to improve your fashion, or your money back
+              </p>
+              <p className="text-xs text-fashion-500">
+                After payment, you'll create your account and get instant access
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
