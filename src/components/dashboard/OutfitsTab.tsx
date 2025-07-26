@@ -350,18 +350,16 @@ const OutfitsTab: React.FC = () => {
 
                           {/* Detailed Feedback */}
                           <div className="lg:col-span-3">
-                            <div className="text-sm text-fashion-700 leading-relaxed">
-                              {outfit.feedback}
-                            </div>
+                            <FeedbackSection feedback={outfit.feedback} />
                             
                             {outfit.suggestions && outfit.suggestions.length > 0 && (
-                              <div className="mt-3">
-                                <h5 className="font-medium text-fashion-900 mb-1 text-sm">Suggestions</h5>
+                              <div className="mt-4">
+                                <h4 className="font-medium text-fashion-900 mb-2">Suggestions</h4>
                                 <ul className="space-y-1">
                                   {outfit.suggestions.map((suggestion, index) => (
-                                    <li key={index} className="flex items-start gap-2 text-xs">
-                                      <span className="text-fashion-500 mt-0.5">•</span>
-                                      <span className="text-fashion-600">{suggestion}</span>
+                                    <li key={index} className="flex items-start gap-2 text-sm">
+                                      <span className="text-fashion-500 mt-1">•</span>
+                                      <span className="text-fashion-700">{suggestion}</span>
                                     </li>
                                   ))}
                                 </ul>
