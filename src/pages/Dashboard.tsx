@@ -1,20 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Crown, Upload, ArrowLeft } from 'lucide-react';
+import { Crown, Upload, ArrowLeft, X } from 'lucide-react';
 import SubscriptionStatusIndicator from '@/components/SubscriptionStatusIndicator';
 import FeedbackSection from '@/components/rating/FeedbackSection';
 import StyleAnalysisSection from '@/components/style/StyleAnalysisSection';
 import ColorAnalysisSection from '@/components/style/ColorAnalysisSection';
 import BodyTypeSection from '@/components/style/BodyTypeSection';
+import { RatingProvider } from '@/context/RatingContext';
+import UploadArea from '@/components/UploadArea';
+import RatingDisplay from '@/components/RatingDisplay';
 
 const Dashboard: React.FC = () => {
   const { user, subscription, loading } = useAuth();
   const { currentUpload, analysisResult, clearSession } = useUploadSession();
   const navigate = useNavigate();
+  const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
     // Only redirect if user is not authenticated and we're not still loading auth state
@@ -30,8 +34,11 @@ const Dashboard: React.FC = () => {
   }, [user, loading, navigate, currentUpload, analysisResult]);
 
   const handleNewAnalysis = () => {
-    clearSession();
-    navigate('/');
+    setShowUpload(true);
+  };
+
+  const handleCloseUpload = () => {
+    setShowUpload(false);
   };
 
   if (!user) {
@@ -71,8 +78,35 @@ const Dashboard: React.FC = () => {
           <SubscriptionStatusIndicator showRefreshButton={true} compact={false} />
         </div>
 
+        {/* Upload Interface Overlay */}
+        {showUpload && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-warm-cream rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-fashion-200">
+                <h2 className="text-2xl font-bold text-fashion-900">New Style Analysis</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCloseUpload}
+                  className="text-fashion-600 hover:text-fashion-800"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="p-6">
+                <RatingProvider>
+                  <div className="space-y-6">
+                    <UploadArea />
+                    <RatingDisplay />
+                  </div>
+                </RatingProvider>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Current Analysis Results */}
-        {analysisResult && currentUpload && (
+        {analysisResult && currentUpload && !showUpload && (
           <div className="space-y-6 mb-8">
             <Card>
               <CardHeader>
@@ -150,7 +184,7 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Empty State */}
-        {!analysisResult && (
+        {!analysisResult && !showUpload && (
           <Card className="text-center py-12">
             <CardContent>
               <Upload className="h-16 w-16 text-fashion-400 mx-auto mb-4" />
@@ -168,24 +202,26 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Quick Actions */}
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button onClick={handleNewAnalysis} className="h-auto py-4">
-                  <Upload className="h-5 w-5 mr-2" />
-                  <div className="text-left">
-                    <div className="font-medium">New Analysis</div>
-                    <div className="text-xs opacity-75">Upload another photo</div>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {!showUpload && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button onClick={handleNewAnalysis} className="h-auto py-4">
+                    <Upload className="h-5 w-5 mr-2" />
+                    <div className="text-left">
+                      <div className="font-medium">New Analysis</div>
+                      <div className="text-xs opacity-75">Upload another photo</div>
+                    </div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
