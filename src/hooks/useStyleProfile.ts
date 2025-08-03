@@ -120,6 +120,8 @@ export const useStyleProfile = () => {
 
   // Generate color palette
   const generateColorPalette = async (seasonalType: string, bodyType: string, skinTone: string, undertone: string, gender: 'male' | 'female') => {
+    console.log('Generating color palette with params:', { seasonalType, bodyType, skinTone, undertone, gender });
+    
     try {
       const response = await supabase.functions.invoke('generate-style-palette', {
         body: {
@@ -131,10 +133,24 @@ export const useStyleProfile = () => {
         }
       });
 
-      if (response.error) throw response.error;
+      console.log('Color palette response:', response);
+
+      if (response.error) {
+        console.error('Supabase function error:', response.error);
+        throw response.error;
+      }
+      
+      if (!response.data) {
+        throw new Error('No data returned from color palette generation');
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error generating color palette:', error);
+      // Re-throw with more context
+      if (error.message?.includes('Load failed')) {
+        throw new Error('Network error: Failed to connect to color palette service. Please check your internet connection and try again.');
+      }
       throw error;
     }
   };

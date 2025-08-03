@@ -91,36 +91,72 @@ Respond with this exact JSON structure:
 
 Ensure all hex codes are valid 6-digit hex colors (e.g., #FF6B9D).`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: `Generate a personalized color palette for this ${gender} with ${seasonalType} coloring, ${bodyType} body type, ${skinTone} skin with ${undertone} undertones.`
-        }
-      ],
-      max_tokens: 1500,
-      temperature: 0.4,
-    }),
-  });
+    console.log('Generating color palette with OpenAI...');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `Generate a personalized color palette for this ${gender} with ${seasonalType} coloring, ${bodyType} body type, ${skinTone} skin with ${undertone} undertones.`
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.4,
+      }),
+    });
 
-  const data = await response.json();
-  const content = data.choices[0].message.content;
+    console.log('OpenAI request sent, awaiting response...');
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid OpenAI API response format');
+    }
+
+    const content = data.choices[0].message.content;
+    console.log('OpenAI palette response received:', content.substring(0, 200) + '...');
   
-  // Extract JSON from response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
-  }
-  
-  throw new Error('Failed to parse color palette');
+    // Extract JSON from response with improved parsing
+    let jsonStr = content.trim();
+    
+    // Remove markdown code blocks if present
+    jsonStr = jsonStr.replace(/```json\s*|\s*```/g, '');
+    
+    // Extract JSON object from text
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+    
+    try {
+      const parsed = JSON.parse(jsonStr);
+      
+      // Validate required fields
+      if (!parsed.categoryRecommendations || !Array.isArray(parsed.categoryRecommendations)) {
+        throw new Error('Missing or invalid categoryRecommendations in palette response');
+      }
+      
+      console.log('Successfully parsed color palette with', parsed.categoryRecommendations.length, 'categories');
+      return parsed;
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Raw content:', content);
+      throw new Error(`Failed to parse color palette: ${parseError.message}`);
+    }
 }
 
 serve(async (req) => {
@@ -130,6 +166,15 @@ serve(async (req) => {
   }
 
   try {
+    // Check if OpenAI API key is available
+    if (!openAIApiKey) {
+      console.error('OpenAI API key is not configured');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
     const request: PaletteRequest = await req.json();
     
     if (!request.seasonalType || !request.bodyType || !request.skinTone || !request.undertone || !request.gender) {
