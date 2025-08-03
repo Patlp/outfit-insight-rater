@@ -292,74 +292,52 @@ const BodyTypeSection: React.FC<BodyTypeSectionProps> = ({ bodyType }) => {
                 </div>
               </div>
 
-              {/* Additional guide information if available */}
-              {guideData && (
-                <>
-                  {guideData.recommended_fits.length > 0 && (
-                    <div>
-                      <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
-                        Best Fits
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {guideData.recommended_fits.map((fit, index) => (
-                          <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
-                            {fit}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {guideData.recommended_fabrics.length > 0 && (
-                    <div>
-                      <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
-                        Recommended Fabrics
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {guideData.recommended_fabrics.map((fabric, index) => (
-                          <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
-                            {fabric}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* What Not to Wear section - Always show if available from either source */}
-                  {((guideData?.what_not_to_wear && guideData.what_not_to_wear.length > 0) || 
-                    (bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0)) && (
-                    <div>
-                      <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                        What Not to Wear
-                      </h4>
-                      <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
-                        {(guideData?.what_not_to_wear || bodyType.whatNotToWear || []).map((avoidItem, index) => (
-                          <div key={index} className="flex items-start gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
-                            <div className="flex-1">
-                              <span className="font-medium text-red-800">{avoidItem.item}</span>
-                              <p className="text-sm text-red-700 mt-1">{avoidItem.reason}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
+              {/* Best Fits section - show from either database or AI analysis */}
+              {((guideData?.recommended_fits && guideData.recommended_fits.length > 0) || 
+                (bodyType.bestFits && bodyType.bestFits.length > 0)) && (
+                <div>
+                  <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
+                    Best Fits
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(guideData?.recommended_fits || bodyType.bestFits || []).map((fit, index) => (
+                      <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
+                        {fit}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
-              
-              {/* Show What Not to Wear from AI analysis if no database guide data */}
-              {!guideData && bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0 && (
+
+              {/* Recommended Fabrics section - show from either database or AI analysis */}
+              {((guideData?.recommended_fabrics && guideData.recommended_fabrics.length > 0) || 
+                (bodyType.recommendedFabrics && bodyType.recommendedFabrics.length > 0)) && (
+                <div>
+                  <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-fashion-500 rounded-full"></span>
+                    Recommended Fabrics
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(guideData?.recommended_fabrics || bodyType.recommendedFabrics || []).map((fabric, index) => (
+                      <span key={index} className="px-3 py-1 bg-fashion-100 text-fashion-800 rounded-full text-sm font-medium">
+                        {fabric}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* What Not to Wear section - show from either database or AI analysis */}
+              {((guideData?.what_not_to_wear && guideData.what_not_to_wear.length > 0) || 
+                (bodyType.whatNotToWear && bodyType.whatNotToWear.length > 0)) && (
                 <div>
                   <h4 className="text-lg font-semibold text-fashion-800 mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                     What Not to Wear
                   </h4>
                   <div className="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
-                    {bodyType.whatNotToWear.map((avoidItem, index) => (
+                    {(guideData?.what_not_to_wear || bodyType.whatNotToWear || []).map((avoidItem, index) => (
                       <div key={index} className="flex items-start gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
                         <div className="flex-1">

@@ -45,6 +45,8 @@ export interface BodyType {
   description: string;
   visualShape: string;
   stylingRecommendations: string[];
+  bestFits?: string[];
+  recommendedFabrics?: string[];
   whatNotToWear?: Array<{ item: string; reason: string }>;
 }
 

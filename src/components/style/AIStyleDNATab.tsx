@@ -330,6 +330,8 @@ const AIStyleDNATab: React.FC = () => {
                   description: bodyTypeAnalysis?.explanation || 'AI-analyzed body type',
                   visualShape: bodyTypeAnalysis?.visualShape || 'Balanced silhouette',
                   stylingRecommendations: bodyTypeAnalysis?.stylingRecommendations || [],
+                  bestFits: bodyTypeAnalysis?.bestFits || [],
+                  recommendedFabrics: bodyTypeAnalysis?.recommendedFabrics || [],
                   whatNotToWear: bodyTypeAnalysis?.whatNotToWear || []
                 }}
               />
