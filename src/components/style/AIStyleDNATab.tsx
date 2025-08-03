@@ -6,6 +6,7 @@ import { useStyleProfile, BodyTypeAnalysis, ColorAnalysis } from '@/hooks/useSty
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Palette, Upload, Camera, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { validateFile, compressImage } from '@/utils/imageProcessing';
 import BodyTypeConfirmation from './BodyTypeConfirmation';
 import ColorAnalysisConfirmation from './ColorAnalysisConfirmation';
 import EnhancedColorPaletteSection from './EnhancedColorPaletteSection';
@@ -25,6 +26,7 @@ const AIStyleDNATab: React.FC = () => {
   const [colorAnalysis, setColorAnalysis] = useState<ColorAnalysis | null>(null);
   const [confirmedBodyType, setConfirmedBodyType] = useState<string | null>(null);
   const [confirmedColorAnalysis, setConfirmedColorAnalysis] = useState<ColorAnalysis | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   // Check if user has existing complete profile
   useEffect(() => {
@@ -47,15 +49,59 @@ const AIStyleDNATab: React.FC = () => {
     }
   }, [styleProfile]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    console.log('Starting image upload for Style DNA:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      timestamp: new Date().toISOString()
+    });
+
+    // Validate the file first
+    if (!validateFile(file)) {
+      console.error('File validation failed for Style DNA upload');
+      return;
+    }
+
+    try {
+      // Compress the image
+      const processedFile = await compressImage(file, setIsCompressing);
+      console.log('Image compression completed for Style DNA, starting file read');
+      
+      // Read the processed file
       const reader = new FileReader();
+      
+      reader.onerror = (error) => {
+        console.error('FileReader error in Style DNA:', error);
+        toast({
+          title: "Upload Failed",
+          description: "Failed to read image file. Please try again.",
+          variant: "destructive"
+        });
+      };
+      
       reader.onload = (e) => {
         const base64 = e.target?.result as string;
         setSelectedImage(base64);
+        console.log('Style DNA image upload completed successfully');
+        
+        toast({
+          title: "Image Uploaded",
+          description: "Your photo has been uploaded successfully!",
+        });
       };
-      reader.readAsDataURL(file);
+      
+      reader.readAsDataURL(processedFile);
+    } catch (error) {
+      console.error('Error processing image for Style DNA:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to process image. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -198,7 +244,17 @@ const AIStyleDNATab: React.FC = () => {
                     id="style-image-upload"
                   />
                   <label htmlFor="style-image-upload" className="cursor-pointer">
-                    {selectedImage ? (
+                    {isCompressing ? (
+                      <div className="space-y-4">
+                        <Loader2 className="h-12 w-12 text-fashion-400 mx-auto animate-spin" />
+                        <div>
+                          <p className="text-fashion-900 font-medium">Processing image...</p>
+                          <p className="text-fashion-600 text-sm">
+                            Compressing and optimizing your photo
+                          </p>
+                        </div>
+                      </div>
+                    ) : selectedImage ? (
                       <div className="space-y-4">
                         <img 
                           src={selectedImage} 
