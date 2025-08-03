@@ -1,10 +1,41 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Authentication middleware
+async function validateAuth(req: Request) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('Missing Authorization header');
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  // Extract JWT token from Authorization header
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Verify the JWT token
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) {
+    throw new Error('Invalid or expired authentication token');
+  }
+  
+  console.log('Authenticated user:', user.id);
+  return user;
+}
 
 interface PaletteRequest {
   seasonalType: string;
@@ -160,6 +191,8 @@ Ensure all hex codes are valid 6-digit hex colors (e.g., #FF6B9D).`;
 }
 
 serve(async (req) => {
+  const startTime = Date.now();
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -167,6 +200,25 @@ serve(async (req) => {
 
   try {
     console.log('Starting generate-style-palette function...');
+    
+    // Validate authentication first
+    let user;
+    try {
+      user = await validateAuth(req);
+      console.log('Authentication successful for user:', user.id);
+    } catch (authError) {
+      console.error('Authentication failed:', authError.message);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Authentication failed', 
+          details: authError.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 401 
+        }
+      );
+    }
     
     // Check if OpenAI API key is available
     if (!openAIApiKey) {
@@ -177,22 +229,61 @@ serve(async (req) => {
       );
     }
 
-    console.log('Parsing request body...');
-    const request: PaletteRequest = await req.json();
-    console.log('Received request:', request);
-    
-    if (!request.seasonalType || !request.bodyType || !request.skinTone || !request.undertone || !request.gender) {
-      console.error('Missing required fields:', request);
+    // Parse and validate request body
+    let request: PaletteRequest;
+    try {
+      console.log('Parsing request body...');
+      request = await req.json();
+      console.log('Received request for user:', user.id, 'Request:', request);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields', received: request }),
+        JSON.stringify({ 
+          error: 'Invalid JSON in request body',
+          details: parseError.message 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // Validate required fields with detailed error reporting
+    const requiredFields = ['seasonalType', 'bodyType', 'skinTone', 'undertone', 'gender'];
+    const missingFields = requiredFields.filter(field => !request[field as keyof PaletteRequest]);
+    
+    if (missingFields.length > 0) {
+      console.error('Missing required fields:', missingFields, 'Received:', request);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required fields', 
+          missingFields,
+          received: request 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log('Generating color palette for:', request);
+    // Validate gender field specifically
+    if (request.gender !== 'male' && request.gender !== 'female') {
+      console.error('Invalid gender value:', request.gender);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid gender value. Must be "male" or "female"',
+          received: request.gender 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    console.log('Generating color palette for user:', user.id, 'Request:', request);
     
+    // Generate the color palette
     const palette = await generateColorPalette(request);
-    console.log('Successfully generated palette:', palette);
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.log('Successfully generated palette for user:', user.id, 'Duration:', duration + 'ms');
+    console.log('Palette categories:', palette.categoryRecommendations.length);
 
     return new Response(
       JSON.stringify(palette),
@@ -200,11 +291,38 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in generate-style-palette:', error);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.error('Error in generate-style-palette after', duration + 'ms:', error);
     console.error('Error stack:', error.stack);
+    
+    // Provide more specific error messages
+    let errorMessage = error.message;
+    let statusCode = 500;
+    
+    if (error.message.includes('OpenAI API')) {
+      statusCode = 502;
+      errorMessage = 'External API error: ' + error.message;
+    } else if (error.message.includes('JSON')) {
+      statusCode = 502;
+      errorMessage = 'Response parsing error: ' + error.message;
+    } else if (error.message.includes('Authentication')) {
+      statusCode = 401;
+      errorMessage = 'Authentication error: ' + error.message;
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message, stack: error.stack }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: errorMessage, 
+        type: error.constructor.name,
+        timestamp: new Date().toISOString(),
+        duration: duration + 'ms'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: statusCode 
+      }
     );
   }
 });
