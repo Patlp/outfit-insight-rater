@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Camera, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { validateFile, compressImage } from '@/utils/imageProcessing';
 
 interface StylePhotoUploadProps {
   onImageSelected: (base64: string) => void;
@@ -200,8 +199,11 @@ const StylePhotoUpload: React.FC<StylePhotoUploadProps> = ({
   };
 
   const clearImage = () => {
+    console.log('🗑️ Clearing selected image...');
     onImageSelected('');
   };
+
+  console.log('🔄 StylePhotoUpload render - selectedImage exists:', !!selectedImage);
 
   return (
     <Card className="fashion-card">
