@@ -147,6 +147,11 @@ const AIStyleDNATab: React.FC = () => {
     setColorAnalysis(null);
     setConfirmedBodyType(null);
     setConfirmedColorAnalysis(null);
+    
+    toast({
+      title: "Analysis Reset",
+      description: "Ready to analyze a new photo!",
+    });
   };
 
   if (loading) {

@@ -150,6 +150,9 @@ export const useStyleProfile = () => {
           skinTone,
           undertone,
           gender
+        },
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
 
