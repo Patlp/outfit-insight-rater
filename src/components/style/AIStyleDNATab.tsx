@@ -144,12 +144,22 @@ const AIStyleDNATab: React.FC = () => {
   };
 
   const resetAnalysis = () => {
+    console.log('🔄 Re-analyze button clicked');
+    console.log('📋 Current state before reset:', {
+      analysisStep,
+      hasSelectedImage: !!selectedImage,
+      hasBodyType: !!confirmedBodyType,
+      hasColorAnalysis: !!confirmedColorAnalysis
+    });
+    
     setAnalysisStep('upload');
     setSelectedImage(null);
     setBodyTypeAnalysis(null);
     setColorAnalysis(null);
     setConfirmedBodyType(null);
     setConfirmedColorAnalysis(null);
+    
+    console.log('✅ Analysis reset completed, should be back to upload step');
     
     toast({
       title: "Analysis Reset",
