@@ -40,7 +40,11 @@ const EnhancedColorPaletteSection: React.FC<EnhancedColorPaletteSectionProps> = 
   const canGenerate = seasonalType && bodyType && skinTone && undertone;
 
   const generatePalette = async () => {
+    console.log('generatePalette called with canGenerate:', canGenerate);
+    console.log('Values:', { seasonalType, bodyType, skinTone, undertone, gender });
+    
     if (!canGenerate) {
+      console.log('Cannot generate - missing data');
       toast({
         title: "Missing Information",
         description: "Please complete your body type and color analysis first.",
@@ -50,7 +54,9 @@ const EnhancedColorPaletteSection: React.FC<EnhancedColorPaletteSectionProps> = 
     }
 
     setLoading(true);
+    console.log('Starting palette generation...');
     try {
+      console.log('Calling generateColorPalette hook...');
       const result = await generateColorPalette(
         seasonalType!,
         bodyType!,
@@ -59,17 +65,31 @@ const EnhancedColorPaletteSection: React.FC<EnhancedColorPaletteSectionProps> = 
         gender
       );
       
+      console.log('Palette generation successful, result:', result);
       setColorRecommendations(result.categoryRecommendations);
       setOverallExplanation(result.overallExplanation);
+      
+      toast({
+        title: "Success!",
+        description: "Your color palette has been generated.",
+        variant: "default"
+      });
     } catch (error) {
-      console.error('Error generating palette:', error);
+      console.error('Error generating palette in component:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        type: typeof error,
+        stack: error?.stack
+      });
+      
       toast({
         title: "Generation Failed",
-        description: "Failed to generate color palette. Please try again.",
+        description: error?.message || "Failed to generate color palette. Please try again.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
+      console.log('Palette generation finished');
     }
   };
 

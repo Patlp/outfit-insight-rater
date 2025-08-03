@@ -57,9 +57,14 @@ export const useStyleProfile = () => {
 
   // Fetch existing style profile
   const fetchStyleProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping style profile fetch');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('Fetching style profile for user:', user.id);
       const { data, error } = await supabase
         .from('style_profiles')
         .select('*')
@@ -68,11 +73,15 @@ export const useStyleProfile = () => {
         .limit(1)
         .maybeSingle();
 
+      console.log('Style profile query result:', { data, error });
+
       if (error) {
+        console.error('Database error fetching style profile:', error);
         throw error;
       }
 
       setStyleProfile(data || null);
+      console.log('Style profile set:', data || null);
     } catch (error) {
       console.error('Error fetching style profile:', error);
     } finally {
@@ -123,6 +132,7 @@ export const useStyleProfile = () => {
     console.log('Generating color palette with params:', { seasonalType, bodyType, skinTone, undertone, gender });
     
     try {
+      console.log('About to invoke generate-style-palette function...');
       const response = await supabase.functions.invoke('generate-style-palette', {
         body: {
           seasonalType,
@@ -133,25 +143,36 @@ export const useStyleProfile = () => {
         }
       });
 
-      console.log('Color palette response:', response);
+      console.log('Color palette response received:', response);
+      console.log('Response error:', response.error);
+      console.log('Response data:', response.data);
 
       if (response.error) {
-        console.error('Supabase function error:', response.error);
-        throw response.error;
+        console.error('Supabase function error details:', response.error);
+        throw new Error(`Function error: ${JSON.stringify(response.error)}`);
       }
       
       if (!response.data) {
+        console.error('No data returned from function');
         throw new Error('No data returned from color palette generation');
       }
       
+      console.log('Successfully received palette data, returning:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error generating color palette:', error);
+      console.error('Error generating color palette - full error:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      
       // Re-throw with more context
-      if (error.message?.includes('Load failed')) {
+      if (error?.message?.includes('Load failed')) {
         throw new Error('Network error: Failed to connect to color palette service. Please check your internet connection and try again.');
       }
-      throw error;
+      if (error?.message?.includes('Function error:')) {
+        throw error; // Already formatted
+      }
+      throw new Error(`Unexpected error: ${error?.message || 'Unknown error occurred'}`);
     }
   };
 
