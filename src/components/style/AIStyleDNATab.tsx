@@ -49,7 +49,10 @@ const AIStyleDNATab: React.FC = () => {
   }, [styleProfile]);
 
   const handleImageSelected = (base64: string) => {
+    console.log('🎯 AIStyleDNATab: handleImageSelected called with base64 length:', base64.length);
+    console.log('📝 Setting selectedImage state...');
     setSelectedImage(base64);
+    console.log('✅ selectedImage state set, current selectedImage state:', !!selectedImage);
   };
 
   const startAnalysis = async () => {

@@ -164,7 +164,14 @@ const StylePhotoUpload: React.FC<StylePhotoUploadProps> = ({
       const base64Result = await readFile;
       
       console.log('🎯 Calling onImageSelected with base64 data...');
+      console.log('📊 Before onImageSelected - selectedImage prop exists:', !!selectedImage);
       onImageSelected(base64Result);
+      console.log('✅ onImageSelected called successfully');
+      
+      // Force a small delay to see if state updates
+      setTimeout(() => {
+        console.log('📊 After onImageSelected (delayed check) - selectedImage prop:', !!selectedImage);
+      }, 100);
       
       console.log('✅ Upload process completed successfully!');
       toast({
