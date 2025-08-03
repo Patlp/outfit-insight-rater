@@ -56,62 +56,98 @@ async function analyzeBodyType(imageBase64: string, gender: string): Promise<Bod
 
 Focus ONLY on visible body proportions and shape. Be ethical and professional.
 
-Respond with this exact JSON structure:
+CRITICAL: You MUST respond with ONLY valid JSON. Do not include any text before or after the JSON. The response must start with { and end with }.
+
 {
-  "bodyType": "one of: rectangle, pear, hourglass, inverted_triangle, undefined",
-  "confidence": 0.0-1.0,
+  "bodyType": "rectangle",
+  "confidence": 0.75,
   "explanation": "Brief explanation of why this body type was chosen based on visible proportions",
   "visualShape": "Description of the silhouette",
-  "typicalPersonality": "Positive archetype associated with this body type (confident, creative, practical, etc.)",
-  "weightGainPattern": ["area1", "area2", "area3"],
-  "stylingRecommendations": ["tip1", "tip2", "tip3"],
-  "bestFits": ["fit1", "fit2", "fit3"],
-  "recommendedFabrics": ["fabric1", "fabric2", "fabric3"],
+  "typicalPersonality": "Confident and balanced",
+  "weightGainPattern": ["midsection", "arms", "legs"],
+  "stylingRecommendations": ["Create waist definition", "Add volume to bust and hips", "Use belts and structured pieces"],
+  "bestFits": ["A-line dresses", "Wrap tops", "High-waisted bottoms"],
+  "recommendedFabrics": ["Structured cotton", "Ponte knits", "Textured fabrics"],
   "whatNotToWear": [
-    {"item": "clothing item", "reason": "why to avoid"},
-    {"item": "clothing item", "reason": "why to avoid"}
+    {"item": "boxy tops", "reason": "Adds bulk without definition"},
+    {"item": "straight leg pants", "reason": "Can make silhouette appear uniform"}
   ]
 }`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Please analyze this ${gender} person's body type from the image. Focus on proportions and shape.`
-            },
-            {
-              type: 'image_url',
-              image_url: { url: `data:image/jpeg;base64,${imageBase64}` }
-            }
-          ]
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.3,
-    }),
-  });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Please analyze this ${gender} person's body type from the image. Focus on proportions and shape. Respond with ONLY valid JSON.`
+              },
+              {
+                type: 'image_url',
+                image_url: { url: `data:image/jpeg;base64,${imageBase64}` }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.3,
+      }),
+    });
 
-  const data = await response.json();
-  const content = data.choices[0].message.content;
-  
-  // Extract JSON from response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid OpenAI API response format');
+    }
+
+    const content = data.choices[0].message.content;
+    console.log('OpenAI body type response:', content);
+    
+    // Try to extract JSON from response with multiple patterns
+    let jsonStr = content.trim();
+    
+    // Remove markdown code blocks if present
+    jsonStr = jsonStr.replace(/```json\s*|\s*```/g, '');
+    
+    // Extract JSON object from text
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+    
+    try {
+      const parsed = JSON.parse(jsonStr);
+      
+      // Validate required fields
+      if (!parsed.bodyType || !parsed.confidence || !parsed.explanation) {
+        throw new Error('Missing required fields in body type analysis');
+      }
+      
+      return parsed;
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Raw content:', content);
+      throw new Error(`Failed to parse body type analysis: ${parseError.message}`);
+    }
+    
+  } catch (error) {
+    console.error('Error in analyzeBodyType:', error);
+    throw error;
   }
-  
-  throw new Error('Failed to parse body type analysis');
 }
 
 async function analyzeColorProfile(imageBase64: string, gender: string): Promise<ColorAnalysis> {
@@ -125,58 +161,94 @@ Examine:
 
 Use seasonal color analysis principles to determine their type (e.g., "Light Summer", "Deep Autumn", etc.).
 
-Respond with this exact JSON structure:
+CRITICAL: You MUST respond with ONLY valid JSON. Do not include any text before or after the JSON. The response must start with { and end with }.
+
 {
-  "seasonalType": "Seasonal color type (e.g., Light Summer, Deep Autumn)",
-  "skinTone": "fair, medium, olive, or deep",
-  "undertone": "cool, warm, or neutral", 
-  "hairColor": "Descriptive hair color",
-  "eyeColor": "Descriptive eye color",
-  "undertoneValue": 0-100 (0=very cool, 100=very warm),
-  "contrastValue": 0-100 (0=low contrast, 100=high contrast),
-  "depthValue": 0-100 (0=very light, 100=very deep),
+  "seasonalType": "Light Summer",
+  "skinTone": "fair",
+  "undertone": "cool", 
+  "hairColor": "Light brown with cool undertones",
+  "eyeColor": "Blue-green",
+  "undertoneValue": 25,
+  "contrastValue": 40,
+  "depthValue": 30,
   "explanation": "Detailed explanation of the seasonal type assignment based on observed features"
 }`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Please analyze this ${gender} person's natural coloring for seasonal color analysis.`
-            },
-            {
-              type: 'image_url',
-              image_url: { url: `data:image/jpeg;base64,${imageBase64}` }
-            }
-          ]
-        }
-      ],
-      max_tokens: 800,
-      temperature: 0.3,
-    }),
-  });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Please analyze this ${gender} person's natural coloring for seasonal color analysis. Respond with ONLY valid JSON.`
+              },
+              {
+                type: 'image_url',
+                image_url: { url: `data:image/jpeg;base64,${imageBase64}` }
+              }
+            ]
+          }
+        ],
+        max_tokens: 800,
+        temperature: 0.3,
+      }),
+    });
 
-  const data = await response.json();
-  const content = data.choices[0].message.content;
-  
-  // Extract JSON from response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid OpenAI API response format');
+    }
+
+    const content = data.choices[0].message.content;
+    console.log('OpenAI color analysis response:', content);
+    
+    // Try to extract JSON from response with multiple patterns
+    let jsonStr = content.trim();
+    
+    // Remove markdown code blocks if present
+    jsonStr = jsonStr.replace(/```json\s*|\s*```/g, '');
+    
+    // Extract JSON object from text
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+    
+    try {
+      const parsed = JSON.parse(jsonStr);
+      
+      // Validate required fields
+      if (!parsed.seasonalType || !parsed.skinTone || !parsed.undertone) {
+        throw new Error('Missing required fields in color analysis');
+      }
+      
+      return parsed;
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Raw content:', content);
+      throw new Error(`Failed to parse color analysis: ${parseError.message}`);
+    }
+    
+  } catch (error) {
+    console.error('Error in analyzeColorProfile:', error);
+    throw error;
   }
-  
-  throw new Error('Failed to parse color analysis');
 }
 
 serve(async (req) => {
