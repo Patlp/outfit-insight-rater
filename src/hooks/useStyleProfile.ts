@@ -141,6 +141,8 @@ export const useStyleProfile = () => {
     
     try {
       console.log('About to invoke generate-style-palette function...');
+      
+      // Add explicit error handling for the function call
       const response = await supabase.functions.invoke('generate-style-palette', {
         body: {
           seasonalType,
@@ -155,32 +157,56 @@ export const useStyleProfile = () => {
       console.log('Response error:', response.error);
       console.log('Response data:', response.data);
 
+      // Check for specific function errors
       if (response.error) {
         console.error('Supabase function error details:', response.error);
-        throw new Error(`Function error: ${JSON.stringify(response.error)}`);
+        
+        // Handle different types of errors
+        if (response.error.message?.includes('FunctionsFetchError')) {
+          throw new Error('Unable to connect to the color palette service. Please check your internet connection and try again.');
+        }
+        
+        if (response.error.message?.includes('missing required fields')) {
+          throw new Error('Invalid data provided for color palette generation.');
+        }
+        
+        throw new Error(`Service error: ${response.error.message || 'Color palette service unavailable'}`);
       }
       
       if (!response.data) {
         console.error('No data returned from function');
-        throw new Error('No data returned from color palette generation');
+        throw new Error('Color palette service returned no data. Please try again.');
+      }
+      
+      // Validate response structure
+      if (!response.data.categoryRecommendations || !Array.isArray(response.data.categoryRecommendations)) {
+        console.error('Invalid response structure:', response.data);
+        throw new Error('Invalid response from color palette service.');
       }
       
       console.log('Successfully received palette data, returning:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error generating color palette - full error:', error);
+      console.error('Error name:', error?.name);
       console.error('Error type:', typeof error);
       console.error('Error message:', error?.message);
       console.error('Error stack:', error?.stack);
       
-      // Re-throw with more context
-      if (error?.message?.includes('Load failed')) {
-        throw new Error('Network error: Failed to connect to color palette service. Please check your internet connection and try again.');
+      // Handle specific error types
+      if (error?.name === 'FunctionsFetchError') {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
       }
-      if (error?.message?.includes('Function error:')) {
+      
+      if (error?.message?.includes('Load failed')) {
+        throw new Error('Failed to load color palette service. Please try again.');
+      }
+      
+      if (error?.message?.includes('Function error:') || error?.message?.includes('Service error:')) {
         throw error; // Already formatted
       }
-      throw new Error(`Unexpected error: ${error?.message || 'Unknown error occurred'}`);
+      
+      throw new Error(`Failed to generate color palette: ${error?.message || 'Unknown error occurred'}`);
     }
   };
 

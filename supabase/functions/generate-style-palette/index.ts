@@ -166,6 +166,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting generate-style-palette function...');
+    
     // Check if OpenAI API key is available
     if (!openAIApiKey) {
       console.error('OpenAI API key is not configured');
@@ -175,11 +177,14 @@ serve(async (req) => {
       );
     }
 
+    console.log('Parsing request body...');
     const request: PaletteRequest = await req.json();
+    console.log('Received request:', request);
     
     if (!request.seasonalType || !request.bodyType || !request.skinTone || !request.undertone || !request.gender) {
+      console.error('Missing required fields:', request);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields', received: request }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -187,6 +192,7 @@ serve(async (req) => {
     console.log('Generating color palette for:', request);
     
     const palette = await generateColorPalette(request);
+    console.log('Successfully generated palette:', palette);
 
     return new Response(
       JSON.stringify(palette),
@@ -195,8 +201,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-style-palette:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
