@@ -258,10 +258,20 @@ serve(async (req) => {
   }
 
   try {
+    // Check if OpenAI API key is available
+    if (!openAIApiKey) {
+      console.error('OpenAI API key is not configured');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
     const request: StyleProfileRequest = await req.json();
     const { imageBase64, gender, analysisType } = request;
 
     if (!imageBase64 || !gender || !analysisType) {
+      console.error('Missing required fields:', { imageBase64: !!imageBase64, gender, analysisType });
       return new Response(
         JSON.stringify({ error: 'Missing required fields: imageBase64, gender, analysisType' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -274,14 +284,19 @@ serve(async (req) => {
 
     switch (analysisType) {
       case 'body_type':
+        console.log('Analyzing body type...');
         result.bodyTypeAnalysis = await analyzeBodyType(imageBase64, gender);
+        console.log('Body type analysis completed');
         break;
       
       case 'color_analysis':
+        console.log('Analyzing color profile...');
         result.colorAnalysis = await analyzeColorProfile(imageBase64, gender);
+        console.log('Color analysis completed');
         break;
       
       case 'full_profile':
+        console.log('Analyzing full profile...');
         // Analyze both body type and color profile
         const [bodyType, colorProfile] = await Promise.all([
           analyzeBodyType(imageBase64, gender),
@@ -289,13 +304,14 @@ serve(async (req) => {
         ]);
         result.bodyTypeAnalysis = bodyType;
         result.colorAnalysis = colorProfile;
+        console.log('Full profile analysis completed');
         break;
       
       default:
-        throw new Error('Invalid analysis type');
+        throw new Error(`Invalid analysis type: ${analysisType}`);
     }
 
-    console.log('Analysis completed successfully');
+    console.log('Analysis completed successfully', Object.keys(result));
 
     return new Response(
       JSON.stringify(result),
@@ -304,8 +320,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in analyze-style-profile:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Unknown error occurred',
+        details: error.name || 'UnknownError'
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
