@@ -82,7 +82,7 @@ CRITICAL: You MUST respond with ONLY valid JSON. Do not include any text before 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -104,8 +104,12 @@ CRITICAL: You MUST respond with ONLY valid JSON. Do not include any text before 
       }),
     });
 
+    console.log('OpenAI body type request sent, awaiting response...');
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
@@ -183,7 +187,7 @@ CRITICAL: You MUST respond with ONLY valid JSON. Do not include any text before 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -205,8 +209,12 @@ CRITICAL: You MUST respond with ONLY valid JSON. Do not include any text before 
       }),
     });
 
+    console.log('OpenAI color analysis request sent, awaiting response...');
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
