@@ -26,68 +26,170 @@ const StylePhotoUpload: React.FC<StylePhotoUploadProps> = ({
   const { toast } = useToast();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('=== UPLOAD PROCESS STARTED ===');
     const file = event.target.files?.[0];
+    
     if (!file) {
-      console.log('No file selected');
+      console.log('❌ No file selected from input');
       return;
     }
 
-    console.log('File selected:', {
+    console.log('✅ File selected:', {
       name: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
+      lastModified: file.lastModified
     });
 
     // Reset the input to allow selecting the same file again
     event.target.value = '';
 
-    // Validate file
-    if (!validateFile(file)) {
-      console.error('File validation failed');
-      return;
-    }
-
     try {
-      console.log('Starting file processing...');
+      console.log('🔍 Starting file validation...');
       
-      // Compress image
-      const processedFile = await compressImage(file, setIsCompressing);
-      console.log('File compression completed');
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        console.error('❌ Invalid file type:', file.type);
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file (JPG, PNG, etc.)",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        console.error('❌ File too large:', file.size, 'bytes');
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 10MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ File validation passed');
+      console.log('🔄 Starting image compression...');
+      
+      setIsCompressing(true);
+      
+      // Simple compression without external dependency
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      const processImage = new Promise<File>((resolve, reject) => {
+        img.onload = () => {
+          try {
+            console.log('🖼️ Original image dimensions:', img.width, 'x', img.height);
+            
+            // Calculate new dimensions (max 1024px on longest side)
+            const maxDimension = 1024;
+            let { width, height } = img;
+            
+            if (width > height && width > maxDimension) {
+              height = (height * maxDimension) / width;
+              width = maxDimension;
+            } else if (height > maxDimension) {
+              width = (width * maxDimension) / height;
+              height = maxDimension;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            console.log('📐 Resized dimensions:', width, 'x', height);
+            
+            // Draw and compress
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  console.log('✅ Image compressed from', file.size, 'to', blob.size, 'bytes');
+                  const compressedFile = new File([blob], file.name, {
+                    type: file.type,
+                    lastModified: Date.now()
+                  });
+                  resolve(compressedFile);
+                } else {
+                  console.error('❌ Failed to create compressed blob');
+                  reject(new Error('Failed to compress image'));
+                }
+              },
+              file.type,
+              0.8 // 80% quality
+            );
+          } catch (error) {
+            console.error('❌ Error in image processing:', error);
+            reject(error);
+          }
+        };
+        
+        img.onerror = (error) => {
+          console.error('❌ Error loading image:', error);
+          reject(new Error('Failed to load image'));
+        };
+        
+        img.src = URL.createObjectURL(file);
+      });
+
+      const processedFile = await processImage;
+      setIsCompressing(false);
+      
+      console.log('✅ Image compression completed');
+      console.log('📁 Converting to base64...');
 
       // Convert to base64
       const reader = new FileReader();
       
-      reader.onerror = (error) => {
-        console.error('FileReader error:', error);
-        toast({
-          title: "Upload Failed",
-          description: "Failed to read the image file. Please try again.",
-          variant: "destructive"
-        });
-      };
+      const readFile = new Promise<string>((resolve, reject) => {
+        reader.onerror = (error) => {
+          console.error('❌ FileReader error:', error);
+          reject(new Error('Failed to read image file'));
+        };
 
-      reader.onload = () => {
-        const result = reader.result as string;
-        console.log('File read successfully, base64 length:', result.length);
-        
-        onImageSelected(result);
-        
-        toast({
-          title: "Image Uploaded",
-          description: "Your photo has been uploaded successfully!",
-        });
-      };
+        reader.onload = () => {
+          const result = reader.result as string;
+          console.log('✅ File read successfully, base64 length:', result.length);
+          console.log('📋 Base64 preview:', result.substring(0, 100) + '...');
+          resolve(result);
+        };
 
-      reader.readAsDataURL(processedFile);
+        reader.readAsDataURL(processedFile);
+      });
+
+      const base64Result = await readFile;
+      
+      console.log('🎯 Calling onImageSelected with base64 data...');
+      onImageSelected(base64Result);
+      
+      console.log('✅ Upload process completed successfully!');
+      toast({
+        title: "Image Uploaded",
+        description: "Your photo has been uploaded successfully!",
+      });
       
     } catch (error) {
-      console.error('Error processing file:', error);
+      console.error('❌ Error in upload process:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      });
+      
+      setIsCompressing(false);
+      
       toast({
-        title: "Upload Failed",
-        description: "Failed to process the image. Please try again.",
+        title: "Upload Failed", 
+        description: error?.message || "Failed to process the image. Please try again.",
         variant: "destructive"
       });
     }
+    
+    console.log('=== UPLOAD PROCESS ENDED ===');
   };
 
   const clearImage = () => {
