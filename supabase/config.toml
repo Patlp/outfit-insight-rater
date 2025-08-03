@@ -131,7 +131,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-style-palette]
-verify_jwt = true
+verify_jwt = false
 
 [functions.analyze-style-profile]
 verify_jwt = true

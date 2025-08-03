@@ -1,41 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Authentication middleware
-async function validateAuth(req: Request) {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    throw new Error('Missing Authorization header');
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase configuration');
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  
-  // Extract JWT token from Authorization header
-  const token = authHeader.replace('Bearer ', '');
-  
-  // Verify the JWT token
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
-  if (error || !user) {
-    throw new Error('Invalid or expired authentication token');
-  }
-  
-  console.log('Authenticated user:', user.id);
-  return user;
-}
 
 interface PaletteRequest {
   seasonalType: string;
@@ -201,25 +170,6 @@ serve(async (req) => {
   try {
     console.log('Starting generate-style-palette function...');
     
-    // Validate authentication first
-    let user;
-    try {
-      user = await validateAuth(req);
-      console.log('Authentication successful for user:', user.id);
-    } catch (authError) {
-      console.error('Authentication failed:', authError.message);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Authentication failed', 
-          details: authError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-          status: 401 
-        }
-      );
-    }
-    
     // Check if OpenAI API key is available
     if (!openAIApiKey) {
       console.error('OpenAI API key is not configured');
@@ -234,7 +184,7 @@ serve(async (req) => {
     try {
       console.log('Parsing request body...');
       request = await req.json();
-      console.log('Received request for user:', user.id, 'Request:', request);
+      console.log('Received request:', request);
     } catch (parseError) {
       console.error('Failed to parse request body:', parseError);
       return new Response(
@@ -274,7 +224,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating color palette for user:', user.id, 'Request:', request);
+    console.log('Generating color palette with request:', request);
     
     // Generate the color palette
     const palette = await generateColorPalette(request);
@@ -282,7 +232,7 @@ serve(async (req) => {
     const endTime = Date.now();
     const duration = endTime - startTime;
     
-    console.log('Successfully generated palette for user:', user.id, 'Duration:', duration + 'ms');
+    console.log('Successfully generated palette, Duration:', duration + 'ms');
     console.log('Palette categories:', palette.categoryRecommendations.length);
 
     return new Response(
