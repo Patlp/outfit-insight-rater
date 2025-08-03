@@ -71,19 +71,27 @@ export const useStyleProfile = () => {
         .eq('user_id', user.id)
         .order('analysis_date', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .single();
 
       console.log('Style profile query result:', { data, error });
 
       if (error) {
-        console.error('Database error fetching style profile:', error);
-        throw error;
+        if (error.code === 'PGRST116') {
+          // No records found
+          console.log('No style profile found for user');
+          setStyleProfile(null);
+        } else {
+          console.error('Database error fetching style profile:', error);
+          throw error;
+        }
+      } else {
+        setStyleProfile(data);
+        console.log('Style profile set:', data);
       }
-
-      setStyleProfile(data || null);
-      console.log('Style profile set:', data || null);
     } catch (error) {
       console.error('Error fetching style profile:', error);
+      // Don't throw, just set to null to allow UI to continue
+      setStyleProfile(null);
     } finally {
       setLoading(false);
     }
