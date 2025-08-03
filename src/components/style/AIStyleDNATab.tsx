@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useStyleProfile, BodyTypeAnalysis, ColorAnalysis } from '@/hooks/useStyleProfile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Palette, Upload, Camera, Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { validateFile, compressImage } from '@/utils/imageProcessing';
 import BodyTypeConfirmation from './BodyTypeConfirmation';
 import ColorAnalysisConfirmation from './ColorAnalysisConfirmation';
 import EnhancedColorPaletteSection from './EnhancedColorPaletteSection';
 import BodyTypeSection from './BodyTypeSection';
 import ColorAnalysisSection from './ColorAnalysisSection';
+import StylePhotoUpload from './StylePhotoUpload';
 
 const AIStyleDNATab: React.FC = () => {
   const { user } = useAuth();
@@ -26,7 +26,6 @@ const AIStyleDNATab: React.FC = () => {
   const [colorAnalysis, setColorAnalysis] = useState<ColorAnalysis | null>(null);
   const [confirmedBodyType, setConfirmedBodyType] = useState<string | null>(null);
   const [confirmedColorAnalysis, setConfirmedColorAnalysis] = useState<ColorAnalysis | null>(null);
-  const [isCompressing, setIsCompressing] = useState(false);
 
   // Check if user has existing complete profile
   useEffect(() => {
@@ -49,60 +48,8 @@ const AIStyleDNATab: React.FC = () => {
     }
   }, [styleProfile]);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    console.log('Starting image upload for Style DNA:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      timestamp: new Date().toISOString()
-    });
-
-    // Validate the file first
-    if (!validateFile(file)) {
-      console.error('File validation failed for Style DNA upload');
-      return;
-    }
-
-    try {
-      // Compress the image
-      const processedFile = await compressImage(file, setIsCompressing);
-      console.log('Image compression completed for Style DNA, starting file read');
-      
-      // Read the processed file
-      const reader = new FileReader();
-      
-      reader.onerror = (error) => {
-        console.error('FileReader error in Style DNA:', error);
-        toast({
-          title: "Upload Failed",
-          description: "Failed to read image file. Please try again.",
-          variant: "destructive"
-        });
-      };
-      
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setSelectedImage(base64);
-        console.log('Style DNA image upload completed successfully');
-        
-        toast({
-          title: "Image Uploaded",
-          description: "Your photo has been uploaded successfully!",
-        });
-      };
-      
-      reader.readAsDataURL(processedFile);
-    } catch (error) {
-      console.error('Error processing image for Style DNA:', error);
-      toast({
-        title: "Upload Failed",
-        description: "Failed to process image. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleImageSelected = (base64: string) => {
+    setSelectedImage(base64);
   };
 
   const startAnalysis = async () => {
@@ -226,105 +173,14 @@ const AIStyleDNATab: React.FC = () => {
       {/* Analysis Flow */}
       {analysisStep === 'upload' && (
         <div className="max-w-2xl mx-auto">
-          <Card className="fashion-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5" />
-                Upload Your Photo
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center">
-                <div className="border-2 border-dashed border-fashion-300 rounded-lg p-8 hover:border-fashion-400 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="style-image-upload"
-                  />
-                  <label htmlFor="style-image-upload" className="cursor-pointer">
-                    {isCompressing ? (
-                      <div className="space-y-4">
-                        <Loader2 className="h-12 w-12 text-fashion-400 mx-auto animate-spin" />
-                        <div>
-                          <p className="text-fashion-900 font-medium">Processing image...</p>
-                          <p className="text-fashion-600 text-sm">
-                            Compressing and optimizing your photo
-                          </p>
-                        </div>
-                      </div>
-                    ) : selectedImage ? (
-                      <div className="space-y-4">
-                        <img 
-                          src={selectedImage} 
-                          alt="Uploaded" 
-                          className="max-h-64 mx-auto rounded-lg object-cover"
-                        />
-                        <p className="text-fashion-600">Click to change image</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <Upload className="h-12 w-12 text-fashion-400 mx-auto" />
-                        <div>
-                          <p className="text-fashion-900 font-medium">Upload your outfit photo</p>
-                          <p className="text-fashion-600 text-sm">
-                            For best results, use a full-body photo with good lighting
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-fashion-800 mb-2 block">
-                    Gender (for styling principles):
-                  </label>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={selectedGender === 'female' ? 'default' : 'outline'}
-                      onClick={() => setSelectedGender('female')}
-                      className="flex-1"
-                    >
-                      Female
-                    </Button>
-                    <Button
-                      variant={selectedGender === 'male' ? 'default' : 'outline'}
-                      onClick={() => setSelectedGender('male')}
-                      className="flex-1"
-                    >
-                      Male
-                    </Button>
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={startAnalysis}
-                  disabled={!selectedImage || analyzing}
-                  className="w-full"
-                >
-                  {analyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="h-4 w-4 mr-2" />
-                      Analyze My Style
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <div className="text-xs text-fashion-600 text-center">
-                <p>Your image is analyzed locally and securely. We don't store personal photos.</p>
-              </div>
-            </CardContent>
-          </Card>
+          <StylePhotoUpload
+            onImageSelected={handleImageSelected}
+            selectedImage={selectedImage}
+            selectedGender={selectedGender}
+            onGenderChange={setSelectedGender}
+            onAnalyze={startAnalysis}
+            isAnalyzing={analyzing}
+          />
         </div>
       )}
 
