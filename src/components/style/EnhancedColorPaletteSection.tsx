@@ -34,7 +34,7 @@ const EnhancedColorPaletteSection: React.FC<EnhancedColorPaletteSectionProps> = 
   );
   const [loading, setLoading] = useState(false);
   const [overallExplanation, setOverallExplanation] = useState('');
-  const { generateColorPalette } = useStyleProfile();
+  const { generateColorPalette, saveStyleProfile, styleProfile } = useStyleProfile();
   const { toast } = useToast();
 
   const canGenerate = seasonalType && bodyType && skinTone && undertone;
@@ -68,6 +68,22 @@ const EnhancedColorPaletteSection: React.FC<EnhancedColorPaletteSectionProps> = 
       console.log('Palette generation successful, result:', result);
       setColorRecommendations(result.categoryRecommendations);
       setOverallExplanation(result.overallExplanation);
+
+      // Persist palette into user's style profile
+      try {
+        await saveStyleProfile({
+          full_style_analysis: {
+            ...(styleProfile?.full_style_analysis || {}),
+            colorPalette: {
+              categoryRecommendations: result.categoryRecommendations,
+              overallExplanation: result.overallExplanation
+            }
+          }
+        });
+        console.log('✅ Saved color palette to profile');
+      } catch (saveErr) {
+        console.warn('⚠️ Failed to persist palette to profile:', saveErr);
+      }
       
       toast({
         title: "Success!",

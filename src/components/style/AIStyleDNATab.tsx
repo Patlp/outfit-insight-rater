@@ -26,17 +26,22 @@ const AIStyleDNATab: React.FC = () => {
   const [colorAnalysis, setColorAnalysis] = useState<ColorAnalysis | null>(null);
   const [confirmedBodyType, setConfirmedBodyType] = useState<string | null>(null);
   const [confirmedColorAnalysis, setConfirmedColorAnalysis] = useState<ColorAnalysis | null>(null);
+  const [suppressAutoComplete, setSuppressAutoComplete] = useState(false);
 
   // Check if user has existing complete profile
   useEffect(() => {
+    if (suppressAutoComplete) {
+      console.log('⏸️ Auto-complete suppressed; staying in upload flow');
+      return;
+    }
     if (styleProfile && styleProfile.body_type && styleProfile.seasonal_type) {
       setAnalysisStep('complete');
       setConfirmedBodyType(styleProfile.body_type);
       if (styleProfile.seasonal_type) {
         setConfirmedColorAnalysis({
           seasonalType: styleProfile.seasonal_type,
-          skinTone: styleProfile.skin_tone as any || 'medium',
-          undertone: styleProfile.undertone as any || 'neutral',
+          skinTone: (styleProfile.skin_tone as any) || 'medium',
+          undertone: (styleProfile.undertone as any) || 'neutral',
           hairColor: styleProfile.hair_color || 'brown',
           eyeColor: styleProfile.eye_color || 'brown',
           undertoneValue: styleProfile.undertone_value || 50,
@@ -46,7 +51,7 @@ const AIStyleDNATab: React.FC = () => {
         });
       }
     }
-  }, [styleProfile]);
+  }, [styleProfile, suppressAutoComplete]);
 
   const handleImageSelected = (base64: string) => {
     console.log('🎯 AIStyleDNATab: handleImageSelected called with base64 length:', base64.length);
@@ -127,6 +132,7 @@ const AIStyleDNATab: React.FC = () => {
         }
       });
       
+      setSuppressAutoComplete(false);
       setAnalysisStep('complete');
       
       toast({
@@ -145,6 +151,7 @@ const AIStyleDNATab: React.FC = () => {
 
   const resetAnalysis = () => {
     console.log('🔄 Re-analyze button clicked');
+    setSuppressAutoComplete(true);
     console.log('📋 Current state before reset:', {
       analysisStep,
       hasSelectedImage: !!selectedImage,

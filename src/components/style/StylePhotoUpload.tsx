@@ -213,7 +213,9 @@ const StylePhotoUpload: React.FC<StylePhotoUploadProps> = ({
             <input
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={handleFileSelect}
+              onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ''; }}
               className="hidden"
               id="style-photo-input"
             />
